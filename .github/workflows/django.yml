@@ -27,7 +27,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Tests
-      run: |
-        cd src
-        python manage.py test
+    - name: Give execute permission to the script
+      run: chmod +x script/run_tests.sh
+
+    - name: Run tests
+      run: ./script/run_tests.sh  # Execute the script
