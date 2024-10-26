@@ -28,7 +28,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Give execute permission to the script
-      run: chmod +x ./script/run_tests.sh
+      run: chmod +x ./script/run_test.sh
 
     - name: Run tests
-      run: ./script/run_tests.sh  # Execute the script
+      run: ./script/run_test.sh  # Execute the script
