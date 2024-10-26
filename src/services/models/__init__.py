@@ -1,1 +1,1 @@
-from .users import Bus
+from .base import Bus
