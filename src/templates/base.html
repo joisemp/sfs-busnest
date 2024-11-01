@@ -1,21 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
-    {% load static %}
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{% block title %}{% endblock title %}</title>
-        <script src="{% static 'utils/htmx/htmx.min.js' %}"></script>
-        <link rel="stylesheet" href="{% static 'utils/font_awesome/css/all.min.css' %}">
-        <link rel="stylesheet" href="{% static 'utils/font_awesome/css/fontawesome.min.css' %}">
-        <link href="{% static 'utils/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-        {% block style %}{% endblock style %}
-    </head>
-    <body>
-        {% block navbar %}{% include 'navbar.html' %}{% endblock navbar %}
-        {% block subnav %}{% endblock subnav %}
-        {% block content %}{% endblock %}
-        {% block scripts %}{% endblock scripts %}
-        <script src="{% static 'utils/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    </body>
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock title %}</title>
+    <script src="{% static 'utils/htmx/htmx.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'utils/font_awesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'utils/font_awesome/css/fontawesome.min.css' %}">
+    <link href="{% static 'utils/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    {% block style %}{% endblock style %}
+</head>
+
+<body class="bg-light">
+
+    <div class="initial-wrap">
+
+        <!-- Navbar -->
+        <header class="header">
+            <div class="header-content w-100">
+                <div class="logo">
+                    <img src="./logo.svg" alt="">
+                </div>
+                <div class="profile">
+                    <div class="dropdown">
+                        <div class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://th.bing.com/th/id/OIP.WRU5MtefqKM493DeLtnzxwHaHa?rs=1&pid=ImgDetMain"
+                                height="40px" width="40px" style="border-radius: 50%; object-fit: cover;" alt="">
+                        </div>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Action</a></li>
+                            <li><a class="dropdown-item" href="#">Another action</a></li>
+                            <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <section class="sidebar">
+            <div class="nav">
+                <a class="navlink active"> <i class="fa-solid fa-graduation-cap me-2"></i><span>Institution</span></a>
+                <a class="navlink"><i class="fa-solid fa-bus me-2"></i><span>Buses</span></a>
+                <a class="navlink"><i class="fa-solid fa-user-group me-2"></i><span>People</span></a>
+                <a class="navlink"><i class="fa-solid fa-map me-2"></i><span>Routes</span></a>
+                <a class="navlink"><i class="fa-solid fa-book-open-reader me-2"></i><span>Registration</span></a>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <section class="main-content">
+            <div class="container">
+                {% block content %}{% endblock %}
+            </div>
+        </section>
+    </div>
+    {% block scripts %}{% endblock scripts %}
+    <script src="{% static 'utils/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+
 </html>

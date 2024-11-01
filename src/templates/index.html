@@ -1,4 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/landing_page/landing_page.css' %}">
+{% endblock style %}
 
 {% block title %}
 Hello world

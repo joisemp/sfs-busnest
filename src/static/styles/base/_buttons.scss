@@ -1,0 +1,86 @@
+// Button Design System - SASS
+
+// Color Palette
+$primary-color: #6366F1; // Purple
+$secondary-color: #F87171; // Red
+$light-color: #F3F4F6; // Light background
+$dark-color: #111827; // Dark text
+$muted-color: #9CA3AF; // Muted grey text
+$border-color: #E5E7EB; // Light border
+$link-color: #4F46E5; // Link color
+
+// Button Sizes
+$btn-sizes: (
+  sm: (padding: 0.25rem 0.5rem, font-size: 0.875rem), // Small
+  base: (padding: 0.5rem 1rem, font-size: 1rem), // Base
+  lg: (padding: 0.75rem 1.25rem, font-size: 1.125rem), // Large
+);
+
+// Button Variants
+$btn-variants: (
+  primary: (
+    background: $primary-color,
+    color: white,
+    border: $primary-color
+  ),
+  secondary: (
+    background: $secondary-color,
+    color: white,
+    border: $secondary-color
+  ),
+  outline: (
+    background: white,
+    color: $dark-color,
+    border: $border-color
+  ),
+  link: (
+    background: transparent,
+    color: $link-color,
+    border: none
+  )
+);
+
+// Button Mixin
+@mixin button($variant, $size: base) {
+  $bg: map-get(map-get($btn-variants, $variant), background);
+  $color: map-get(map-get($btn-variants, $variant), color);
+  $border: map-get(map-get($btn-variants, $variant), border);
+
+  padding: map-get(map-get($btn-sizes, $size), padding);
+  font-size: map-get(map-get($btn-sizes, $size), font-size);
+  background-color: $bg;
+  color: $color;
+  border: 1px solid $border;
+  border-radius: 0.375rem; // 6px border radius
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// Button Classes
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-primary {
+    @include button(primary);
+  }
+  
+  .btn-secondary {
+    @include button(secondary);
+  }
+  
+  .btn-outline {
+    @include button(outline);
+  }
+  
+  .btn-link {
+    @include button(link);
+  }
+  
