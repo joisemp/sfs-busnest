@@ -1,0 +1,44 @@
+$font-sizes: (
+  xs: 0.75rem,// 12px
+  sm: 0.875rem, // 14px
+  base: 1rem, // 16px
+  lg: 1.125rem, // 18px
+  xl: 1.25rem, // 20px
+  '2xl': 1.5rem, // 24px
+  '3xl': 1.875rem, // 30px
+  '4xl': 2.25rem, // 36px
+  '5xl': 3rem, // 48px
+  '6xl': 3.75rem, // 60px
+  '7xl': 4.5rem, // 72px
+  '8xl': 6rem, // 96px
+  '9xl': 8rem // 128px
+);
+
+// Line Heights
+$line-heights: (
+  xs: 1rem, 
+  sm: 1.25rem, 
+  base: 1.5rem, 
+  lg: 1.75rem, 
+  xl: 1.75rem, 
+  '2xl': 2rem, 
+  '3xl': 2.25rem, 
+  '4xl': 2.5rem, 
+  '5xl': 1, 
+  '6xl': 1, 
+  '7xl': 1, 
+  '8xl': 1, 
+  '9xl': 1
+);
+
+// Font Weights
+$font-weights: (
+  regular: 400,
+  bold: 700
+);
+// Typography Mixin
+@mixin typography($size, $weight: regular) {
+    font-size: map-get($font-sizes, $size);
+    line-height: map-get($line-heights, $size);
+    font-weight: map-get($font-weights, $weight);
+  }

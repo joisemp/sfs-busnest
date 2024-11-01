@@ -18,3 +18,14 @@ class CustomAuthenticationForm(AuthenticationForm):
 
         self.fields['username'].widget.attrs.update({'class': 'form-control'})
         self.fields['password'].widget.attrs.update({'class': 'form-control'})
+        
+
+class UserRegisterForm(UserCreationForm):
+    first_name = forms.CharField(max_length=200, required=True)
+    last_name = forms.CharField(max_length=200, required=True)
+
+    class Meta:
+        model = User
+        fields = ['email',]  
+        
+        
