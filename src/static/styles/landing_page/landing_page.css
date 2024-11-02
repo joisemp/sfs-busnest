@@ -10,14 +10,17 @@
 .btn-primary {
   padding: 0.5rem 1rem;
   font-size: 1rem;
-  background-color: #6366F1;
-  color: white;
+  background-color: #4f46e5;
+  color: #ffffff;
   border: 1px solid #6366F1;
   border-radius: 0.375rem;
   transition: background-color 0.2s ease-in-out;
 }
 .btn-primary:hover {
   opacity: 0.9;
+}
+.btn-primary:hover {
+  background-color: #4f46e5;
 }
 
 .btn-secondary {
@@ -54,6 +57,7 @@
   border: 1px solid none;
   border-radius: 0.375rem;
   transition: background-color 0.2s ease-in-out;
+  font-weight: 500;
 }
 .btn-link:hover {
   opacity: 0.9;

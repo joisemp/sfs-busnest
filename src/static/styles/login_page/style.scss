@@ -8,7 +8,8 @@ body {
         .wrapper {
             display: flex;
             justify-content: center;
-            margin-top: 50px;
+            align-items: center;
+            min-height: 100vh;
 
             .outer {
                 width: 100%;
