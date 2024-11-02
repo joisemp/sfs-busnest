@@ -43,4 +43,4 @@ class LoginViewTests(TestCase):
         # Check that it does not redirect (stays on the login page)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'core/login.html')
-        self.assertContains(response, "Please enter a correct email and password.")
+        self.assertContains(response, "Please enter a correct email address and password. Note that both fields may be case-sensitive.")
