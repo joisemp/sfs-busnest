@@ -208,6 +208,7 @@
 .initial-wrap .main-content {
   margin-left: 220px;
   margin-top: 60px;
+  margin-bottom: 76px;
   padding: 1rem;
   overflow-y: auto;
   height: calc(100vh - 60px);
