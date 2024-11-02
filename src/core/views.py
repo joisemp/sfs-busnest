@@ -1,5 +1,9 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import (
+    LoginView, LogoutView, PasswordChangeView, 
+    PasswordResetCompleteView, PasswordResetConfirmView, 
+    PasswordResetDoneView, PasswordResetView
+    )
 from django.contrib.auth import login
 from django.urls import reverse_lazy
 from . forms import CustomAuthenticationForm, UserRegisterForm
@@ -44,4 +48,31 @@ class UserRegisterView(CreateView):
 
 class LogoutView(LogoutView):
     template_name = 'core/logout.html'
+
+
+class ChangePasswordView(PasswordChangeView):
+    template_name = 'core/change_password.html'
+    success_url = reverse_lazy('landing_page')
+
+
+class ResetPasswordView(PasswordResetView):
+    email_template_name = 'core/password_reset/password_reset_email.html'
+    html_email_template_name = 'core/password_reset/password_reset_email.html'
+    subject_template_name = 'core/password_reset/password_reset_subject.txt'
+    success_url = reverse_lazy('core:done_password_reset')
+    template_name = 'core/password_reset/password_reset_form.html'
+
+
+class DonePasswordResetView(PasswordResetDoneView):
+    template_name = 'core/password_reset/password_reset_done.html'
+
+
+class ConfirmPasswordResetView(PasswordResetConfirmView):
+    success_url = reverse_lazy('core:complete_password_reset')
+    template_name = 'core/password_reset/password_reset_confirm.html'
+
+
+class CompletePasswordResetView(PasswordResetCompleteView):
+    template_name = 'core/password_reset/password_reset_complete.html'
+
 
