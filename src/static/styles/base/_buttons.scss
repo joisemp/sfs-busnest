@@ -1,36 +1,59 @@
-@import './colors';
+@import "./colors";
 // Button Design System - SASS
 
 // Color Palette
-$primary-color: #6366F1; // Purple
-$secondary-color: #F87171; // Red
-$light-color: #F3F4F6; // Light background
-$dark-color: #111827; // Dark text
-$muted-color: #9CA3AF; // Muted grey text
-$border-color: #E5E7EB; // Light border
-$link-color: #4F46E5; // Link color
+$colors: (
+  primary: $indigo-600,
+  secondary: $indigo-50,
+  secondary-foreground: $indigo-900,
+  light: $base-white,
+  dark: $slate-900,
+  border: $slate-400
+);
+
+$primary-color: map-get($colors, primary);
+$secondary-color: map-get($colors, secondary);
+$secondary-foreground-color: map-get($colors, secondary-foreground);
+$dark-color: map-get($colors, dark);
+$border-color: map-get($colors, border);
+$link-color: map-get($colors, primary);
+$border-color: map-get($colors, border);
 
 // Button Sizes
 $btn-sizes: (
-  sm: (padding: 0.25rem 0.5rem, font-size: 0.875rem), // Small
-  base: (padding: 0.5rem 1rem, font-size: 1rem), // Base
-  lg: (padding: 0.75rem 1.25rem, font-size: 1.125rem), // Large
+  sm: (
+    padding: 0.25rem 0.5rem,
+    font-size: 0.875rem
+  ),
+  // Small
+  base:
+    (
+      padding: 0.5rem 1rem,
+      font-size: 1rem
+    ),
+  // Base
+  lg:
+    (
+      padding: 0.75rem 1.25rem,
+      font-size: 1.125rem
+    )
+    // Large
 );
 
 // Button Variants
 $btn-variants: (
   primary: (
-    background: $indigo-600,
+    background: $primary-color,
     color: $base-white,
     border: $primary-color
   ),
   secondary: (
     background: $secondary-color,
-    color: white,
+    color: $secondary-foreground-color,
     border: $secondary-color
   ),
   outline: (
-    background: white,
+    background: trasparent,
     color: $dark-color,
     border: $border-color
   ),
@@ -55,7 +78,9 @@ $btn-variants: (
   border-radius: 0.375rem; // 6px border radius
   transition: background-color 0.2s ease-in-out;
 
-  &:hover {
+  &:hover,
+  &:focus,
+  &:active {
     opacity: 0.9;
   }
 }
@@ -65,29 +90,55 @@ $btn-variants: (
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
 }
 
 .btn-primary {
-    @include button(primary);
+  @include button(primary);
 
-    &:hover{
-      background-color: $indigo-600;
-    }
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: darken($primary-color, 10%);
+    border-color: darken($primary-color, 10%);
   }
-  
-  .btn-secondary {
-    @include button(secondary);
+}
+
+.btn-secondary {
+  @include button(secondary);
+  &:hover,
+  &:focus,
+  &:active {
+    color: $secondary-foreground-color;
+    background-color: $secondary-color;
+    border-color: $secondary-color;
   }
-  
-  .btn-outline {
-    @include button(outline);
+}
+
+.btn-outline {
+  @include button(outline);
+  &:hover,
+  &:focus,
+  &:active {
+    color: $base-white;
+    background-color: $dark-color;
+    border-color: $dark-color;
   }
-  
-  .btn-link {
-    @include button(link);
-    font-weight: 500;
+}
+
+.btn-link {
+  @include button(link);
+  font-weight: 500;
+}
+
+.link {
+  color: $primary-color;
+  font-weight: 500;
+  &:hover,
+  &:focus,
+  &:active {
+    color: darken($primary-color, 10%);
   }
-  
+}
