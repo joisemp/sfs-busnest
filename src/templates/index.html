@@ -12,5 +12,11 @@ Hello world
 
 {% block content %}
 <h1>Hello world</h1>
-<p>{{request.user}}</p>
+<p>{{request.user.profile.first_name}} {{request.user.profile.last_name}}</p>
+{% if request.user.is_authenticated %}
+<a href="{% url 'core:logout' %}">Logout</a>
+{% else %}
+<a href="{% url 'core:login' %}">Login</a>
+<a href="{% url 'core:register' %}">Register now</a>
+{% endif %}
 {% endblock content %}

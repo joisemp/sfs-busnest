@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth import login
 from django.urls import reverse_lazy
 from . forms import CustomAuthenticationForm, UserRegisterForm
@@ -41,3 +41,7 @@ class UserRegisterView(CreateView):
         login(self.request, user)
         return redirect('landing_page')
     
+
+class LogoutView(LogoutView):
+    template_name = 'core/logout.html'
+
