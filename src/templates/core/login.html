@@ -1,11 +1,35 @@
 {% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/login_page/style.css'%}">
+{% endblock style%}
 
 {% block content %}
-<div class="container">
+<div id="login-page">
     <form action="" method="post">
-        {% csrf_token %}
-        {{form}}
-        <button type="submit">Submit</button>
+        <div class="wrapper">
+            <div class="outer">
+                <div class="flex-box">
+                    <div class="icon">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div class="form">
+                        {% csrf_token %}
+                        {{form.as_p}}
+                        <div class="footer">
+                            <button type="submit" class="btn btn-primary btn-sm me-2">Sign in</button>
+                            <a href="#">Forgot password?</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="message mt-3">
+                    <span>Don't have an account? </span>
+                    <a class="ms-2" href="{% url 'core:register' %}">Register now</a>
+                </div>
+            </div>
+        </div>
+
     </form>
 </div>
 {% endblock content %}

@@ -1,0 +1,63 @@
+@import '../base';
+
+body {
+    background: $indigo-600 !important;
+
+    // consist of outer,flex-box block
+    #login-page {
+        .wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+
+            .outer {
+                width: 100%;
+                max-width: 370px;
+
+                // consist of form and footer block
+                .flex-box {
+                    width: 100%;
+                    background: $base-white;
+                    border-radius: 5px;
+                    padding: 15px;
+
+                    .icon {
+                        width: 100%;
+                        text-align: center;
+                        font-size: 43px;
+                        margin-bottom: 1rem;
+                    }
+
+                    .form {
+                        // icon block
+                        width: 100%;
+                        background: $base-white;
+
+                        // consist of button and anchor tag
+                        .footer {
+                            a {
+                                text-decoration: none;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // outside of flex-box,consist of para and anchor tag
+            .message {
+                width: 100%;
+                display: flex;
+                background: $base-white;
+                border-radius: 5px;
+                padding: 25px 10px;
+                justify-content: center;
+
+                a {
+                    text-decoration: none;
+                }
+            }
+        }
+    }
+
+}
