@@ -5,5 +5,6 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='index.html'), name='landing_page'),
-    path('core/', include('core.urls', namespace='core'))
+    path('core/', include('core.urls', namespace='core')),
+    path('central_admin/', include('services.urls.central_admin', namespace='central_admin')),
 ]
