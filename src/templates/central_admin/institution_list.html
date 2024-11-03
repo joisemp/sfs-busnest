@@ -6,5 +6,12 @@
 {% endblock style %}
 
 {% block content %}
-Institution list
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary">Add institution</a>
+    </div>
+</div>
+{% for institution in institutions %}
+{{institution}}
+{% endfor %}
 {% endblock content %}
