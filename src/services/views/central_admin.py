@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, UpdateView
 from services.models import Institution
 
 
@@ -21,4 +21,13 @@ class InstitutionCreateView(CreateView):
         institution.user = user
         institution.save()
         return redirect('central_admin:institution_list')
-        
+    
+
+class InstitutionUpdateView(UpdateView):
+    model = Institution
+    fields = ['name', 'label', 'contact_no', 'email', 'incharge']
+    template_name = 'central_admin/institution_update.html'
+    success_url = reverse_lazy('central_admin:institution_list')
+
+    def form_valid(self, form):
+        return super().form_valid(form)

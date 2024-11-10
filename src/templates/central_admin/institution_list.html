@@ -12,6 +12,6 @@
     </div>
 </div>
 {% for institution in institutions %}
-{{institution}}
+{{institution}} <a href="{% url 'central_admin:institution_update' slug=institution.slug %}">Edit</a> | <a href="#">Delete</a>
 {% endfor %}
 {% endblock content %}
