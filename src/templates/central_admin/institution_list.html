@@ -5,6 +5,10 @@
 <link rel="stylesheet" href="{% static 'styles/central_admin/institution_list/style.css' %}">
 {% endblock style %}
 
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
@@ -12,6 +16,6 @@
     </div>
 </div>
 {% for institution in institutions %}
-{{institution}}
+{{institution}} <a href="{% url 'central_admin:institution_update' slug=institution.slug %}">Edit</a> | <a href="{% url 'central_admin:institution_delete' slug=institution.slug %}">Delete</a>
 {% endfor %}
 {% endblock content %}

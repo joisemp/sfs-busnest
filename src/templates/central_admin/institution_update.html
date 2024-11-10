@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/central_admin/institution_create/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/central_admin/institution_update/style.css' %}">
 {% endblock style %}
 
 {% block sidebar %}
@@ -14,7 +14,7 @@
 <form action="" method="post">
     {% csrf_token %}
     {{form.as_p}}
-    <button type="submit" class="btn-primary">Create institution</button>
+    <button type="submit" class="btn-primary">Update info</button>
 </form>
 
 {% endblock content %}
