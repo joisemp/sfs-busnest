@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from services.models import Institution
 
 
@@ -31,3 +31,9 @@ class InstitutionUpdateView(UpdateView):
 
     def form_valid(self, form):
         return super().form_valid(form)
+
+class InstitutionDeleteView(DeleteView):
+    model = Institution
+    template_name = 'central_admin/institution_confirm_delete.html'
+    success_url = reverse_lazy('central_admin:institution_list')
+    
