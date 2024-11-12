@@ -223,4 +223,19 @@
     margin-left: auto;
     width: 100%;
   }
+}
+
+.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.wrap .card-wrap {
+  max-width: 18rem;
+  width: 100%;
+  margin: 5px;
+}
+.wrap .card-wrap .card {
+  width: 100%;
+  padding: 30px 20px;
 }/*# sourceMappingURL=style.css.map */

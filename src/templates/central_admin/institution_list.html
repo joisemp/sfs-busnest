@@ -10,12 +10,121 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
+<div class="d-flex justify-content-between  align-items-center mb-3">
     <div>
         <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary">Add institution</a>
     </div>
+    <div>
+        <form class="d-flex" role="search">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-dark" type="submit">Search<i class="fa-solid fa-magnifying-glass ms-3"></i></button>
+        </form>
+    </div>
 </div>
-{% for institution in institutions %}
-{{institution}} <a href="{% url 'central_admin:institution_update' slug=institution.slug %}">Edit</a> | <a href="{% url 'central_admin:institution_delete' slug=institution.slug %}">Delete</a>
-{% endfor %}
+<section>
+    <div class="wrap">
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">St.Francis De Sales School</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">St.Francis De Sales School</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">St.Francis De Sales School</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">St.Francis De Sales School</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">St.Francis De Sales School</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">St.Francis De Sales School</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock content %}
