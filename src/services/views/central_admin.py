@@ -18,7 +18,7 @@ class InstitutionCreateView(CreateView):
     def form_valid(self, form):
         institution = form.save(commit=False)
         user = self.request.user
-        institution.user = user
+        institution.org = user.profile.org
         institution.save()
         return redirect('central_admin:institution_list')
     

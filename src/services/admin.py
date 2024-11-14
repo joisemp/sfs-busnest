@@ -1,6 +1,10 @@
 from django.contrib import admin
-from services.models import Institution, Bus
+from services.models import Institution, Bus, Organisation
 
+
+@admin.register(Organisation)
+class OrganisationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email')
 
 @admin.register(Institution)
 class InstitutionAdmin(admin.ModelAdmin):
