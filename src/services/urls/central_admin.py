@@ -9,4 +9,6 @@ urlpatterns = [
      path('institutions/create/', central_admin.InstitutionCreateView.as_view(), name='institution_create'),
      path('institutions/<slug:slug>/update/', central_admin.InstitutionUpdateView.as_view(), name='institution_update'),
      path('institutions/<slug:slug>/delete/', central_admin.InstitutionDeleteView.as_view(), name='institution_delete'),
+     
+     path('buses/', central_admin.BusListView.as_view(), name='bus_list'),
 ]

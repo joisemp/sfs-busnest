@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from services.models import Institution
+from services.models import Institution, Bus
 
 
 class InstitutionListView(ListView):
@@ -36,4 +36,11 @@ class InstitutionDeleteView(DeleteView):
     model = Institution
     template_name = 'central_admin/institution_confirm_delete.html'
     success_url = reverse_lazy('central_admin:institution_list')
+
+
+class BusListView(ListView):
+    model = Bus
+    template_name = 'central_admin/bus_list.html'
+    context_object_name = 'buses'
+
     
