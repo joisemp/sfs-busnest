@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/bus_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<a href="{% url 'central_admin:bus_create' %}">Add bus</a>
+<h1>Bus List</h1>
+
+{% for bus in buses %}
+<ul>
+    <li>{{bus}} - <a href="{% url 'central_admin:bus_update' slug=bus.slug %}">Edit</a> | <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}">Delete</a></li>
+</ul>
+{% endfor %}
+
+{% endblock content %}
