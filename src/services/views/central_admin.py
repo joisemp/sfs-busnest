@@ -43,4 +43,17 @@ class BusListView(ListView):
     template_name = 'central_admin/bus_list.html'
     context_object_name = 'buses'
 
+
+class BusCreateView(CreateView):
+    template_name = 'central_admin/bus_create.html'
+    model = Bus
+    fields = ['label', 'bus_no', 'driver']
     
+    def form_valid(self, form):
+        bus = form.save(commit=False)
+        user = self.request.user
+        bus.org = user.profile.org
+        bus.save()
+        return redirect('central_admin:bus_list')
+    
+        

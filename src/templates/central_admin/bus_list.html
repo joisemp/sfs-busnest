@@ -10,6 +10,11 @@
 {% endblock sidebar %}
 
 {% block content %}
-<a href="#">Add bus</a>
+<a href="{% url 'central_admin:bus_create' %}">Add bus</a>
 <h1>Bus List</h1>
+
+{% for bus in buses %}
+{{bus}}
+{% endfor %}
+
 {% endblock content %}

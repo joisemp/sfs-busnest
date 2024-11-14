@@ -1,5 +1,4 @@
 from django.urls import path
-from core import views
 from services.views import central_admin
 
 app_name = 'central_admin'
@@ -11,4 +10,5 @@ urlpatterns = [
      path('institutions/<slug:slug>/delete/', central_admin.InstitutionDeleteView.as_view(), name='institution_delete'),
      
      path('buses/', central_admin.BusListView.as_view(), name='bus_list'),
+     path('buses/create/', central_admin.BusCreateView.as_view(), name='bus_create'),
 ]
