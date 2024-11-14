@@ -32,6 +32,7 @@ class InstitutionUpdateView(UpdateView):
     def form_valid(self, form):
         return super().form_valid(form)
 
+
 class InstitutionDeleteView(DeleteView):
     model = Institution
     template_name = 'central_admin/institution_confirm_delete.html'
@@ -55,5 +56,21 @@ class BusCreateView(CreateView):
         bus.org = user.profile.org
         bus.save()
         return redirect('central_admin:bus_list')
+    
+    
+class BusUpdateView(UpdateView):
+    model = Bus
+    fields = ['label', 'bus_no', 'driver']
+    template_name = 'central_admin/bus_update.html'
+    success_url = reverse_lazy('central_admin:bus_list')
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+
+
+class BusDeleteView(DeleteView):
+    model = Bus
+    template_name = 'central_admin/bus_confirm_delete.html'
+    success_url = reverse_lazy('central_admin:bus_list')
     
         
