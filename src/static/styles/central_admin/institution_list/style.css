@@ -235,6 +235,11 @@
   width: 100%;
   margin: 5px;
 }
+@media screen and (max-width: 767px) {
+  .wrap .card-wrap {
+    max-width: 26rem;
+  }
+}
 .wrap .card-wrap .card {
   width: 100%;
   padding: 30px 20px;

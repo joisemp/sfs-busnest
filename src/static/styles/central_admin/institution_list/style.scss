@@ -8,6 +8,11 @@
         max-width:18rem;
         width:100%;
         margin:5px;
+
+         // for tablet,mobile
+         @media  screen and (max-width:767px) {
+             max-width:26rem;
+         }
        .card{
         width:100%;
         padding: 30px 20px;
