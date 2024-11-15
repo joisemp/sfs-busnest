@@ -2,6 +2,12 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from services.models import Institution, Bus
+from core.models import UserProfile
+
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 
 class InstitutionListView(ListView):
@@ -72,5 +78,11 @@ class BusDeleteView(DeleteView):
     model = Bus
     template_name = 'central_admin/bus_confirm_delete.html'
     success_url = reverse_lazy('central_admin:bus_list')
+    
+    
+class PeopleListView(ListView):
+    model = UserProfile
+    template_name = 'central_admin/people_list.html'
+    context_object_name = 'people'
     
         
