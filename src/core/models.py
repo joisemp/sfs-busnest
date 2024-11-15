@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from . user_manager import UserManager
+from services.models import Organisation
     
 class User(AbstractUser):
     username = None
@@ -15,6 +16,7 @@ class User(AbstractUser):
     
 class UserProfile(models.Model):
     user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, related_name='profile')
+    org = models.ForeignKey(Organisation, null=True, on_delete=models.CASCADE, related_name='user_profiles')
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     is_central_admin = models.BooleanField(_('is central admin'), default=False)
