@@ -9,9 +9,10 @@ class Organisation(models.Model):
     contact_no = models.CharField(
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
-        db_index=True
+        db_index=True,
+        null=True
     )
-    email = models.EmailField(unique=True, db_index=True)
+    email = models.EmailField(unique=True, db_index=True, null=True)
     slug = models.SlugField(unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

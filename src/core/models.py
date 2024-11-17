@@ -18,7 +18,7 @@ class User(AbstractUser):
     
 class UserProfile(models.Model):
     user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, related_name='profile')
-    org = models.ForeignKey(Organisation, null=True, on_delete=models.CASCADE, related_name='user_profiles')
+    org = models.ForeignKey(Organisation, null=True, on_delete=models.SET_NULL, related_name='org')
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     is_central_admin = models.BooleanField(_('is central admin'), default=False)
@@ -28,7 +28,7 @@ class UserProfile(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.bus_no)
+            base_slug = slugify(f"{self.first_name}-{self.last_name}{self.org}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
     
