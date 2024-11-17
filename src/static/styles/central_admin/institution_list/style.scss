@@ -1,1 +1,23 @@
 @import '../../sidebar_navbar_base';
+
+.wrap{
+    display:flex;
+    flex-wrap: wrap;
+    @media  screen and (max-width:805px) {
+        justify-content: center;
+    }
+    .card-wrap{
+        max-width:20rem;
+        width:100%;
+        margin:5px;
+
+         // for tablet,mobile
+         @media  screen and (max-width:805px) {
+             max-width:26rem;
+         }
+       .card{
+        width:100%;
+        padding: 30px 20px;
+       }
+    }
+}

@@ -1,20 +1,7 @@
-import random
-import string
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
-
-
-def generate_unique_slug(instance, base_slug):
-    """Generates a unique slug with a 4-character alphanumeric code."""
-    def generate_code():
-        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
-    
-    slug = f"{base_slug}-{generate_code()}"
-    model_class = instance.__class__
-    while model_class.objects.filter(slug=slug).exists():
-        slug = f"{base_slug}-{generate_code()}"
-    return slug
+from config.utils import generate_unique_slug
 
 
 class Organisation(models.Model):
@@ -22,9 +9,10 @@ class Organisation(models.Model):
     contact_no = models.CharField(
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
-        db_index=True
+        db_index=True,
+        null=True
     )
-    email = models.EmailField(unique=True, db_index=True)
+    email = models.EmailField(unique=True, db_index=True, null=True)
     slug = models.SlugField(unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

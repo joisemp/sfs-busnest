@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/people_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h2>Are you sure you want to remove {{ object.first_name }}?</h2>
+<p>This action cannot be undone.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Yes remove</button>
+    <a href="{% url 'central_admin:institution_list' %}">Cancel</a>
+</form>
+{% endblock %}

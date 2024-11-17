@@ -1,4 +1,5 @@
 from django.shortcuts import redirect, render
+from django.db import transaction
 from django.contrib.auth.views import (
     LoginView, LogoutView, PasswordChangeView, 
     PasswordResetCompleteView, PasswordResetConfirmView, 
@@ -7,9 +8,10 @@ from django.contrib.auth.views import (
 from django.contrib.auth import login
 from django.urls import reverse_lazy
 from . forms import CustomAuthenticationForm, UserRegisterForm
-from django.views.generic import CreateView, View
+from django.views.generic import CreateView
 from core.models import UserProfile
 from django.contrib.auth import get_user_model
+from services.models import Organisation
 
 User = get_user_model()
 
@@ -29,19 +31,26 @@ class UserRegisterView(CreateView):
     template_name = 'core/register.html'
     success_url = reverse_lazy('core:login')
     
+    @transaction.atomic
     def form_valid(self, form):
         user = form.save()
+        
+        org_name = form.cleaned_data.get('org_name')
+        org = Organisation.objects.create(
+            name = org_name
+        )
         
         # Create user profile
         first_name = form.cleaned_data.get('first_name')
         last_name = form.cleaned_data.get('last_name')
         UserProfile.objects.create(
             user=user, 
+            org = org,
             first_name=first_name, 
             last_name=last_name, 
             is_central_admin=True
             )
-
+        
         login(self.request, user)
         return redirect('landing_page')
     

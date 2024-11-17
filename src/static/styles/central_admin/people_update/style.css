@@ -223,28 +223,4 @@
     margin-left: auto;
     width: 100%;
   }
-}
-
-.wrap {
-  display: flex;
-  flex-wrap: wrap;
-}
-@media screen and (max-width: 805px) {
-  .wrap {
-    justify-content: center;
-  }
-}
-.wrap .card-wrap {
-  max-width: 20rem;
-  width: 100%;
-  margin: 5px;
-}
-@media screen and (max-width: 805px) {
-  .wrap .card-wrap {
-    max-width: 26rem;
-  }
-}
-.wrap .card-wrap .card {
-  width: 100%;
-  padding: 30px 20px;
 }/*# sourceMappingURL=style.css.map */
