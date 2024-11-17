@@ -23,108 +23,25 @@
 </div>
 <section>
     <div class="wrap">
+        {% for institute in institutions %}
         <div class="card-wrap">
             <div class="card">
                 <div class="mb-3">
                     <div class="mb-3">
-                        <h5 class="card-title">St.Francis De Sales School</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
+                        <h5 class="card-title">{{institute.name}}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{institute.label}}</h6>
                     </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Managed by: {{institute.incharge}}</h6>
                 </div>
                 <div class="d-flex justify-content-end">
                     <div class="button-block d-flex">
-                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
+                        <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}" class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="{% url 'central_admin:institution_update' slug=institute.slug %}" class="btn btn-outline-dark btn-sm">Edit</a>
                     </div>
                 </div> 
             </div>
         </div>
-        <div class="card-wrap">
-            <div class="card">
-                <div class="mb-3">
-                    <div class="mb-3">
-                        <h5 class="card-title">St.Francis De Sales School</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
-                </div>
-                <div class="d-flex justify-content-end">
-                    <div class="button-block d-flex">
-                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
-                    </div>
-                </div> 
-            </div>
-        </div>
-        <div class="card-wrap">
-            <div class="card">
-                <div class="mb-3">
-                    <div class="mb-3">
-                        <h5 class="card-title">St.Francis De Sales School</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
-                </div>
-                <div class="d-flex justify-content-end">
-                    <div class="button-block d-flex">
-                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
-                    </div>
-                </div> 
-            </div>
-        </div>
-        <div class="card-wrap">
-            <div class="card">
-                <div class="mb-3">
-                    <div class="mb-3">
-                        <h5 class="card-title">St.Francis De Sales School</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
-                </div>
-                <div class="d-flex justify-content-end">
-                    <div class="button-block d-flex">
-                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
-                    </div>
-                </div> 
-            </div>
-        </div>
-        <div class="card-wrap">
-            <div class="card">
-                <div class="mb-3">
-                    <div class="mb-3">
-                        <h5 class="card-title">St.Francis De Sales School</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
-                </div>
-                <div class="d-flex justify-content-end">
-                    <div class="button-block d-flex">
-                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
-                    </div>
-                </div> 
-            </div>
-        </div>
-        <div class="card-wrap">
-            <div class="card">
-                <div class="mb-3">
-                    <div class="mb-3">
-                        <h5 class="card-title">St.Francis De Sales School</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">ICSE</h6>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by :Lakshmi.C.N</h6>
-                </div>
-                <div class="d-flex justify-content-end">
-                    <div class="button-block d-flex">
-                        <a href="#" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="#" class="btn btn-outline-dark btn-sm">Edit</a>
-                    </div>
-                </div> 
-            </div>
-        </div>
+        {% endfor %}
     </div>
 </section>
 {% endblock content %}

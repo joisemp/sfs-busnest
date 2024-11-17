@@ -228,14 +228,18 @@
 .wrap {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+}
+@media screen and (max-width: 805px) {
+  .wrap {
+    justify-content: center;
+  }
 }
 .wrap .card-wrap {
-  max-width: 18rem;
+  max-width: 20rem;
   width: 100%;
   margin: 5px;
 }
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 805px) {
   .wrap .card-wrap {
     max-width: 26rem;
   }
