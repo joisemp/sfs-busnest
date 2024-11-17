@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm
 
 
 User = get_user_model()
@@ -120,3 +120,11 @@ class PeopleCreateView(CreateView):
             return self.form_invalid(form)
         
         
+class PeopleUpdateView(UpdateView):
+    model = UserProfile
+    form_class = PeopleUpdateForm
+    template_name = 'central_admin/people_update.html'
+    success_url = reverse_lazy('central_admin:people_list')
+
+    def form_valid(self, form):
+        return super().form_valid(form)

@@ -16,4 +16,5 @@ urlpatterns = [
      
      path('people/', central_admin.PeopleListView.as_view(), name='people_list'),
      path('people/add/', central_admin.PeopleCreateView.as_view(), name='people_create'),
+     path('people/<slug:slug>/update/', central_admin.PeopleUpdateView.as_view(), name='people_update'),
 ]

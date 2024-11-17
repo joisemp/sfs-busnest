@@ -15,3 +15,9 @@ class PeopleCreateForm(forms.ModelForm):
         if User.objects.filter(email=email).exists():
             raise ValidationError("A user with this email already exists.")
         return email
+    
+    
+class PeopleUpdateForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['first_name', 'last_name', 'is_central_admin', 'is_institution_admin']  
