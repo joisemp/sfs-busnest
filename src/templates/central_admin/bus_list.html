@@ -10,7 +10,7 @@
 {% endblock sidebar %}
 
 {% block content %}
-<a href="{% url 'central_admin:bus_create' %}">Add bus</a>
+<a class="btn btn-primary" href="{% url 'central_admin:bus_create' %}">Add bus</a>
 <h1>Bus List</h1>
 
 {% for bus in buses %}

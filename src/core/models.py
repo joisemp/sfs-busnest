@@ -5,6 +5,9 @@ from . user_manager import UserManager
 from services.models import Organisation
 from django.utils.text import slugify
 from config.utils import generate_unique_slug
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+    
     
 class User(AbstractUser):
     username = None
@@ -35,4 +38,14 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{str(self.first_name)} {str(self.last_name)}"
     
-    
+
+# Signals
+# Delete User that is associated with UserProfile on its delete
+@receiver(post_delete, sender=UserProfile)
+def delete_user_on_profile_delete(sender, instance, **kwargs):
+    try:
+        user = instance.user
+        user.delete()
+        print(f"User {user.email} and associated profile deleted successfully.")
+    except Exception as e:
+        print(f"Error occurred while deleting user: {str(e)}")    

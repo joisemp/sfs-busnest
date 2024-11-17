@@ -128,3 +128,10 @@ class PeopleUpdateView(UpdateView):
 
     def form_valid(self, form):
         return super().form_valid(form)
+    
+
+class PeopleDeleteView(DeleteView):
+    model = UserProfile
+    template_name = 'central_admin/people_confirm_delete.html'
+    success_url = reverse_lazy('central_admin:people_list')
+
