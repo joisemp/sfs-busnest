@@ -15,4 +15,5 @@ urlpatterns = [
      path('buses/<slug:slug>/delete/', central_admin.BusDeleteView.as_view(), name='bus_delete'),
      
      path('people/', central_admin.PeopleListView.as_view(), name='people_list'),
+     path('people/add/', central_admin.PeopleCreateView.as_view(), name='people_create'),
 ]

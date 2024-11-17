@@ -1,10 +1,14 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from services.models import Institution, Bus
 from core.models import UserProfile
-
+from django.db import transaction
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+
+from services.forms.central_admin import PeopleCreateForm
 
 
 User = get_user_model()
@@ -85,4 +89,34 @@ class PeopleListView(ListView):
     template_name = 'central_admin/people_list.html'
     context_object_name = 'people'
     
+
+class PeopleCreateView(CreateView):
+    model = UserProfile
+    template_name = 'central_admin/people_create.html'
+    form_class = PeopleCreateForm
+    success_url = reverse_lazy('central_admin:people_list')
+
+    @transaction.atomic
+    def form_valid(self, form):
+        try:
+            userprofile = form.save(commit=False)
+
+            random_password = BaseUserManager().make_random_password()
+
+            user = User.objects.create_user(
+                email=form.cleaned_data.get('email'),
+                first_name=userprofile.first_name,
+                last_name=userprofile.last_name,
+                password=random_password,
+            )
+
+            userprofile.user = user
+            userprofile.org = self.request.user.profile.org
+            userprofile.save()
+            
+            return redirect(self.success_url)
+        except Exception as e:
+            print(self.request, f"An error occurred: {str(e)}")
+            return self.form_invalid(form)
+        
         

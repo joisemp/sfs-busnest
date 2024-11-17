@@ -12,7 +12,7 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="#" class="btn btn-primary">Add People</a>
+        <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary">Add People</a>
     </div>
 </div>
 {% for person in people %}
