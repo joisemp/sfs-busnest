@@ -30,9 +30,9 @@
                                 height="40px" width="40px" style="border-radius: 50%; object-fit: cover;" alt="">
                         </div>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Action</a></li>
-                            <li><a class="dropdown-item" href="#">Another action</a></li>
-                            <li><a class="dropdown-item" href="#">Something else here</a></li>
+                            <li><a class="dropdown-item" href="#">View profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'core:change_password' %}">Change password</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'core:logout' %}"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
                         </ul>
                     </div>
                 </div>
