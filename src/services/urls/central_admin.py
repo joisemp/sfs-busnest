@@ -21,5 +21,6 @@ urlpatterns = [
      
      path('routes/', central_admin.RouteListView.as_view(), name='route_list'),
      path('routes/create-route/', central_admin.RouteCreateView.as_view(), name='route_create'),
-     path('routes/add-stop/', central_admin.StopCreateView.as_view(), name='stop_create'),
+     path('routes/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
+     path('routes/stops/<slug:slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
 ]

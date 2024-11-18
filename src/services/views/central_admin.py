@@ -145,19 +145,6 @@ class RouteListView(ListView):
         context = super().get_context_data(**kwargs)
         context["stops"] = Stop.objects.all()
         return context
-
-
-class StopCreateView(CreateView):
-    template_name = 'central_admin/stop_create.html'
-    model = Stop
-    fields = ['name', 'map_link']
-    
-    def form_valid(self, form):
-        stop = form.save(commit=False)
-        user = self.request.user
-        stop.org = user.profile.org
-        stop.save()
-        return redirect('central_admin:route_list')
         
 
 class RouteCreateView(CreateView):
@@ -171,3 +158,22 @@ class RouteCreateView(CreateView):
         route.org = user.profile.org
         route.save()
         return redirect('central_admin:route_list')
+    
+
+class StopCreateView(CreateView):
+    template_name = 'central_admin/stop_create.html'
+    model = Stop
+    fields = ['name', 'map_link']
+    
+    def form_valid(self, form):
+        stop = form.save(commit=False)
+        user = self.request.user
+        stop.org = user.profile.org
+        stop.save()
+        return redirect('central_admin:route_list')
+    
+
+class StopDeleteView(DeleteView):
+    model = Stop
+    template_name = 'central_admin/stop_confirm_delete.html'
+    success_url = reverse_lazy('central_admin:route_list')

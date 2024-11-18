@@ -35,7 +35,7 @@
 </div>
 <div>
 {% for stop in stops %}
-<li>{{stop.name}} - <a href="{{stop.map_link}}">View in map</a></li>
+<li>{{stop.name}} - <a href="{{stop.map_link}}">View in map</a> - <a href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn btn-danger btn-sm me-2">Delete</a></li>
 {% endfor %}
 </div>
 
