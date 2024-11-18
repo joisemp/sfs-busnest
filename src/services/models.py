@@ -67,4 +67,33 @@ class Bus(models.Model):
 
     def __str__(self):
         return f"{self.label} - {self.bus_no}"
+    
 
+class Stop(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
+    name = models.CharField(max_length=200)
+    map_link = models.CharField(max_length=255, null=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+
+
+class Route(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
+    name = models.CharField(max_length=200)
+    stops = models.ManyToManyField(Stop)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+        

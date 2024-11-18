@@ -1,5 +1,5 @@
 from django.contrib import admin
-from services.models import Institution, Bus, Organisation
+from services.models import Institution, Bus, Organisation, Route, Stop
 
 
 @admin.register(Organisation)
@@ -14,4 +14,13 @@ class InstitutionAdmin(admin.ModelAdmin):
 @admin.register(Bus)
 class BusAdmin(admin.ModelAdmin):
     list_display = ('label', 'bus_no')
+    
+@admin.register(Route)
+class RouteAdmin(admin.ModelAdmin):
+    list_display = ('org', 'name')
+    
+
+@admin.register(Stop)
+class StopAdmin(admin.ModelAdmin):
+    list_display = ('org', 'name',)
 
