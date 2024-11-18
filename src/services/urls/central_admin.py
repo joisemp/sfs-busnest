@@ -18,4 +18,7 @@ urlpatterns = [
      path('people/add/', central_admin.PeopleCreateView.as_view(), name='people_create'),
      path('people/<slug:slug>/update/', central_admin.PeopleUpdateView.as_view(), name='people_update'),
      path('people/<slug:slug>/delete/', central_admin.PeopleDeleteView.as_view(), name='people_delete'),
+     
+     path('routes/', central_admin.RouteListView.as_view(), name='route_list'),
+     path('routes/add-stop/', central_admin.StopCreateView.as_view(), name='stop_create'),
 ]

@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from services.models import Institution, Bus
+from services.models import Institution, Bus, Stop, Route
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -135,3 +135,27 @@ class PeopleDeleteView(DeleteView):
     template_name = 'central_admin/people_confirm_delete.html'
     success_url = reverse_lazy('central_admin:people_list')
 
+
+class RouteListView(ListView):
+    model = Route
+    template_name = 'central_admin/route_list.html'
+    context_object_name = 'routes'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["stops"] = Stop.objects.all()
+        return context
+
+
+class StopCreateView(CreateView):
+    template_name = 'central_admin/stop_create.html'
+    model = Stop
+    fields = ['name', 'map_link']
+    
+    def form_valid(self, form):
+        stop = form.save(commit=False)
+        user = self.request.user
+        stop.org = user.profile.org
+        stop.save()
+        return redirect('central_admin:route_list')
+        
