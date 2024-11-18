@@ -169,6 +169,12 @@ class RouteUpdateView(UpdateView):
     def form_valid(self, form):
         return super().form_valid(form)
     
+    
+class RouteDeleteView(DeleteView):
+    model = Route
+    template_name = 'central_admin/route_confirm_delete.html'
+    success_url = reverse_lazy('central_admin:route_list')
+    
 
 class StopCreateView(CreateView):
     template_name = 'central_admin/stop_create.html'
