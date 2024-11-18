@@ -80,12 +80,15 @@ class Stop(models.Model):
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Route(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
-    stops = models.ManyToManyField(Stop)
+    stops = models.ManyToManyField(Stop, related_name='stops')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True)
@@ -95,5 +98,8 @@ class Route(models.Model):
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.name}"
         
         

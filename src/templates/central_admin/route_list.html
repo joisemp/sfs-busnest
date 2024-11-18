@@ -15,8 +15,13 @@
         <h3>Routes</h3>
     </div>
     <div>
-        <a href="#" class="btn btn-primary">Add Route</a>
+        <a href="{% url 'central_admin:route_create' %}" class="btn btn-primary">Add Route</a>
     </div>
+</div>
+<div>
+    {% for route in routes %}
+    <li>{{route}} - {% for stop in stops %}{{stop}}, {% endfor %}</li>
+    {% endfor %}
 </div>
 
 

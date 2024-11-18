@@ -159,3 +159,15 @@ class StopCreateView(CreateView):
         stop.save()
         return redirect('central_admin:route_list')
         
+
+class RouteCreateView(CreateView):
+    template_name = 'central_admin/route_create.html'
+    model = Route
+    fields = ['name', 'stops']
+    
+    def form_valid(self, form):
+        route = form.save(commit=False)
+        user = self.request.user
+        route.org = user.profile.org
+        route.save()
+        return redirect('central_admin:route_list')
