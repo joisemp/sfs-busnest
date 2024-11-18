@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/stop_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h5>Are you sure you want to remove {{ object.name }}?</h5>
+<p>This action cannot be undone.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger btn-sm" type="submit">Yes remove</button>
+    <a href="{% url 'central_admin:route_list' %}">Cancel</a>
+</form>
+{% endblock %}

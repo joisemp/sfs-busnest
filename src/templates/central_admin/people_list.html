@@ -16,6 +16,11 @@
     </div>
 </div>
 {% for person in people %}
-{{person}} <a href="{% url 'central_admin:people_update' slug=person.slug %}">Edit</a> | <a href="{% url 'central_admin:people_delete' slug=person.slug %}">Remove</a>
+{{person}} 
+{%if request.user.profile == person %}
+ (You)
+{% else %}
+<a href="{% url 'central_admin:people_update' slug=person.slug %}">Edit</a> | <a href="{% url 'central_admin:people_delete' slug=person.slug %}">Remove</a>
+{% endif %}
 {% endfor %}
 {% endblock content %}
