@@ -20,7 +20,7 @@
 </div>
 <div>
     {% for route in routes %}
-    <li>{{route}} - {% for stop in stops %}{{stop}}, {% endfor %}</li>
+    <li>{{route}} - {% for stop in stops %}{{stop}}, {% endfor %} - <a href="{% url 'central_admin:route_update' slug=route.slug %}" class="btn btn-dark btn-sm me-2">Edit</a></li>
     {% endfor %}
 </div>
 

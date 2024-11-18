@@ -159,6 +159,16 @@ class RouteCreateView(CreateView):
         route.save()
         return redirect('central_admin:route_list')
     
+    
+class RouteUpdateView(UpdateView):
+    model = Route
+    fields = ['name', 'stops']
+    template_name = 'central_admin/route_update.html'
+    success_url = reverse_lazy('central_admin:route_list')
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+    
 
 class StopCreateView(CreateView):
     template_name = 'central_admin/stop_create.html'
