@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/central_admin/people_list/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/central_admin/registrations_list/style.css' %}">
 {% endblock style %}
 
 {% block sidebar %}
@@ -12,7 +12,7 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="#" class="btn btn-primary">New registration</a>
+        <a href="{% url 'central_admin:registrations_create' %}" class="btn btn-primary">New registration</a>
     </div>
 </div>
 {% for registration in registrations %}

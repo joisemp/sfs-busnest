@@ -27,4 +27,5 @@ urlpatterns = [
      path('routes/stops/<slug:slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      
      path('registrations/', central_admin.RegistraionListView.as_view(), name='registrations_list'),
+     path('registrations/create/', central_admin.RegistrationCreateView.as_view(), name='registrations_create'),
 ]

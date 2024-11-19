@@ -5,7 +5,7 @@ from services.models import Institution, Bus, Stop, Route, Registration
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
-from django.contrib import messages
+from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm
@@ -199,5 +199,19 @@ class RegistraionListView(ListView):
     model = Registration
     template_name = 'central_admin/registration_list.html'
     context_object_name = 'registrations'
+    
+    
+class RegistrationCreateView(CreateView):
+    template_name = 'central_admin/registration_create.html'
+    model = Registration
+    fields = ['name', 'instructions', 'stops', 'status']
+    
+    def form_valid(self, form):
+        registration = form.save(commit=False)
+        user = self.request.user
+        registration.org = user.profile.org
+        registration.code = generate_unique_code(Registration)
+        registration.save()
+        return redirect('central_admin:registrations_list')
     
     
