@@ -12,11 +12,13 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="{% url 'central_admin:registrations_create' %}" class="btn btn-primary">New registration</a>
+        <a href="{% url 'central_admin:registration_create' %}" class="btn btn-primary">New registration</a>
     </div>
 </div>
 {% for registration in registrations %}
-{{registration}} 
-<a href="#">Edit</a> | <a href="#">Delete</a>
+<li>
+    {{registration}} 
+<a href="{% url 'central_admin:registration_update' slug=registration.slug %}">Edit</a> | <a href="#">Delete</a>
+</li>
 {% endfor %}
 {% endblock content %}

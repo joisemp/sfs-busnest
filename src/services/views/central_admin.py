@@ -212,6 +212,16 @@ class RegistrationCreateView(CreateView):
         registration.org = user.profile.org
         registration.code = generate_unique_code(Registration)
         registration.save()
-        return redirect('central_admin:registrations_list')
+        return redirect('central_admin:registration_list')
+
+
+class RegistrationUpdateView(UpdateView):
+    model = Registration
+    fields = ['name', 'instructions', 'stops', 'status']
+    template_name = 'central_admin/registration_update.html'
+    success_url = reverse_lazy('central_admin:registration_list')
+
+    def form_valid(self, form):
+        return super().form_valid(form)
     
     
