@@ -224,4 +224,9 @@ class RegistrationUpdateView(UpdateView):
     def form_valid(self, form):
         return super().form_valid(form)
     
+
+class RegistrationDeleteView(DeleteView):
+    model = Registration
+    template_name = 'central_admin/registration_confirm_delete.html'
+    success_url = reverse_lazy('central_admin:registration_list')
     

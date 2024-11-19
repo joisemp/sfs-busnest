@@ -18,7 +18,7 @@
 {% for registration in registrations %}
 <li>
     {{registration}} 
-<a href="{% url 'central_admin:registration_update' slug=registration.slug %}">Edit</a> | <a href="#">Delete</a>
+<a href="{% url 'central_admin:registration_update' slug=registration.slug %}">Edit</a> | <a href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a>
 </li>
 {% endfor %}
 {% endblock content %}
