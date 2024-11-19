@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/people_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a href="#" class="btn btn-primary">New registration</a>
+    </div>
+</div>
+{% for registration in registrations %}
+{{registration}} 
+<a href="#">Edit</a> | <a href="#">Delete</a>
+{% endfor %}
+{% endblock content %}
