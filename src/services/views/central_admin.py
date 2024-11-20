@@ -58,7 +58,7 @@ class BusListView(ListView):
 class BusCreateView(CreateView):
     template_name = 'central_admin/bus_create.html'
     model = Bus
-    fields = ['label', 'bus_no', 'driver']
+    fields = ['label', 'bus_no', 'route', 'driver']
     
     def form_valid(self, form):
         bus = form.save(commit=False)
@@ -70,7 +70,7 @@ class BusCreateView(CreateView):
     
 class BusUpdateView(UpdateView):
     model = Bus
-    fields = ['label', 'bus_no', 'driver']
+    fields = ['label', 'bus_no', 'route', 'driver']
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
 

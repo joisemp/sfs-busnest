@@ -50,23 +50,6 @@ class Institution(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.label}"
-
-
-class Bus(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
-    label = models.CharField(max_length=255)
-    bus_no = models.CharField(max_length=15)
-    driver = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, db_index=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.bus_no)
-            self.slug = generate_unique_slug(self, base_slug)
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.label} - {self.bus_no}"
     
 
 class Stop(models.Model):
@@ -120,5 +103,23 @@ class Registration(models.Model):
     
     def __str__(self):
         return f"{self.org}{self.name}"
+    
+
+class Bus(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
+    label = models.CharField(max_length=255)
+    bus_no = models.CharField(max_length=15)
+    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    driver = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.bus_no)
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.label} - {self.bus_no}"
     
         
