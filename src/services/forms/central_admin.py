@@ -1,9 +1,11 @@
 from django import forms
 from core.models import UserProfile, User
+from services.models import Institution
 from django.core.exceptions import ValidationError
+from config.mixins import form_mixin
 
 
-class PeopleCreateForm(forms.ModelForm):
+class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     email = forms.EmailField(required=True)
 
     class Meta:
@@ -17,7 +19,15 @@ class PeopleCreateForm(forms.ModelForm):
         return email
     
     
-class PeopleUpdateForm(forms.ModelForm):
+class PeopleUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = UserProfile
         fields = ['first_name', 'last_name', 'is_central_admin', 'is_institution_admin']  
+
+
+class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Institution
+        fields = [
+            'name', 'label', 'contact_no', 'email', 'incharge'
+        ]

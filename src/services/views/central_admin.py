@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm
 
 
 User = get_user_model()
@@ -23,7 +23,7 @@ class InstitutionListView(ListView):
 class InstitutionCreateView(CreateView):
     template_name = 'central_admin/institution_create.html'
     model = Institution
-    fields = ['name', 'label', 'contact_no', 'email', 'incharge']
+    form_class = InstitutionForm
     
     def form_valid(self, form):
         institution = form.save(commit=False)
@@ -35,7 +35,7 @@ class InstitutionCreateView(CreateView):
 
 class InstitutionUpdateView(UpdateView):
     model = Institution
-    fields = ['name', 'label', 'contact_no', 'email', 'incharge']
+    form_class = InstitutionForm
     template_name = 'central_admin/institution_update.html'
     success_url = reverse_lazy('central_admin:institution_list')
 
