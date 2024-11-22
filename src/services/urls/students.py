@@ -5,5 +5,6 @@ app_name = 'students'
 
 
 urlpatterns = [
-     # path('', institution_admin.InstitutionListView.as_view(), name='institution_detail'),
+     path('search-bus/<str:code>/', students.BusSearchFormView.as_view(), name='bus_search'),
+     path('bus-results/<str:code>/', students.BusSearchResultsView.as_view(), name='bus_search_results'),
 ]

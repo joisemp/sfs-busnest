@@ -1,0 +1,8 @@
+<h1>Search Buses</h1>
+<p>Fill in the details to find available buses.</p>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
