@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution
+from services.models import Institution, Bus
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -30,4 +30,12 @@ class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         model = Institution
         fields = [
             'name', 'label', 'contact_no', 'email', 'incharge'
+        ]
+        
+
+class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Bus
+        fields = [
+            'label', 'bus_no', 'route', 'driver', 'time_slot'
         ]

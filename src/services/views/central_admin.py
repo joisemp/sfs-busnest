@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm
 
 
 User = get_user_model()
@@ -58,7 +58,7 @@ class BusListView(ListView):
 class BusCreateView(CreateView):
     template_name = 'central_admin/bus_create.html'
     model = Bus
-    fields = ['label', 'bus_no', 'route', 'driver', 'time_slot']
+    form_class = BusForm
     
     def form_valid(self, form):
         bus = form.save(commit=False)
@@ -70,7 +70,7 @@ class BusCreateView(CreateView):
     
 class BusUpdateView(UpdateView):
     model = Bus
-    fields = ['label', 'bus_no', 'route', 'driver', 'time_slot']
+    form_class = BusForm
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
 
