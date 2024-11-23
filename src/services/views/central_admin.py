@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm
 
 
 User = get_user_model()
@@ -205,7 +205,7 @@ class RegistraionListView(ListView):
 class RegistrationCreateView(CreateView):
     template_name = 'central_admin/registration_create.html'
     model = Registration
-    fields = ['name', 'instructions', 'stops', 'status']
+    form_class = RegistrationForm
     
     def form_valid(self, form):
         registration = form.save(commit=False)
@@ -218,7 +218,7 @@ class RegistrationCreateView(CreateView):
 
 class RegistrationUpdateView(UpdateView):
     model = Registration
-    fields = ['name', 'instructions', 'stops', 'status']
+    form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
     success_url = reverse_lazy('central_admin:registration_list')
 

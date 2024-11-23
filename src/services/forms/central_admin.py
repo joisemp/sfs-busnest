@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop
+from services.models import Institution, Bus, Route, Stop, Registration
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -82,4 +82,28 @@ class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         fields = [
             'name', 'map_link'
         ]
+
+
+class RegistrationForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Registration
+        fields = ['name', 'instructions', 'stops', 'status']
+        labels = {
+            'status': 'Open registration',
+        }
+    
+    # Customizing the 'stops' field
+    stops = forms.ModelMultipleChoiceField(
+        queryset=Stop.objects.all(),
+        widget=forms.SelectMultiple(attrs={'size': '10'}),
+        label="Select Stops",
+        required=True,
+        help_text="Hold Ctrl (Cmd) to select multiple stops"
+    )
+        
+    def clean_stops(self):
+        stops = self.cleaned_data.get('stops')
+        if not stops:
+            raise forms.ValidationError("You must select at least one stop.")
+        return stops
 
