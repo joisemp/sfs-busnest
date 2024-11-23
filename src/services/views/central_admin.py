@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm
 
 
 User = get_user_model()
@@ -180,7 +180,7 @@ class RouteDeleteView(DeleteView):
 class StopCreateView(CreateView):
     template_name = 'central_admin/stop_create.html'
     model = Stop
-    fields = ['name', 'map_link']
+    form_class = StopForm
     
     def form_valid(self, form):
         stop = form.save(commit=False)

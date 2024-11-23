@@ -75,3 +75,11 @@ class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             raise forms.ValidationError("You must select at least one stop.")
         return stops
 
+
+class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Stop
+        fields = [
+            'name', 'map_link'
+        ]
+

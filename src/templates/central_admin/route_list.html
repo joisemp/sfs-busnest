@@ -20,7 +20,15 @@
 </div>
 <div>
     {% for route in routes %}
-    <li>{{route}} - {% for stop in stops %}{{stop}}, {% endfor %} - <a href="{% url 'central_admin:route_update' slug=route.slug %}" class="btn btn-dark btn-sm me-2">Edit</a> | <a href="{% url 'central_admin:route_delete' slug=route.slug %}" class="btn btn-danger btn-sm me-2">Delete</a></li>
+    <li>
+        {{ route.name }} -
+        {% for stop in route.stops.all %}
+        {{ stop }},
+        {% endfor %}
+        -
+        <a href="{% url 'central_admin:route_update' slug=route.slug %}" class="btn btn-dark btn-sm me-2">Edit</a> |
+        <a href="{% url 'central_admin:route_delete' slug=route.slug %}" class="btn btn-danger btn-sm me-2">Delete</a>
+    </li>
     {% endfor %}
 </div>
 
@@ -34,9 +42,11 @@
     </div>
 </div>
 <div>
-{% for stop in stops %}
-<li>{{stop.name}} - <a href="{{stop.map_link}}">View in map</a> - <a href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn btn-danger btn-sm me-2">Delete</a></li>
-{% endfor %}
+    {% for stop in stops %}
+    <li>{{stop.name}} - <a href="{{stop.map_link}}">View in map</a> - <a
+            href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn btn-danger btn-sm me-2">Delete</a>
+    </li>
+    {% endfor %}
 </div>
 
 {% endblock content %}
