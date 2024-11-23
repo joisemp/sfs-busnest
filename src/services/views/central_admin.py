@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm
 
 
 User = get_user_model()
@@ -150,19 +150,20 @@ class RouteListView(ListView):
 class RouteCreateView(CreateView):
     template_name = 'central_admin/route_create.html'
     model = Route
-    fields = ['name', 'stops']
+    form_class = RouteForm
     
     def form_valid(self, form):
         route = form.save(commit=False)
         user = self.request.user
         route.org = user.profile.org
         route.save()
+        form.save_m2m()
         return redirect('central_admin:route_list')
     
     
 class RouteUpdateView(UpdateView):
     model = Route
-    fields = ['name', 'stops']
+    form_class = RouteForm
     template_name = 'central_admin/route_update.html'
     success_url = reverse_lazy('central_admin:route_list')
 
