@@ -1,8 +1,20 @@
-<h1>Search Buses</h1>
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/bus_search/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+<h4>Search Buses</h4>
 <p>Fill in the details to find available buses.</p>
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.as_p|safe }}
     <button type="submit" class="btn btn-primary">Search</button>
 </form>
-
+{% endblock content %}

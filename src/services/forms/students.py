@@ -1,7 +1,8 @@
 from django import forms
 from services.models import Stop, TimeSlot
+from config.mixins import form_mixin
 
-class BusSearchForm(forms.Form):
+class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
     pickup_point = forms.ModelChoiceField(
         queryset=Stop.objects.all(),
         label="Pickup Point",
