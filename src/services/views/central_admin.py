@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from services.models import Institution, Bus, Stop, Route, Registration
 from core.models import UserProfile
 from django.db import transaction
@@ -214,6 +214,14 @@ class RegistrationCreateView(CreateView):
         registration.code = generate_unique_code(Registration)
         registration.save()
         return redirect('central_admin:registration_list')
+    
+    
+class RegistrationDetailView(DetailView):
+    template_name = 'central_admin/registration_detail.html'
+    model = Registration
+    context_object_name = 'registration'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
 
 
 class RegistrationUpdateView(UpdateView):

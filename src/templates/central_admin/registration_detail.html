@@ -1,0 +1,9 @@
+{{registration.name}}
+
+<ul>
+    {% for ticket in registration.tickets.all %}
+    <li>{{ticket}}</li>
+    {% endfor %}
+</ul>
+
+<p>{{registration.tickets.count}}</p>
