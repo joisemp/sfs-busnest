@@ -16,7 +16,7 @@
                     </div>
                     <div class="form">
                         {% csrf_token %}
-                        {{form.as_p}}
+                        {{form.as_p|safe}}
                         <div class="footer">
                             <button type="submit" class="btn btn-primary me-3">Sign in</button>
                             <a href="{% url 'core:reset_password' %}" class="link">Forgot password?</a>
