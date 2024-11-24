@@ -1,9 +1,10 @@
 from django.views.generic import FormView, ListView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
-from services.forms.students import BusSearchForm
+from services.forms.students import BusSearchForm, ValidateStudentForm
 from services.models import Registration, Bus
 from django.db.models import Q, Count
+from django.http import HttpResponse
 
 class BusSearchFormView(FormView):
     template_name = 'students/search_form.html'
@@ -11,7 +12,7 @@ class BusSearchFormView(FormView):
 
     def get_registration(self):
         """Fetch registration using the code from the URL."""
-        registration_code = self.kwargs.get('code')
+        registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
 
     def form_valid(self, form):
@@ -29,12 +30,12 @@ class BusSearchFormView(FormView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('code'))
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
 
     def get_success_url(self):
-        registration_code = self.kwargs.get('code')
-        return reverse('students:bus_search_results', kwargs={'code': registration_code})
+        registration_code = self.kwargs.get('registration_code')
+        return reverse('students:bus_search_results', kwargs={'registration_code': registration_code})
 
 
 class BusSearchResultsView(ListView):
@@ -42,7 +43,7 @@ class BusSearchResultsView(ListView):
     context_object_name = 'buses'
 
     def get_queryset(self):
-        registration_code = self.kwargs.get('code')
+        registration_code = self.kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
 
         pickup_point_id = self.request.session.get('pickup_point')
@@ -68,7 +69,31 @@ class BusSearchResultsView(ListView):
     def get_context_data(self, **kwargs):
         """Include additional context like the registration."""
         context = super().get_context_data(**kwargs)
-        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('code'))
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
     
+ 
+class ValidateStudentFormView(FormView):
+    template_name = 'students/validate_student_form.html'
+    form_class = ValidateStudentForm  
     
+    def form_valid(self, form):
+        recipt_id = form.cleaned_data['recipt_id']
+        student_id = form.cleaned_data['student_id']
+
+        # Store search criteria in the session
+        self.request.session['recipt_id'] = recipt_id
+        self.request.session['student_id'] = student_id
+
+        recipt_id = self.request.session.get('recipt_id')
+        std_id = self.request.session.get('student_id')
+        time_slot_id = self.request.session.get('time_slot')
+        
+        return HttpResponse(f"Recipt ID : {recipt_id} ----------- Student ID : {std_id} --------- Time SLOT : {time_slot_id}")
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+
+        

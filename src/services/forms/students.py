@@ -21,4 +21,9 @@ class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
 
+class ValidateStudentForm(forms.Form):
+    recipt_id = forms.CharField(max_length=100, required=True)
+    student_id = forms.CharField(max_length=100, required=True)
+    

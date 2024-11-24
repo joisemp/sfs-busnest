@@ -146,9 +146,15 @@ class Ticket(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='tickets')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='tickets')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='tickets')
+    recipt_id = models.CharField(max_length=255)
+    student_id = models.CharField(max_length=100)
     student_name = models.CharField(max_length=200)
     student_email = models.EmailField()
     contact_no = models.CharField(
+        max_length=12,
+        validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
+    )
+    alternative_contact_no = models.CharField(
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
