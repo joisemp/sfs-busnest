@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/registrations_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a href="#" class="btn btn-primary">New registration</a>
+    </div>
+</div>
+{% for registration in registrations %}
+<li>
+<a href="#">{{registration}} </a>
+<a class="btn btn-sm btn-dark ms-2" href="#">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a>
+</li>
+{% endfor %}
+{% endblock content %}

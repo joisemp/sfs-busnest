@@ -38,7 +38,7 @@ class Institution(models.Model):
     )
     email = models.EmailField(unique=True, db_index=True)
     slug = models.SlugField(unique=True, db_index=True)
-    incharge = models.OneToOneField('core.UserProfile', max_length=200, null=True, on_delete=models.SET_NULL)
+    incharge = models.OneToOneField('core.UserProfile', max_length=200, null=True, on_delete=models.SET_NULL, related_name='institution')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
