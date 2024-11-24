@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm
 
 
 User = get_user_model()
@@ -23,7 +23,7 @@ class InstitutionListView(ListView):
 class InstitutionCreateView(CreateView):
     template_name = 'central_admin/institution_create.html'
     model = Institution
-    fields = ['name', 'label', 'contact_no', 'email', 'incharge']
+    form_class = InstitutionForm
     
     def form_valid(self, form):
         institution = form.save(commit=False)
@@ -35,7 +35,7 @@ class InstitutionCreateView(CreateView):
 
 class InstitutionUpdateView(UpdateView):
     model = Institution
-    fields = ['name', 'label', 'contact_no', 'email', 'incharge']
+    form_class = InstitutionForm
     template_name = 'central_admin/institution_update.html'
     success_url = reverse_lazy('central_admin:institution_list')
 
@@ -58,7 +58,7 @@ class BusListView(ListView):
 class BusCreateView(CreateView):
     template_name = 'central_admin/bus_create.html'
     model = Bus
-    fields = ['label', 'bus_no', 'driver']
+    form_class = BusForm
     
     def form_valid(self, form):
         bus = form.save(commit=False)
@@ -70,7 +70,7 @@ class BusCreateView(CreateView):
     
 class BusUpdateView(UpdateView):
     model = Bus
-    fields = ['label', 'bus_no', 'driver']
+    form_class = BusForm
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
 
@@ -150,19 +150,20 @@ class RouteListView(ListView):
 class RouteCreateView(CreateView):
     template_name = 'central_admin/route_create.html'
     model = Route
-    fields = ['name', 'stops']
+    form_class = RouteForm
     
     def form_valid(self, form):
         route = form.save(commit=False)
         user = self.request.user
         route.org = user.profile.org
         route.save()
+        form.save_m2m()
         return redirect('central_admin:route_list')
     
     
 class RouteUpdateView(UpdateView):
     model = Route
-    fields = ['name', 'stops']
+    form_class = RouteForm
     template_name = 'central_admin/route_update.html'
     success_url = reverse_lazy('central_admin:route_list')
 
@@ -179,7 +180,7 @@ class RouteDeleteView(DeleteView):
 class StopCreateView(CreateView):
     template_name = 'central_admin/stop_create.html'
     model = Stop
-    fields = ['name', 'map_link']
+    form_class = StopForm
     
     def form_valid(self, form):
         stop = form.save(commit=False)
@@ -204,7 +205,7 @@ class RegistraionListView(ListView):
 class RegistrationCreateView(CreateView):
     template_name = 'central_admin/registration_create.html'
     model = Registration
-    fields = ['name', 'instructions', 'stops', 'status']
+    form_class = RegistrationForm
     
     def form_valid(self, form):
         registration = form.save(commit=False)
@@ -217,7 +218,7 @@ class RegistrationCreateView(CreateView):
 
 class RegistrationUpdateView(UpdateView):
     model = Registration
-    fields = ['name', 'instructions', 'stops', 'status']
+    form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
     success_url = reverse_lazy('central_admin:registration_list')
 

@@ -1,0 +1,16 @@
+<h1>Search Results for {{ registration.name }}</h1>
+
+{% if buses %}
+    <ul>
+        {% for bus in buses %}
+        <li>
+            <strong>{{ bus.label }}</strong> ({{ bus.bus_no }}) - 
+            <a href="{% url 'students:validate_student' bus_slug=bus.slug registration_code=registration.code %}">Book Now</a>
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No buses found matching your criteria. Please try again.</p>
+    <a href="{% url 'students:bus_search' registration_code=registration.code %}" class="btn btn-secondary">Back to Search</a>
+{% endif %}
+

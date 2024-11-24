@@ -1,0 +1,31 @@
+@import './base';
+
+header{
+    .navbar{
+        background-color: $indigo-600 !important;
+
+        .offcanvas-body{
+            .nav-item{
+                padding: 0 1rem;
+
+                @media screen and (max-width: 991px){
+                    margin-bottom: 1rem;
+                }
+
+                .nav-link{
+                    color: $base-white;
+
+                    @media screen and (max-width: 991px){
+                        color: $base-black;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.container{
+    margin-top: 67px;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
