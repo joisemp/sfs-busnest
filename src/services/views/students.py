@@ -1,8 +1,8 @@
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView, ListView, CreateView
 from django.urls import reverse
-from django.shortcuts import get_object_or_404
-from services.forms.students import BusSearchForm, ValidateStudentForm
-from services.models import Registration, Bus
+from django.shortcuts import get_object_or_404, redirect
+from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
+from services.models import Registration, Bus, Ticket, TimeSlot
 from django.db.models import Q, Count
 from django.http import HttpResponse
 
@@ -84,16 +84,45 @@ class ValidateStudentFormView(FormView):
         # Store search criteria in the session
         self.request.session['recipt_id'] = recipt_id
         self.request.session['student_id'] = student_id
-
-        recipt_id = self.request.session.get('recipt_id')
-        std_id = self.request.session.get('student_id')
-        time_slot_id = self.request.session.get('time_slot')
         
-        return HttpResponse(f"Recipt ID : {recipt_id} ----------- Student ID : {std_id} --------- Time SLOT : {time_slot_id}")
+        return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
+    
+    def get_success_url(self):
+        registration_code = self.kwargs.get('registration_code')
+        bus_slug = self.kwargs.get('bus_slug')
+        return reverse('students:book_bus', kwargs={'bus_slug':bus_slug, 'registration_code': registration_code})
+
+
+class BusBookingView(CreateView):
+    model = Ticket
+    template_name = 'students/bus_booking.html'
+    form_class = TicketForm
+    
+    def form_valid(self, form):
+        ticket = form.save(commit=False)
+        registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        bus = get_object_or_404(Bus, slug=self.kwargs.get('bus_slug'))
+        stop=form.cleaned_data.get('stop')
+        recipt_id = self.request.session.get('recipt_id')
+        std_id = self.request.session.get('student_id')
+        time_slot_id = self.request.session.get('time_slot')
+        
+        ticket.pickup_point = stop
+        ticket.drop_point = stop
+        ticket.recipt_id = recipt_id
+        ticket.student_id = std_id
+        ticket.time_slot = get_object_or_404(TimeSlot, id=time_slot_id)
+        ticket.registration = registration
+        ticket.org = registration.org
+        ticket.status = True
+        ticket.bus = bus
+        ticket.save()
+        
+        return HttpResponse("Booking successful")
 
         
