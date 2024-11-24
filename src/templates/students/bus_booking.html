@@ -1,6 +1,21 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/bus_search/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+
 <h4>Book Bus</h4>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p|safe }}
     <button type="submit" class="btn btn-primary">Book</button>
 </form>
+
+{% endblock content %}

@@ -23,7 +23,7 @@ class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
     )
     
 
-class ValidateStudentForm(forms.Form):
+class ValidateStudentForm(form_mixin.BootstrapFormMixin, forms.Form):
     recipt_id = forms.CharField(max_length=100, required=True)
     student_id = forms.CharField(max_length=100, required=True)
     

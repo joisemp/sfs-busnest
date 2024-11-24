@@ -82,39 +82,39 @@
   color: #291fd9;
 }
 
-body {
+.bg-light {
   background: #4f46e5 !important;
 }
-body #login-page .wrapper {
+.bg-light #login-page .wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
 }
-body #login-page .wrapper .outer {
+.bg-light #login-page .wrapper .outer {
   width: 100%;
   max-width: 370px;
 }
-body #login-page .wrapper .outer .flex-box {
+.bg-light #login-page .wrapper .outer .flex-box {
   width: 100%;
   background: #ffffff;
   border-radius: 5px;
   padding: 15px;
 }
-body #login-page .wrapper .outer .flex-box .icon {
+.bg-light #login-page .wrapper .outer .flex-box .icon {
   width: 100%;
   text-align: center;
   font-size: 43px;
   margin-bottom: 1rem;
 }
-body #login-page .wrapper .outer .flex-box .form {
+.bg-light #login-page .wrapper .outer .flex-box .form {
   width: 100%;
   background: #ffffff;
 }
-body #login-page .wrapper .outer .flex-box .form .footer a {
+.bg-light #login-page .wrapper .outer .flex-box .form .footer a {
   text-decoration: none;
 }
-body #login-page .wrapper .message {
+.bg-light #login-page .wrapper .message {
   width: 100%;
   display: flex;
   background: #ffffff;
@@ -122,6 +122,6 @@ body #login-page .wrapper .message {
   padding: 25px 10px;
   justify-content: center;
 }
-body #login-page .wrapper .message a {
+.bg-light #login-page .wrapper .message a {
   text-decoration: none;
 }/*# sourceMappingURL=style.css.map */
