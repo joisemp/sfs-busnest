@@ -1,42 +1,179 @@
-<h1>{{ registration.name }}</h1>
+{% extends 'base.html' %}
+{% load static %}
 
-<ul>
-    {% for ticket in page_obj %}
-    <li>{{ ticket }}</li>
-    {% empty %}
-    <li>No tickets found.</li>
-    {% endfor %}
-</ul>
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/registration_detail/style.css' %}">
+{% endblock style %}
 
-<!-- Pagination Controls -->
-<div class="pagination" style="text-align: center; margin-top: 20px;">
-    {% if page_obj.has_previous %}
-        <a href="?page=1" 
-           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">&laquo; First</a>
-        <a href="?page={{ page_obj.previous_page_number }}" 
-           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">Previous</a>
-    {% else %}
-        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">&laquo; First</span>
-        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">Previous</span>
-    {% endif %}
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
 
-    <!-- Page Numbers -->
-    {% for page_num in paginator.page_range %}
-        {% if page_num == page_obj.number %}
-            <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #007bff; background-color: #007bff; color: white; font-weight: bold;">{{ page_num }}</span>
-        {% elif page_num >= page_obj.number|add:'-2' and page_num <= page_obj.number|add:'2' %}
-            <a href="?page={{ page_num }}" 
-               style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">{{ page_num }}</a>
-        {% endif %}
-    {% endfor %}
+{% block content %}
 
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}" 
-           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">Next</a>
-        <a href="?page={{ paginator.num_pages }}" 
-           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">Last &raquo;</a>
-    {% else %}
-        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">Next</span>
-        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">Last &raquo;</span>
-    {% endif %}
-</div>
+<section id="registration-dashobard">
+    <div class="row">
+
+
+        <div class="col-12 col-lg-4">
+            <div class="header-button-group">
+                <div class="back">
+                    <button type="button" class="btn btn-outline-dark btn-sm">
+                        <i class="fa-solid fa-arrow-left me-2"></i>Go back
+                    </button>
+                </div>
+                <div class="setting">
+                    <button type="button" class="btn btn-sm">
+                        <i class="fa-solid fa-gear me-2"></i>Settings
+                    </button>
+                </div>
+            </div>
+            <div class="content">
+
+                <div class="card registration-count">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Registration</h5>
+                        <h6 class="card-subtitle">200</h6>
+                    </div>
+                </div>
+
+                <div class="card stop-frequency">
+                    <div class="card-body">
+                        <h5 class="card-title">Stops frequency</h5>
+                        <div class="info">
+                            <p class="card-text">Electronic city</p>
+                            <p>30%</p>
+                        </div>
+                        <div class="info">
+                            <p class="card-text">Hosa road</p>
+                            <p>40%</p>
+                        </div>
+                        <div class="info">
+                            <p class="card-text">Hosur</p>
+                            <p>10%</p>
+                        </div>
+                        <div class="info">
+                            <p class="card-text">Chandapura</p>
+                            <p>5%</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="col-12 col-lg-8">
+
+            <div class="table-content">
+
+                <div class="heading">
+                    <h2>Recent registrations</h2>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary">
+                            View all<i class="fa-solid fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">School</th>
+                                <th scope="col">Class</th>
+                                <th scope="col">Timming</th>
+                                <th scope="col">Booking</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                            <tr>
+                                <td>Naman Kumar</td>
+                                <td>SFS Public School</td>
+                                <td>X</td>
+                                <td>Morning/Evening</td>
+                                <td>3KDFK32</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+</section>
+{% endblock content %}
