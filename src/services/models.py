@@ -175,4 +175,39 @@ class Ticket(models.Model):
     def __str__(self):
         return f"Ticket for {self.student_name} on {self.bus.label} ({self.time_slot.name})"
 
+
+class StudentGroup(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='groups')
+    Institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='groups')
+    name = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+
+
+class Recipt(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipts')
+    Institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipts')
+    recipt_id = models.CharField(max_length=500)
+    student_id = models.CharField(max_length=20)
+    student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if self.student_id:
+            self.student_id = self.student_id.upper()
+        if not self.slug:
+            base_slug = slugify(f"{self.student_id}-{self.created_at}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+  
   
