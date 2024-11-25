@@ -1,0 +1,42 @@
+<h1>{{ registration.name }}</h1>
+
+<ul>
+    {% for ticket in page_obj %}
+    <li>{{ ticket }}</li>
+    {% empty %}
+    <li>No tickets found.</li>
+    {% endfor %}
+</ul>
+
+<!-- Pagination Controls -->
+<div class="pagination" style="text-align: center; margin-top: 20px;">
+    {% if page_obj.has_previous %}
+        <a href="?page=1" 
+           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}" 
+           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">Previous</a>
+    {% else %}
+        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">&laquo; First</span>
+        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">Previous</span>
+    {% endif %}
+
+    <!-- Page Numbers -->
+    {% for page_num in paginator.page_range %}
+        {% if page_num == page_obj.number %}
+            <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #007bff; background-color: #007bff; color: white; font-weight: bold;">{{ page_num }}</span>
+        {% elif page_num >= page_obj.number|add:'-2' and page_num <= page_obj.number|add:'2' %}
+            <a href="?page={{ page_num }}" 
+               style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">{{ page_num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" 
+           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">Next</a>
+        <a href="?page={{ paginator.num_pages }}" 
+           style="display: inline-block; margin: 0 5px; padding: 5px 10px; text-decoration: none; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer;">Last &raquo;</a>
+    {% else %}
+        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">Next</span>
+        <span style="display: inline-block; margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; background-color: #f1f1f1; color: #aaa; cursor: not-allowed;">Last &raquo;</span>
+    {% endif %}
+</div>

@@ -12,9 +12,9 @@
             <div class="outer">
                 <div class="flex-box">
                     <div class="icon">
-                        <i class="fa-solid fa-graduation-cap"></i>
+                        <img src="{% static 'images/logo.svg' %}" style="max-width: 140px;" alt="">
                     </div>
-                    <div class="form">
+                    <div class="form pt-4">
                         {% csrf_token %}
                         {{form.as_p|safe}}
                         <div class="footer">

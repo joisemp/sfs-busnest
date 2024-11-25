@@ -1,12 +1,14 @@
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from services.models import Institution, Bus, Stop, Route, Registration
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+from django.http import Http404
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm
 
@@ -214,6 +216,30 @@ class RegistrationCreateView(CreateView):
         registration.code = generate_unique_code(Registration)
         registration.save()
         return redirect('central_admin:registration_list')
+    
+    
+class RegistrationDetailView(DetailView):
+    template_name = 'central_admin/registration_detail.html'
+    model = Registration
+    context_object_name = 'registration'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tickets = self.object.tickets.all().order_by('-created_at')  # Get all tickets for the registration
+        
+        # Pagination logic
+        paginator = Paginator(tickets, 10)  # Show 10 tickets per page
+        page_number = self.request.GET.get('page', 1)  # Get page number from query params
+        try:
+            page_obj = paginator.get_page(page_number)
+        except:
+            raise Http404("Invalid page number")
+        
+        context['page_obj'] = page_obj
+        context['paginator'] = paginator
+        return context
 
 
 class RegistrationUpdateView(UpdateView):
