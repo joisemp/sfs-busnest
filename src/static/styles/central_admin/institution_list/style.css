@@ -208,7 +208,7 @@
 .initial-wrap .main-content {
   margin-left: 220px;
   margin-top: 60px;
-  margin-bottom: 76px;
+  margin-bottom: 0;
   padding: 1rem;
   overflow-y: auto;
   height: calc(100vh - 60px);
@@ -221,6 +221,7 @@
 @media screen and (max-width: 430px) {
   .initial-wrap .main-content {
     margin-left: auto;
+    margin-bottom: 76px;
     width: 100%;
   }
 }

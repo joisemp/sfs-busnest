@@ -18,14 +18,18 @@
         <div class="col-12 col-lg-4">
             <div class="header-button-group">
                 <div class="back">
-                    <button type="button" class="btn btn-outline-dark btn-sm">
-                        <i class="fa-solid fa-arrow-left me-2"></i>Go back
-                    </button>
+                    <a href="{% url 'central_admin:registration_list' %}">
+                        <button type="button" class="btn btn-outline-dark btn-sm">
+                            <i class="fa-solid fa-arrow-left me-2"></i>Go back
+                        </button>
+                    </a>
                 </div>
                 <div class="setting">
-                    <button type="button" class="btn btn-sm">
-                        <i class="fa-solid fa-gear me-2"></i>Settings
-                    </button>
+                    <a href="{% url 'central_admin:registration_update' slug=registration.slug %}">
+                        <button type="button" class="btn btn-sm">
+                            <i class="fa-solid fa-gear me-2"></i>Settings
+                        </button>
+                    </a>
                 </div>
             </div>
             <div class="content">
@@ -33,7 +37,7 @@
                 <div class="card registration-count">
                     <div class="card-body">
                         <h5 class="card-title">Total Registration</h5>
-                        <h6 class="card-subtitle">200</h6>
+                        <h6 class="card-subtitle">{{registration.tickets.all.count}}</h6>
                     </div>
                 </div>
 
@@ -70,9 +74,11 @@
                 <div class="heading">
                     <h2>Recent registrations</h2>
                     <div class="button-group">
-                        <button type="button" class="btn btn-primary">
-                            View all<i class="fa-solid fa-arrow-right ms-2"></i>
-                        </button>
+                        <a href="#">
+                            <button type="button" class="btn btn-primary">
+                                View all<i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </a>
                     </div>
                 </div>
 
@@ -80,91 +86,23 @@
                     <table class="table">
                         <thead>
                             <tr>
+                                <th scope="col">Student ID</th>
                                 <th scope="col">Name</th>
                                 <th scope="col">School</th>
                                 <th scope="col">Class</th>
                                 <th scope="col">Timming</th>
-                                <th scope="col">Booking</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for ticket in recent_tickets %}
                             <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
+                                <td>{{ticket.student_id}}</td>
+                                <td>{{ticket.student_name}}</td>
+                                <td>{{ticket.institution.name}}</td>
                                 <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
+                                <td>{{ticket.time_slot.name}}</td>
                             </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
-                            <tr>
-                                <td>Naman Kumar</td>
-                                <td>SFS Public School</td>
-                                <td>X</td>
-                                <td>Morning/Evening</td>
-                                <td>3KDFK32</td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

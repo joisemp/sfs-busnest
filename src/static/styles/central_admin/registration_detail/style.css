@@ -208,7 +208,7 @@
 .initial-wrap .main-content {
   margin-left: 220px;
   margin-top: 60px;
-  margin-bottom: 76px;
+  margin-bottom: 0;
   padding: 1rem;
   overflow-y: auto;
   height: calc(100vh - 60px);
@@ -221,10 +221,14 @@
 @media screen and (max-width: 430px) {
   .initial-wrap .main-content {
     margin-left: auto;
+    margin-bottom: 76px;
     width: 100%;
   }
 }
 
+#registration-dashobard {
+  padding-top: 1rem;
+}
 #registration-dashobard .header-button-group {
   display: flex;
   justify-content: space-between;
@@ -246,7 +250,9 @@
 #registration-dashobard .header-button-group .setting .btn {
   background-color: #c7d2fe;
   color: #3730a3;
-  border: none;
+  border: 1px solid #3730a3;
+  padding: 5px 9px;
+  font-weight: 600;
 }
 @media screen and (min-width: 768px) and (max-width: 991px) {
   #registration-dashobard .content {
