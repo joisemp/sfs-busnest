@@ -239,6 +239,9 @@ class RegistrationDetailView(DetailView):
         
         context['page_obj'] = page_obj
         context['paginator'] = paginator
+        
+        # Assuming each Registration object has related tickets
+        context['recent_tickets'] = self.object.tickets.all().order_by('-created_at')[:20]
         return context
 
 
