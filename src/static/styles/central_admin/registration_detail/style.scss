@@ -1,0 +1,98 @@
+@import '../../sidebar_navbar_base';
+
+#registration-dashobard {
+    .header-button-group {
+        @media screen and (max-width:767px) {
+            justify-content: left;
+
+            .setting {
+                margin-left: 1rem;
+            }
+        }
+
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+
+        // back button design
+        .back {
+            .btn {
+                background: $base-white;
+                color: $base-black;
+                border: 1px solid black;
+            }
+        }
+
+        // setting button design
+        .setting {
+            .btn {
+                background-color: $indigo-200;
+                color: $indigo-800;
+                border: none;
+            }
+        }
+    }
+
+
+    .content {
+        @media screen and (min-width:768px) and (max-width:991px) {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .registration-count {
+            margin-bottom: 1rem;
+            width: 100%;
+            background: $indigo-600;
+            color: $base-white;
+            padding: 44px 10px;
+
+            h5 {
+                font-size: 27px;
+                font-weight: 502;
+            }
+
+            h6 {
+                font-size: 60px;
+                font-weight: 700;
+            }
+        }
+
+        .stop-frequency {
+            margin-bottom: 1rem;
+            width: 100%;
+
+            .info {
+                display: flex;
+                justify-content: space-between;
+            }
+        }
+    }
+
+
+    .table-content {
+        .heading {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+
+            h2 {
+                font-weight: 600;
+            }
+        }
+
+        .table td,
+        .table th {
+            white-space: nowrap;
+
+            background-color: rgba(201, 229, 226, 0);
+        }
+
+        .table th {
+            color: $slate-400;
+            font-weight: 500;
+        }
+    }
+
+}
