@@ -12,4 +12,5 @@ urlpatterns = [
      path('student-groups/', institution_admin.StudentGroupListView.as_view(), name='student_group_list'),
      path('student-groups/create/', institution_admin.StudentGroupCreateView.as_view(), name='student_group_create'),
      path('student-groups/<slug:student_group_slug>/update/', institution_admin.StudentGroupUpdateView.as_view(), name='student_group_update'),
+     path('student-groups/<slug:student_group_slug>/delete/', institution_admin.StudentGroupDeleteView.as_view(), name='student_group_delete'),
 ]

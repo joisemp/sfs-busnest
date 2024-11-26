@@ -67,3 +67,11 @@ class StudentGroupUpdateView(UpdateView):
         return super().form_valid(form)
     
     
+class StudentGroupDeleteView(DeleteView):
+    model = StudentGroup
+    template_name = 'institution_admin/student_group_confirm_delete.html'
+    slug_url_kwarg = 'student_group_slug'
+    success_url = reverse_lazy('institution_admin:student_group_list')
+    
+    
+    
