@@ -12,7 +12,7 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="#" class="btn btn-primary">Add receipt</a>
+        <a href="{% url 'institution_admin:receipt_create' %}" class="btn btn-primary">Add receipt</a>
     </div>
 </div>
 {% for receipt in receipts %}

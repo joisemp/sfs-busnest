@@ -18,12 +18,13 @@ class ReceiptListView(ListView):
 class ReceiptCreateView(CreateView):
     template_name = 'institution_admin/receipt_create.html'
     model = Receipt
-    fields = ['registration', 'receipt_id', 'student_id', 'student_group', 'institution']
+    fields = ['registration', 'receipt_id', 'student_id', 'student_group']
     
     def form_valid(self, form):
         receipt = form.save(commit=False)
         user = self.request.user
         receipt.org = user.profile.org
+        receipt.institution = user.profile.institution
         receipt.save()
         return redirect('institution_admin:receipt_list')
     
@@ -37,12 +38,13 @@ class StudentGroupListView(ListView):
 class StudentGroupCreateView(CreateView):
     template_name = 'institution_admin/student_group_create.html'
     model = StudentGroup
-    fields = ['name', 'institution']
+    fields = ['name',]
     
     def form_valid(self, form):
         receipt = form.save(commit=False)
         user = self.request.user
         receipt.org = user.profile.org
+        receipt.institution = user.profile.institution
         receipt.save()
         return redirect('institution_admin:student_group_list') 
     
