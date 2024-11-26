@@ -17,7 +17,7 @@
 </div>
 {% for group in student_groups %}
 <li>
-    {{group}}
+    {{group}} <a href="{% url 'institution_admin:student_group_update' student_group_slug=group.slug %}" class="btn btn-dark btn-sm">Edit</a>
 </li>
 {% endfor %}
 {% endblock content %}

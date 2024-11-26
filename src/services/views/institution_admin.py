@@ -1,5 +1,5 @@
 from django.shortcuts import redirect
-from django.views.generic import FormView, ListView, CreateView, DeleteView
+from django.views.generic import FormView, ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, StudentGroup
 
@@ -54,5 +54,16 @@ class StudentGroupCreateView(CreateView):
         receipt.institution = user.profile.institution
         receipt.save()
         return redirect('institution_admin:student_group_list') 
+    
+    
+class StudentGroupUpdateView(UpdateView):
+    model = StudentGroup
+    fields = ['name',]
+    template_name = 'institution_admin/student_group_update.html'
+    slug_url_kwarg = 'student_group_slug'
+    success_url = reverse_lazy('institution_admin:student_group_list')
+
+    def form_valid(self, form):
+        return super().form_valid(form)
     
     
