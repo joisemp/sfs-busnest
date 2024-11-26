@@ -1,7 +1,7 @@
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from services.models import Institution, Bus, Stop, Route, Registration
+from services.models import Institution, Bus, Stop, Route, Registration, Ticket
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -259,4 +259,16 @@ class RegistrationDeleteView(DeleteView):
     model = Registration
     template_name = 'central_admin/registration_confirm_delete.html'
     success_url = reverse_lazy('central_admin:registration_list')
+    
+    
+class TicketListView(ListView):
+    model = Ticket
+    template_name = 'central_admin/ticket_list.html'
+    context_object_name = 'tickets'
+    
+    def get_queryset(self):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        return Ticket.objects.filter(registration=registration).order_by('-created_at')
+    
     

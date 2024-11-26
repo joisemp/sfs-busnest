@@ -74,7 +74,7 @@
                 <div class="heading">
                     <h2>Recent registrations</h2>
                     <div class="button-group">
-                        <a href="#">
+                        <a href="{% url 'central_admin:ticket_list' registration_slug=registration.slug %}">
                             <button type="button" class="btn btn-primary">
                                 View all<i class="fa-solid fa-arrow-right ms-2"></i>
                             </button>
