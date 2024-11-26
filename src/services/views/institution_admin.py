@@ -1,6 +1,7 @@
+from django.shortcuts import redirect
 from django.views.generic import FormView, ListView, CreateView
 from django.urls import reverse
-from services.models import Registration, Recipt, StudentGroup
+from services.models import Registration, Receipt, StudentGroup
 
 class RegistrationListView(ListView):
     model = Registration
@@ -8,10 +9,23 @@ class RegistrationListView(ListView):
     context_object_name = 'registrations'
 
 
-class ReciptListView(ListView):
-    model = Recipt
-    template_name = 'institution_admin/recipt_list.html'
-    context_object_name = 'recipts'
+class ReceiptListView(ListView):
+    model = Receipt
+    template_name = 'institution_admin/receipt_list.html'
+    context_object_name = 'receipts'
+    
+    
+class ReceiptCreateView(CreateView):
+    template_name = 'institution_admin/receipt_create.html'
+    model = Receipt
+    fields = ['registration', 'receipt_id', 'student_id', 'student_group', 'institution']
+    
+    def form_valid(self, form):
+        receipt = form.save(commit=False)
+        user = self.request.user
+        receipt.org = user.profile.org
+        receipt.save()
+        return redirect('institution_admin:receipt_list')
     
     
 class StudentGroupListView(ListView):

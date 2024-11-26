@@ -191,11 +191,11 @@ class StudentGroup(models.Model):
         super().save(*args, **kwargs)
 
 
-class Recipt(models.Model):
+class Receipt(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipts')
-    Institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipts')
-    recipt_id = models.CharField(max_length=500)
+    receipt_id = models.CharField(max_length=500)
     student_id = models.CharField(max_length=20)
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

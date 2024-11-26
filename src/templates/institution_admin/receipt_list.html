@@ -12,12 +12,12 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="#" class="btn btn-primary">Add recipt</a>
+        <a href="#" class="btn btn-primary">Add receipt</a>
     </div>
 </div>
-{% for recipt in recipts %}
+{% for receipt in receipts %}
 <li>
-<a href="#">{{recipt}} </a>
+<a href="#">{{receipt}} </a>
 <!-- <a class="btn btn-sm btn-dark ms-2" href="#">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a> -->
 </li>
 {% endfor %}
