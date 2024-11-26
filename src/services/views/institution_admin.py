@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import FormView, ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, StudentGroup, Ticket
-from services.forms.institution_admin import ReceiptForm
+from services.forms.institution_admin import ReceiptForm, StudentGroupForm
 
 class RegistrationListView(ListView):
     model = Registration
@@ -57,7 +57,7 @@ class StudentGroupListView(ListView):
 class StudentGroupCreateView(CreateView):
     template_name = 'institution_admin/student_group_create.html'
     model = StudentGroup
-    fields = ['name',]
+    form_class = StudentGroupForm
     
     def form_valid(self, form):
         receipt = form.save(commit=False)
@@ -70,7 +70,7 @@ class StudentGroupCreateView(CreateView):
     
 class StudentGroupUpdateView(UpdateView):
     model = StudentGroup
-    fields = ['name',]
+    form_class = StudentGroupForm
     template_name = 'institution_admin/student_group_update.html'
     slug_url_kwarg = 'student_group_slug'
     success_url = reverse_lazy('institution_admin:student_group_list')
