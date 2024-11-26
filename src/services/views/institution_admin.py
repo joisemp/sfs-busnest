@@ -31,6 +31,19 @@ class ReceiptCreateView(CreateView):
 class StudentGroupListView(ListView):
     model = StudentGroup
     template_name = 'institution_admin/student_group_list.html'
-    context_object_name = 'student_groups'   
+    context_object_name = 'student_groups'  
+    
+    
+class StudentGroupCreateView(CreateView):
+    template_name = 'institution_admin/student_group_create.html'
+    model = StudentGroup
+    fields = ['name', 'institution']
+    
+    def form_valid(self, form):
+        receipt = form.save(commit=False)
+        user = self.request.user
+        receipt.org = user.profile.org
+        receipt.save()
+        return redirect('institution_admin:student_group_list') 
     
     

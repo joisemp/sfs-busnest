@@ -178,7 +178,7 @@ class Ticket(models.Model):
 
 class StudentGroup(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='groups')
-    Institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='groups')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='groups')
     name = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -189,6 +189,9 @@ class StudentGroup(models.Model):
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Receipt(models.Model):
@@ -209,5 +212,8 @@ class Receipt(models.Model):
             base_slug = slugify(f"{self.student_id}-{self.created_at}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.registration} - {self.created_at}"
   
   

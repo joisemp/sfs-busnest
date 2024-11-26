@@ -17,8 +17,7 @@
 </div>
 {% for group in student_groups %}
 <li>
-<a href="#">{{group}} </a>
-<!-- <a class="btn btn-sm btn-dark ms-2" href="#">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a> -->
+    {{group}}
 </li>
 {% endfor %}
 {% endblock content %}

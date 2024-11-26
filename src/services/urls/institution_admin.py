@@ -9,4 +9,5 @@ urlpatterns = [
      path('receipts/', institution_admin.ReceiptListView.as_view(), name='receipt_list'),
      path('receipts/add/', institution_admin.ReceiptCreateView.as_view(), name='receipt_create'),
      path('student-groups/', institution_admin.StudentGroupListView.as_view(), name='student_group_list'),
+     path('student-groups/create/', institution_admin.StudentGroupCreateView.as_view(), name='student_group_create'),
 ]
