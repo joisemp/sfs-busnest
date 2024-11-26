@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
-from django.views.generic import FormView, ListView, CreateView
-from django.urls import reverse
+from django.views.generic import FormView, ListView, CreateView, DeleteView
+from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, StudentGroup
 
 class RegistrationListView(ListView):
@@ -27,6 +27,13 @@ class ReceiptCreateView(CreateView):
         receipt.institution = user.profile.institution
         receipt.save()
         return redirect('institution_admin:receipt_list')
+    
+
+class ReceiptDeleteView(DeleteView):
+    model = Receipt
+    template_name = 'institution_admin/receipt_confirm_delete.html'
+    slug_url_kwarg = 'receipt_slug'
+    success_url = reverse_lazy('institution_admin:receipt_list')
     
     
 class StudentGroupListView(ListView):

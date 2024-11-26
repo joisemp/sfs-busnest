@@ -17,7 +17,7 @@
 </div>
 {% for receipt in receipts %}
 <li>
-{{receipt}}
+{{receipt}} <a href="{% url 'institution_admin:receipt_delete' receipt_slug=receipt.slug %}" class="btn btn-danger btn-sm">Delete</a>
 </li>
 {% endfor %}
 {% endblock content %}
