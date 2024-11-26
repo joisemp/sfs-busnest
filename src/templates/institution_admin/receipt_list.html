@@ -17,8 +17,7 @@
 </div>
 {% for receipt in receipts %}
 <li>
-<a href="#">{{receipt}} </a>
-<!-- <a class="btn btn-sm btn-dark ms-2" href="#">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a> -->
+{{receipt}}
 </li>
 {% endfor %}
 {% endblock content %}
