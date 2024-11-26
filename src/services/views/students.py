@@ -1,10 +1,10 @@
-from django.views.generic import FormView, ListView, CreateView
+from django.db import transaction
+from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
 from services.models import Registration, Bus, Ticket, TimeSlot
 from django.db.models import Q, Count
-from django.http import HttpResponse
 
 class BusSearchFormView(FormView):
     template_name = 'students/search_form.html'
@@ -103,6 +103,7 @@ class BusBookingView(CreateView):
     template_name = 'students/bus_booking.html'
     form_class = TicketForm
     
+    @transaction.atomic
     def form_valid(self, form):
         ticket = form.save(commit=False)
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
@@ -123,6 +124,17 @@ class BusBookingView(CreateView):
         ticket.bus = bus
         ticket.save()
         
-        return HttpResponse("Booking successful")
+        self.request.session['ticket_id'] = ticket.id
+        
+        return redirect('students:book_success')
+    
+
+class BusBookingSuccessView(TemplateView):
+    template_name = 'students/bus_booking_success.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['ticket'] = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
+        return context
 
         
