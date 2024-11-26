@@ -1,12 +1,23 @@
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import FormView, ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
-from services.models import Registration, Receipt, StudentGroup
+from services.models import Registration, Receipt, StudentGroup, Ticket
 
 class RegistrationListView(ListView):
     model = Registration
     template_name = 'institution_admin/registration_list.html'
     context_object_name = 'registrations'
+    
+
+class TicketListView(ListView):
+    model = Ticket
+    template_name = 'institution_admin/ticket_list.html'
+    context_object_name = 'tickets'
+    
+    def get_queryset(self):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        return Ticket.objects.filter(registration=registration, institution=self.request.user.profile.institution).order_by('-created_at')
 
 
 class ReceiptListView(ListView):

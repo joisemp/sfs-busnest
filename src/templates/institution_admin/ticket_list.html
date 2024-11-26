@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/ticket_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+{% for ticket in tickets %}
+<li>
+{{ticket}}
+</li>
+{% endfor %}
+{% endblock content %}
