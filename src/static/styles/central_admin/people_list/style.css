@@ -224,4 +224,11 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+#people-list .text-muted {
+  font-weight: 508;
+}
+#people-list .table-link a {
+  text-decoration: none !important;
 }/*# sourceMappingURL=style.css.map */
