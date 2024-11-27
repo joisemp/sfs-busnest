@@ -1,6 +1,7 @@
 @import '../../sidebar_navbar_base';
 
 #registration-dashobard {
+    padding-top: 1rem;
     .header-button-group {
         @media screen and (max-width:767px) {
             justify-content: left;
@@ -28,7 +29,9 @@
             .btn {
                 background-color: $indigo-200;
                 color: $indigo-800;
-                border: none;
+                border: 1px solid $indigo-800;
+                padding: 5px 9px;
+                font-weight: 600;
             }
         }
     }

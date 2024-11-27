@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/student_group_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h5>Delete {{object.name}}?</h5>
+<p>This action cannot be undone.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Yes remove</button>
+    <a href="{% url 'institution_admin:student_group_list' %}">Cancel</a>
+</form>
+{% endblock %}

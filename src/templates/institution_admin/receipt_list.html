@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/recipt_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a href="{% url 'institution_admin:receipt_create' %}" class="btn btn-primary">Add receipt</a>
+    </div>
+</div>
+{% for receipt in receipts %}
+<li>
+{{receipt.receipt_id}} <a href="{% url 'institution_admin:receipt_delete' receipt_slug=receipt.slug %}" class="btn btn-danger btn-sm">Delete</a>
+</li>
+{% endfor %}
+{% endblock content %}
