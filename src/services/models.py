@@ -216,5 +216,24 @@ class Receipt(models.Model):
         
     def __str__(self):
         return f"{self.receipt_id}"
+    
+
+class FAQ(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='faqs')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='faqs')
+    question = models.CharField(max_length=500)
+    answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"faq-{self.question}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.receipt_id}"
   
   

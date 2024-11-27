@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -107,3 +107,10 @@ class RegistrationForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             raise forms.ValidationError("You must select at least one stop.")
         return stops
 
+
+class FAQForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = FAQ
+        fields = [
+            'question', 'answer'
+        ]

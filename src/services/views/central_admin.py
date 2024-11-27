@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from services.models import Institution, Bus, Stop, Route, Registration, Ticket
+from services.models import Institution, Bus, Stop, Route, Registration, Ticket, FAQ
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import Http404
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm
 
 
 User = get_user_model()
@@ -249,10 +249,17 @@ class RegistrationUpdateView(UpdateView):
     model = Registration
     form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
-    success_url = reverse_lazy('central_admin:registration_list')
 
     def form_valid(self, form):
         return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['faq_form'] = FAQForm
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:registration_detail', kwargs={'slug': self.kwargs['slug']})
     
 
 class RegistrationDeleteView(DeleteView):
@@ -271,4 +278,28 @@ class TicketListView(ListView):
         registration = get_object_or_404(Registration, slug=registration_slug)
         return Ticket.objects.filter(registration=registration).order_by('-created_at')
     
+
+class FAQCreateView(CreateView):
+    template_name = 'central_admin/registration_create.html'
+    model = FAQ
+    form_class = FAQForm
     
+    def form_valid(self, form):
+        faq = form.save(commit=False)
+        user = self.request.user
+        faq.org = user.profile.org
+        faq.registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        faq.save()
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
+    
+    
+class FAQDeleteView(DeleteView):
+    model = FAQ
+    template_name = 'central_admin/registration_confirm_delete.html'
+    slug_url_kwarg = 'faq_slug'
+    
+    def get_success_url(self):
+        return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
