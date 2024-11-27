@@ -294,3 +294,12 @@ class FAQCreateView(CreateView):
     
     def get_success_url(self):
         return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
+    
+    
+class FAQDeleteView(DeleteView):
+    model = FAQ
+    template_name = 'central_admin/registration_confirm_delete.html'
+    slug_url_kwarg = 'faq_slug'
+    
+    def get_success_url(self):
+        return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})

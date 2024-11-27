@@ -73,7 +73,13 @@
                     <div id="flush-collapseOne{{faq.pk}}" class="accordion-collapse collapse"
                         data-bs-parent="#accordionFlushExample">
                         <div class="accordion-body">
-                            {{faq.answer}}
+                            <div class="mb-3">
+                                {{faq.answer}}
+                            </div>
+                            <form action="{% url 'central_admin:faq_delete' registration_slug=object.slug faq_slug=faq.slug %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
                         </div>
                     </div>
                 </div>
