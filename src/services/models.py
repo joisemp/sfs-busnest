@@ -145,8 +145,9 @@ class Ticket(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='tickets')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='tickets')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='tickets')
+    student_group = models.ForeignKey('services.StudentGroup', on_delete=models.CASCADE, related_name='tickets')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='tickets')
-    recipt_id = models.CharField(max_length=255)
+    recipt = models.OneToOneField('services.Receipt', on_delete=models.CASCADE, related_name='ticket')
     student_id = models.CharField(max_length=100)
     student_name = models.CharField(max_length=200)
     student_email = models.EmailField()
@@ -198,7 +199,7 @@ class Receipt(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipts')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipts')
-    receipt_id = models.CharField(max_length=500)
+    receipt_id = models.CharField(max_length=500, unique=True)
     student_id = models.CharField(max_length=20)
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -214,6 +215,6 @@ class Receipt(models.Model):
         super().save(*args, **kwargs)
         
     def __str__(self):
-        return f"{self.registration} - {self.created_at}"
+        return f"{self.receipt_id}"
   
   

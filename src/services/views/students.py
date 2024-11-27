@@ -1,9 +1,10 @@
 from django.db import transaction
+from django.forms import ValidationError
 from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
-from services.models import Registration, Bus, Ticket, TimeSlot
+from services.models import Registration, Bus, Ticket, TimeSlot, Receipt
 from django.db.models import Q, Count
 
 class BusSearchFormView(FormView):
@@ -78,14 +79,27 @@ class ValidateStudentFormView(FormView):
     form_class = ValidateStudentForm  
     
     def form_valid(self, form):
-        recipt_id = form.cleaned_data['recipt_id']
-        student_id = form.cleaned_data['student_id']
+        try:
+            receipt_id = form.cleaned_data['receipt_id']
+            student_id = form.cleaned_data['student_id']
+            
+            # Validate receipt
+            receipt = Receipt.objects.get(receipt_id=receipt_id, student_id=student_id)
 
-        # Store search criteria in the session
-        self.request.session['recipt_id'] = recipt_id
-        self.request.session['student_id'] = student_id
-        
-        return super().form_valid(form)
+            # Store details in the session
+            self.request.session['receipt_id'] = receipt.pk
+            self.request.session['student_id'] = receipt.student_id
+
+            # Check if a ticket already exists for this receipt
+            if Ticket.objects.filter(recipt_id=receipt.pk).exists():
+                form.add_error(None, "A ticket already exists for this receipt.")
+                return self.form_invalid(form)
+
+            return super().form_valid(form)
+
+        except Receipt.DoesNotExist:
+            form.add_error(None, "Receipt or student with the following ID does not exist. Please try again.")
+            return self.form_invalid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -109,13 +123,13 @@ class BusBookingView(CreateView):
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         bus = get_object_or_404(Bus, slug=self.kwargs.get('bus_slug'))
         stop=form.cleaned_data.get('stop')
-        recipt_id = self.request.session.get('recipt_id')
+        receipt_id = self.request.session.get('receipt_id')
         std_id = self.request.session.get('student_id')
         time_slot_id = self.request.session.get('time_slot')
         
         ticket.pickup_point = stop
         ticket.drop_point = stop
-        ticket.recipt_id = recipt_id
+        ticket.recipt = get_object_or_404(Receipt, id=receipt_id)
         ticket.student_id = std_id
         ticket.time_slot = get_object_or_404(TimeSlot, id=time_slot_id)
         ticket.registration = registration
