@@ -12,7 +12,7 @@
 {% block content %}
 {% for ticket in tickets %}
 <li>
-{{ticket}}
+{{ticket}} - <a href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}" class="btn btn-sm btn-dark">Edit</a>
 </li>
 {% endfor %}
 {% endblock content %}

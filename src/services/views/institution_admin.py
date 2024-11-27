@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import FormView, ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, StudentGroup, Ticket
-from services.forms.institution_admin import ReceiptForm, StudentGroupForm
+from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
 
 class RegistrationListView(ListView):
     model = Registration
@@ -19,6 +19,19 @@ class TicketListView(ListView):
         registration_slug = self.kwargs.get('registration_slug')
         registration = get_object_or_404(Registration, slug=registration_slug)
         return Ticket.objects.filter(registration=registration, institution=self.request.user.profile.institution).order_by('-created_at')
+
+
+class TicketUpdateView(UpdateView):
+    model = Ticket
+    form_class = TicketForm
+    template_name = 'institution_admin/ticket_update.html'
+    slug_url_kwarg = 'ticket_slug'
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('institution_admin:ticket_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
 
 class ReceiptListView(ListView):
