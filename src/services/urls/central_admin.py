@@ -32,5 +32,7 @@ urlpatterns = [
      path('registrations/<slug:slug>/update/', central_admin.RegistrationUpdateView.as_view(), name='registration_update'),
      path('registrations/<slug:slug>/delete/', central_admin.RegistrationDeleteView.as_view(), name='registration_delete'),
      
+     path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
+     
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
 ]
