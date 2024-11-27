@@ -223,4 +223,50 @@
     margin-left: auto;
     width: 100%;
   }
+}
+
+#routes .title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#routes .title-section h1 {
+  color: #4f46e5;
+}
+#routes .route-list .table-responsive {
+  display: flex;
+  padding: 1rem 0;
+}
+#routes .route-list .table-responsive .card {
+  width: 25rem;
+}
+
+#stops .title-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#stops .title-section h1 {
+  color: #4f46e5;
+}
+#stops .title-section input {
+  border-radius: 5px;
+  border: 1px solid #94a3b8;
+}
+#stops .title-section .search {
+  background-color: #c7d2fe;
+  color: #3730a3;
+  border: none;
+  height: 37px;
+  width: 95px;
+  margin-left: 1rem;
+}
+#stops .stop-list .list-group {
+  border-radius: 0;
+}
+#stops .stop-list .list-group .list-group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
 }/*# sourceMappingURL=style.css.map */
