@@ -12,92 +12,93 @@
 {% block content %}
 
 <section id="bus-list">
-    <div class="d-flex justify-content-between  align-items-center  mt-2 mb-5">
-      <div>
-        <a href="{% url 'central_admin:bus_create' %}" class="btn btn-primary">Add bus</a>
-      </div>
-      <div>
-        <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-dark" type="submit">Search<i
-              class="fa-solid fa-magnifying-glass ms-3"></i></button>
-        </form>
-      </div>
+  <div class="d-md-flex d-block justify-content-between align-items-center  mt-2 mb-4">
+    <div class="mb-3 mb-md-0">
+      <a href="{% url 'central_admin:bus_create' %}" class="btn btn-primary me-2 me-md-0"><i
+          class="fa-solid fa-plus me-md-2 me-0"></i>Add bus</a>
     </div>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <td class="text-muted">Bus Label</td>
-            <th class="text-muted">Bus number</th>
-            <th class="text-muted">Driver name</th>
-            <th class="text-muted">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>5</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>6</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>7</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>8</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>9</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-          <tr>
-            <td>10</td>
-            <td>KB32C3225</td>
-            <td>Navan Kumar</td>
-            <td class="table-link"><a href="#">View more</a></td>
-          </tr>
-        </tbody>
-      </table>
+    <div>
+      <form class="d-flex" role="search">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-dark" type="submit">
+          <span class="d-none d-md-inline">Search</span><i class="fa-solid fa-magnifying-glass ms-md-2"></i></button>
+      </form>
     </div>
-  </section>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <td class="text-muted">Bus Label</td>
+          <th class="text-muted">Bus number</th>
+          <th class="text-muted">Driver name</th>
+          <th class="text-muted">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td>KB32C3225</td>
+          <td>Navan Kumar</td>
+          <td class="table-link"><a href="#">View more</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
 {% endblock content %}

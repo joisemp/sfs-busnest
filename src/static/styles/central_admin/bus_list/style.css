@@ -226,9 +226,15 @@
   }
 }
 
-#bus-list .text-muted {
+#bus-list tbody, #bus-list td, #bus-list tfoot, #bus-list th, #bus-list thead, #bus-list tr {
+  background: rgba(255, 255, 255, 0) !important;
+  white-space: nowrap;
+  padding: 1rem;
+}
+#bus-list tbody .text-muted, #bus-list td .text-muted, #bus-list tfoot .text-muted, #bus-list th .text-muted, #bus-list thead .text-muted, #bus-list tr .text-muted {
   font-weight: 508;
 }
-#bus-list .table-link a {
+#bus-list tbody .table-link a, #bus-list td .table-link a, #bus-list tfoot .table-link a, #bus-list th .table-link a, #bus-list thead .table-link a, #bus-list tr .table-link a {
   text-decoration: none !important;
+  font-weight: 500;
 }/*# sourceMappingURL=style.css.map */
