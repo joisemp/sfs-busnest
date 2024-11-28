@@ -223,4 +223,11 @@
     margin-left: auto;
     width: 100%;
   }
+}
+
+#bus-list .text-muted {
+  font-weight: 508;
+}
+#bus-list .table-link a {
+  text-decoration: none !important;
 }/*# sourceMappingURL=style.css.map */
