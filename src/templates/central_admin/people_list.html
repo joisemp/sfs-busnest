@@ -12,21 +12,22 @@
 {% block content %}
 
 <section id="people-list">
-    <!-- search bar -->
-    <div class="d-flex justify-content-between  align-items-center  mt-2 mb-5">
-      <div>
-        <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary">Add people</a>
-      </div>
-      <div>
-        <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-dark" type="submit">Search<i
-              class="fa-solid fa-magnifying-glass ms-3"></i></button>
-        </form>
-      </div>
+  <!-- search bar -->
+  <div class="d-md-flex d-block justify-content-between align-items-center  mt-2 mb-4">
+    <div class="mb-3 mb-md-0">
+      <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary">Add people</a>
     </div>
+    <div>
+      <form class="d-flex" role="search">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-dark" type="submit">
+          <span class="d-none d-md-inline">Search</span><i class="fa-solid fa-magnifying-glass ms-md-2"></i></button>
+      </form>
+    </div>
+  </div>
 
-    <!-- table -->
+  <!-- table -->
+  <div class="table-responsive">
     <table class="table">
       <thead>
         <tr>
@@ -83,6 +84,7 @@
         </tr>
       </tbody>
     </table>
-  </section>
+  </div>
+</section>
 
 {% endblock content %}
