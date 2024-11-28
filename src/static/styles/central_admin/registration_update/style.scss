@@ -1,1 +1,40 @@
 @import '../../sidebar_navbar_base';
+
+#registeration-update{
+    .registration-setting{
+        display:flex;
+        justify-content: center;
+        .wrap{
+           width:500px;
+           margin-top:12px;
+           .link-box{
+               padding: 15px 0px;
+               .button{
+                   display: flex;
+                   margin-top: 16px;
+                   justify-content: right;
+               }
+           }
+           .form-check-input{
+               &:checked {
+                   background-color:$indigo-600;
+                   border-color: $indigo-600;
+                 }
+               
+                 &:focus {
+                   border-color:$indigo-600;
+                   box-shadow: 0 0 0 0.2rem rgba($indigo-600, 0.25);
+                 }
+               // box-shadow:#4f46e5;
+           }
+           .save-button{
+               display: flex;
+               justify-content: right;
+           }
+           .head{
+               display:flex;
+               justify-content:space-between;
+           }
+        }
+       }
+}

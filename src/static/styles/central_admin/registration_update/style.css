@@ -224,4 +224,37 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+#registeration-update .registration-setting {
+  display: flex;
+  justify-content: center;
+}
+#registeration-update .registration-setting .wrap {
+  width: 500px;
+  margin-top: 12px;
+}
+#registeration-update .registration-setting .wrap .link-box {
+  padding: 15px 0px;
+}
+#registeration-update .registration-setting .wrap .link-box .button {
+  display: flex;
+  margin-top: 16px;
+  justify-content: right;
+}
+#registeration-update .registration-setting .wrap .form-check-input:checked {
+  background-color: #4f46e5;
+  border-color: #4f46e5;
+}
+#registeration-update .registration-setting .wrap .form-check-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+}
+#registeration-update .registration-setting .wrap .save-button {
+  display: flex;
+  justify-content: right;
+}
+#registeration-update .registration-setting .wrap .head {
+  display: flex;
+  justify-content: space-between;
 }/*# sourceMappingURL=style.css.map */

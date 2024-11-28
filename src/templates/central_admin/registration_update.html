@@ -11,51 +11,59 @@
 
 {% block content %}
 
-<section class="mb-4">
-    <form action="" method="post">
-        {% csrf_token %}
-        {{form.as_p|safe}}
-        <button type="submit" class="btn-primary">Update info</button>
-    </form>
-</section>
-
-
-<section>
-    <div class="card p-3">
-        <div class="button-group w-100 d-flex justify-content-between mb-3">
-            <div>
-                <h4>Frequently asked questions</h4>
+<section id="registeration-update">
+    <div class="registration-setting">
+      <div class="wrap">
+        <!-- link card -->
+        <div class="card link-box">
+          <div class="card-body">
+            <h5 class="card-title" style="font-weight: 502;">Link for Sharing</h5>
+            <h6 class="card-subtitle mb-2 text-body-secondary">https://www.sfs.com/js23ksil2is/</h6>
+            <div class="button">
+              <a href="#" class="btn btn-sm btn-outline-dark card-link">Regenerate<i class="fa-solid fa-rotate ms-2"></i></a>
+              <a href="#" class="btn btn-sm btn-outline-primary card-link">Copy Link<i class="fa-regular fa-copy ms-2"></i></a>
             </div>
-            <div>
-                <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#faq-form">
-                    Add
-                </button>
-
-                <div class="modal fade" id="faq-form" tabindex="-1" aria-labelledby="faq-form" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="exampleModalLabel">Add FAQ</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <form action="{% url 'central_admin:faq_create' registration_slug=object.slug %}" method="post">
-                                <div class="modal-body">
-                                    {% csrf_token %}
-                                    {{faq_form.as_p | safe}}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" class="btn btn-primary">Add now</button>
-                                </div>
-                            </form>
+          </div>
+        </div>
+        <!-- form card -->
+        <div class="card mt-2 link-box">
+          <div class="card-body">
+            <form action="" method="post">
+                {% csrf_token %}
+                {{form.as_p|safe}}
+            </form>
+            <div class="save-button">
+               <button class="btn btn-sm btn-primary">Save changes</button>
+            </div>
+          </div>
+        </div>
+        <div class="card link-box mt-2">
+          <div class="card-body">
+            <div class="head mb-3">
+              <h6 class="card-title" style="font-weight:400;">Add FAQ</h6>
+              <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#faq-form"><i class="fa-solid fa-plus"></i></button>
+              <div class="modal fade" id="faq-form" tabindex="-1" aria-labelledby="faq-form" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">Add FAQ</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
+                        <form action="{% url 'central_admin:faq_create' registration_slug=object.slug %}" method="post">
+                            <div class="modal-body">
+                                {% csrf_token %}
+                                {{faq_form.as_p | safe}}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Add now</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-
             </div>
-        </div>
-        <div class="container">
-            <div class="accordion accordion-flush" id="accordionFlushExample">
+            </div>
+            <div class="accordion" id="accordionExample">
                 {% if object.faqs.all %}
                 {% for faq in object.faqs.all %}
                 <div class="accordion-item">
@@ -90,8 +98,10 @@
                 </div>
                 {% endif %}
             </div>
+          </div>
         </div>
+      </div>
     </div>
-</section>
+  </section>
 
 {% endblock content %}
