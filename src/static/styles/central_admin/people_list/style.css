@@ -226,9 +226,15 @@
   }
 }
 
-#people-list .text-muted {
+#people-list tbody, #people-list td, #people-list tfoot, #people-list th, #people-list thead, #people-list tr {
+  background: rgba(255, 255, 255, 0) !important;
+  white-space: nowrap;
+  padding: 1rem;
+}
+#people-list tbody .text-muted, #people-list td .text-muted, #people-list tfoot .text-muted, #people-list th .text-muted, #people-list thead .text-muted, #people-list tr .text-muted {
   font-weight: 508;
 }
-#people-list .table-link a {
+#people-list tbody .table-link a, #people-list td .table-link a, #people-list tfoot .table-link a, #people-list th .table-link a, #people-list thead .table-link a, #people-list tr .table-link a {
   text-decoration: none !important;
+  font-weight: 500;
 }/*# sourceMappingURL=style.css.map */
