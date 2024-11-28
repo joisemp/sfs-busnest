@@ -18,7 +18,7 @@
 {% for registration in registrations %}
 <li>
 <a href="{% url 'central_admin:registration_detail' slug=registration.slug %}">{{registration}} </a>
-<a class="btn btn-sm btn-dark ms-2" href="{% url 'central_admin:registration_update' slug=registration.slug %}">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a>
+<a class="btn btn-sm btn-danger ms-2" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a>
 </li>
 {% endfor %}
 {% endblock content %}

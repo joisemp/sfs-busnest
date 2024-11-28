@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/student_group_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a href="{% url 'institution_admin:student_group_create' %}" class="btn btn-primary">Create group</a>
+    </div>
+</div>
+{% for group in student_groups %}
+<li>
+    {{group}} <a href="{% url 'institution_admin:student_group_update' student_group_slug=group.slug %}" class="btn btn-dark btn-sm">Edit</a> | <a href="{% url 'institution_admin:student_group_delete' student_group_slug=group.slug %}" class="btn btn-danger btn-sm">Delete</a>
+</li>
+{% endfor %}
+{% endblock content %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/student_group_update/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<form action="" method="post">
+    {% csrf_token %}
+    {{form.as_p|safe}}
+    <button type="submit" class="btn-primary">Update info</button>
+</form>
+
+{% endblock content %}

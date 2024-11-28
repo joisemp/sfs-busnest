@@ -17,7 +17,7 @@
 </div>
 {% for registration in registrations %}
 <li>
-<a href="#">{{registration}} </a>
+<a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}">{{registration}} </a>
 <a class="btn btn-sm btn-dark ms-2" href="#">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a>
 </li>
 {% endfor %}

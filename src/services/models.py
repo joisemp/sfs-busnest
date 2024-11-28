@@ -145,8 +145,9 @@ class Ticket(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='tickets')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='tickets')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='tickets')
+    student_group = models.ForeignKey('services.StudentGroup', on_delete=models.CASCADE, related_name='tickets')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='tickets')
-    recipt_id = models.CharField(max_length=255)
+    recipt = models.OneToOneField('services.Receipt', on_delete=models.CASCADE, related_name='ticket')
     student_id = models.CharField(max_length=100)
     student_name = models.CharField(max_length=200)
     student_email = models.EmailField()
@@ -175,4 +176,64 @@ class Ticket(models.Model):
     def __str__(self):
         return f"Ticket for {self.student_name} on {self.bus.label} ({self.time_slot.name})"
 
+
+class StudentGroup(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='groups')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='groups')
+    name = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.name}"
+
+
+class Receipt(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipts')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipts')
+    receipt_id = models.CharField(max_length=500, unique=True)
+    student_id = models.CharField(max_length=20)
+    student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if self.student_id:
+            self.student_id = self.student_id.upper()
+        if not self.slug:
+            base_slug = slugify(f"{self.student_id}-{self.created_at}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.receipt_id}"
+    
+
+class FAQ(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='faqs')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='faqs')
+    question = models.CharField(max_length=500)
+    answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"faq-{self.question}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.receipt_id}"
+  
   
