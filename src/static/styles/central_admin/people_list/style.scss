@@ -1,1 +1,12 @@
 @import '../../sidebar_navbar_base';
+
+#people-list{
+    .text-muted{
+        font-weight: 508;
+    }
+    .table-link {
+        a {
+            text-decoration: none !important;
+        }
+    }
+}
