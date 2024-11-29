@@ -13,17 +13,17 @@
 
 <section id="routes">
 
-    <div class="title-section mb-3">
-        <h1>Routes</h1>
+    <div class="title-section">
+        <h3>Routes</h3>
         <div>
             <div class="dropdown">
                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
-                    Create 
+                    <span class="me-2"><i class="fa-solid fa-plus me-2"></i>Create</span> 
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-map me-2"></i>Route</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-location-dot me-2"></i>Stop</a></li>
+                    <li><a class="dropdown-item" href="{% url 'central_admin:route_create' %}"><i class="fa-solid fa-map me-2"></i>Route</a></li>
+                    <li><a class="dropdown-item" href="{% url 'central_admin:stop_create' %}"><i class="fa-solid fa-location-dot me-2"></i>Stop</a></li>
                 </ul>
             </div>
         </div>
@@ -34,78 +34,22 @@
             <table class="table table-borderless">
 
                 <!--Routes-->
+                {% for route in routes %}
                 <div class="col">
                     <div class="card me-2">
                         <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Card subtitle</h6>
-                            <p class="card-text">Some quick example text to build on the card title and make up
-                                the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-outline-dark">Remove<i class="fa-regular fa-trash-can ms-2"></i></a>
-                            <a href="#" class="btn btn-primary">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
+                            <h5 class="card-title">{{route.name}}</h5>
+                            <p class="card-subtitle mb-2 text-body-secondary mb-4">
+                                {% for stop in route.stops.all %}
+                                {{stop}}, 
+                                {% endfor %}
+                            </p>
+                            <a href="{% url 'central_admin:route_delete' slug=route.slug %}" class="btn btn-sm text-danger">Remove<i class="fa-regular fa-trash-can ms-1"></i></a>
+                            <a href="{% url 'central_admin:route_update' slug=route.slug %}" class="btn btn-sm btn-dark">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
                         </div>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="card me-2">
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Card subtitle</h6>
-                            <p class="card-text">Some quick example text to build on the card title and make up
-                                the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-outline-dark">Remove<i class="fa-regular fa-trash-can ms-2"></i></a>
-                            <a href="#" class="btn btn-primary">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card me-2">
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Card subtitle</h6>
-                            <p class="card-text">Some quick example text to build on the card title and make up
-                                the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-outline-dark">Remove<i class="fa-regular fa-trash-can ms-2"></i></a>
-                            <a href="#" class="btn btn-primary">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card me-2">
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Card subtitle</h6>
-                            <p class="card-text">Some quick example text to build on the card title and make up
-                                the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-outline-dark">Remove<i class="fa-regular fa-trash-can ms-2"></i></a>
-                            <a href="#" class="btn btn-primary">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card me-2">
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Card subtitle</h6>
-                            <p class="card-text">Some quick example text to build on the card title and make up
-                                the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-outline-dark">Remove<i class="fa-regular fa-trash-can ms-2"></i></a>
-                            <a href="#" class="btn btn-primary">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card me-2">
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Card subtitle</h6>
-                            <p class="card-text">Some quick example text to build on the card title and make up
-                                the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-outline-dark">Remove<i class="fa-regular fa-trash-can ms-2"></i></a>
-                            <a href="#" class="btn btn-primary">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
-                        </div>
-                    </div>
-                </div>
+                {% endfor %}
                 <!-- End -->
 
             </table>
@@ -115,54 +59,27 @@
 
 <section id="stops">
     <div class="title-section mb-3">
-        <h1>Stops</h1>
+        <h3>Stops</h3>
         <!-- search bar -->
         <div class="search-feild">
             <form class="d-flex" id="search-feild" role="search">
                 <input class="form-control me-2 ms-3" type="search" placeholder="Search" aria-label="Search">
-                <a href="#" class="btn btn-primary ms-2" type="submit" style="width: 150px;">Search <i class="fa-solid fa-magnifying-glass"></i></a>
+                <a href="#" class="btn btn-primary ms-2" type="submit" style="width: 150px;">Search <i class="fa-solid fa-magnifying-glass ms-2"></i></a>
             </form>
         </div>
     </div>
 
     <div class="stop-list">
         <ul class="list-group">
+            {% for stop in stops %}
             <li class="list-group-item">
-                <h5>Electronic city</h5>
+                <h6>{{stop.name}}</h6>
                 <div>
-                    <button class="btn btn-danger btn-sm">Delete</button>
+                    <a href="{{stop.map_link}}" class="btn text-primary">View in map<i class="fa-solid fa-map-location-dot ms-2"></i></a>
+                    <a href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn btn-danger btn-sm">Delete<i class="fa-solid fa-trash ms-2"></i></a>
                 </div>
             </li>
-            <li class="list-group-item">
-                <h5>Hosur</h5>
-                <div>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                </div>
-            </li>
-            <li class="list-group-item">
-                <h5>Anekal</h5>
-                <div>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                </div>
-            </li>
-            <li class="list-group-item">
-                <h5>Hosa Road</h5>
-                <div>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                </div>
-            </li>
-            <li class="list-group-item">
-                <h5>Madiwala</h5>
-                <div>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                </div>
-            </li>
-            <li class="list-group-item">
-                <h5>Bommasandra</h5>
-                <div>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                </div>
-            </li>
+            {% endfor %}
         </ul>
     </div>
 </section>

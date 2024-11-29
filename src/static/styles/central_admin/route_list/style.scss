@@ -5,8 +5,17 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      h1 {
+      h3 {
         color: $indigo-600;
+        font-weight: 700;
+      }
+
+      .dropdown{
+        .dropdown-menu{
+          .dropdown-item{
+            padding: 1rem;
+          }
+        }
       }
     }
     .route-list {
@@ -14,7 +23,7 @@
         display: flex;
         padding: 1rem 0;
         .card {
-          width: 25rem;
+          width: 20rem;
         }
       }
     }
@@ -25,8 +34,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      h1 {
+      h3 {
         color: $indigo-600;
+        font-weight: 700;
       }
       input {
         border-radius: 5px;

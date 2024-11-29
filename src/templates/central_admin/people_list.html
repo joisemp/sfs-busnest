@@ -15,7 +15,7 @@
   <!-- search bar -->
   <div class="d-md-flex d-block justify-content-between align-items-center  mt-2 mb-4">
     <div class="mb-3 mb-md-0">
-      <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary">Add people</a>
+      <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add people</a>
     </div>
     <div>
       <form class="d-flex" role="search">
@@ -37,51 +37,27 @@
         </tr>
       </thead>
       <tbody>
+        {% for person in people %}
         <tr>
-          <td>Navan Kumar</td>
-          <td>Institution Admin</td>
-          <td class="table-link"><a href="#">View more</a></td>
+          <td>
+            <span class="name">{{person.first_name}} {{person.last_name}}</span>
+            {% if request.user.profile == person %}
+            (You)
+            {% endif %}
+          </td>
+          <td>
+            {% if person.is_institution_admin %}
+            Institution Admin [{{person.institution}}]
+            {% elif person.is_central_admin %}
+            Central admin
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'central_admin:people_update' slug=person.slug %}" class="btn btn-sm btn-dark">Edit</a>
+            <a href="{% url 'central_admin:people_delete' slug=person.slug %}" class="btn btn-sm btn-danger">Delete</a>
+          </td>
         </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Institution Admin</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>Navan Kumar</td>
-          <td>Driver</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>

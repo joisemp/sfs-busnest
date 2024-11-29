@@ -36,66 +36,17 @@
         </tr>
       </thead>
       <tbody>
+        {% for bus in buses %}
         <tr>
-          <td>1</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
+          <td>{{bus.label}}</td>
+          <td>{{bus.bus_no}}</td>
+          <td>{{bus.driver}}</td>
+          <td class="table-link">
+            <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-sm btn-dark">Edit</a>
+            <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-sm btn-danger">Delete</a>
+          </td>
         </tr>
-        <tr>
-          <td>2</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>3</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>4</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>5</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>6</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>7</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>8</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>9</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
-        <tr>
-          <td>10</td>
-          <td>KB32C3225</td>
-          <td>Navan Kumar</td>
-          <td class="table-link"><a href="#">View more</a></td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
