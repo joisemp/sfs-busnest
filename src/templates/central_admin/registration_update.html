@@ -12,96 +12,114 @@
 {% block content %}
 
 <section id="registeration-update">
-    <div class="registration-setting">
-      <div class="wrap">
-        <!-- link card -->
-        <div class="card link-box">
-          <div class="card-body">
-            <h5 class="card-title" style="font-weight: 502;">Link for Sharing</h5>
-            <h6 class="card-subtitle mb-2 text-body-secondary">https://www.sfs.com/js23ksil2is/</h6>
-            <div class="button">
-              <a href="#" class="btn btn-sm btn-outline-dark card-link">Regenerate<i class="fa-solid fa-rotate ms-2"></i></a>
-              <a href="#" class="btn btn-sm btn-outline-primary card-link">Copy Link<i class="fa-regular fa-copy ms-2"></i></a>
-            </div>
+  <div class="registration-setting">
+    <div class="wrap">
+      <!-- link card -->
+      <div class="card link-box">
+        <div class="card-body">
+          <h5 class="card-title" style="font-weight: 502;">Link for Sharing</h5>
+          <input class="w-100 link-input form-control" disabled type="text"
+            value="{{ protocol }}://{{ domain }}{% url 'students:bus_search' registration_code=object.code %}"
+            id="link-input">
+          <div class="button">
+            <a href="{% url 'students:bus_search' registration_code=object.code %}" target="_blank"
+              class="btn btn-sm btn-outline-dark card-link">View<i
+                class="fa-solid fa-arrow-up-right-from-square ms-2"></i></a>
+            <button class="btn btn-dark btn-sm card-link" onclick="copyLink()">Copy Link<i
+                class="fa-regular fa-copy ms-2"></i></button>
           </div>
         </div>
-        <!-- form card -->
-        <div class="card mt-2 link-box">
-          <div class="card-body">
-            <form action="" method="post">
-                {% csrf_token %}
-                {{form.as_p|safe}}
+      </div>
+      <!-- form card -->
+      <div class="card form-card mt-2">
+        <div class="card-body">
+          <form action="" method="post">
+            {% csrf_token %}
+            {{form.as_p|safe}}
             <div class="save-button">
-               <button class="btn btn-sm btn-primary">Save changes</button>
+              <button class="btn btn-sm btn-primary">Save changes</button>
             </div>
           </form>
-          </div>
         </div>
-        <div class="card link-box mt-2">
-          <div class="card-body">
-            <div class="head mb-3">
-              <h6 class="card-title" style="font-weight:400;">Add FAQ</h6>
-              <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#faq-form"><i class="fa-solid fa-plus"></i></button>
-              <div class="modal fade" id="faq-form" tabindex="-1" aria-labelledby="faq-form" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalLabel">Add FAQ</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <form action="{% url 'central_admin:faq_create' registration_slug=object.slug %}" method="post">
-                            <div class="modal-body">
-                                {% csrf_token %}
-                                {{faq_form.as_p | safe}}
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Add now</button>
-                            </div>
-                        </form>
+      </div>
+      <div class="card mt-2">
+        <div class="card-body">
+          <div class="head mb-3">
+            <h6 class="card-title" style="font-weight:400;">Add FAQ</h6>
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#faq-form"><i
+                class="fa-solid fa-plus"></i></button>
+            <div class="modal fade" id="faq-form" tabindex="-1" aria-labelledby="faq-form" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Add FAQ</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <form action="{% url 'central_admin:faq_create' registration_slug=object.slug %}" method="post">
+                    <div class="modal-body">
+                      {% csrf_token %}
+                      {{faq_form.as_p | safe}}
                     </div>
-                </div>
-            </div>
-            </div>
-            <div class="accordion" id="accordionExample">
-                {% if object.faqs.all %}
-                {% for faq in object.faqs.all %}
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" style="outline: none !important; box-shadow: none;"
-                            type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{faq.pk}}"
-                            aria-controls="flush-collapseOne{{faq.pk}}">
-                            <div class="w-100">
-                                <div class="text-body-default-bold mb-0">
-                                    {{faq.question}}
-                                </div>
-                            </div>
-                        </button>
-                    </h2>
-                    <div id="flush-collapseOne{{faq.pk}}" class="accordion-collapse collapse"
-                        data-bs-parent="#accordionFlushExample">
-                        <div class="accordion-body">
-                            <div class="mb-3">
-                                {{faq.answer}}
-                            </div>
-                            <form action="{% url 'central_admin:faq_delete' registration_slug=object.slug faq_slug=faq.slug %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        </div>
+                    <div class="modal-footer">
+                      <button type="submit" class="btn btn-primary">Add now</button>
                     </div>
+                  </form>
                 </div>
-                {% endfor %}
-                {% else %}
-                <div class="w-100 p-3 text-center">
-                    <span class="text-muted">No faqs added yet</span>
-                </div>
-                {% endif %}
+              </div>
             </div>
+          </div>
+          <div class="accordion" id="accordionExample">
+            {% if object.faqs.all %}
+            {% for faq in object.faqs.all %}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" style="outline: none !important; box-shadow: none;"
+                  type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{faq.pk}}"
+                  aria-controls="flush-collapseOne{{faq.pk}}">
+                  <div class="w-100">
+                    <div class="text-body-default-bold mb-0">
+                      {{faq.question}}
+                    </div>
+                  </div>
+                </button>
+              </h2>
+              <div id="flush-collapseOne{{faq.pk}}" class="accordion-collapse collapse"
+                data-bs-parent="#accordionFlushExample">
+                <div class="accordion-body">
+                  <div class="mb-3">
+                    {{faq.answer}}
+                  </div>
+                  <form action="{% url 'central_admin:faq_delete' registration_slug=object.slug faq_slug=faq.slug %}"
+                    method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="w-100 p-3 text-center">
+              <span class="text-muted">No faqs added yet</span>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
 {% endblock content %}
+
+{% block scripts %}
+<script>
+  function copyLink() {
+    var copyText = document.getElementById("link-input");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    alert("Copied the text: " + copyText.value);
+  }
+</script>
+{% endblock scripts %}

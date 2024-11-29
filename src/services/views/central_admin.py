@@ -256,6 +256,8 @@ class RegistrationUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['faq_form'] = FAQForm
+        context['protocol'] = self.request.scheme
+        context['domain'] = self.request.get_host()
         return context
     
     def get_success_url(self):

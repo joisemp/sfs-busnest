@@ -237,6 +237,11 @@
 #registeration-update .registration-setting .wrap .link-box {
   padding: 15px 0px;
 }
+#registeration-update .registration-setting .wrap .link-box .link-input {
+  border: none;
+  border-radius: 0;
+  background-color: #f3f8ff;
+}
 #registeration-update .registration-setting .wrap .link-box .button {
   display: flex;
   margin-top: 16px;
