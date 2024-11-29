@@ -10,12 +10,12 @@
 {% endblock sidebar %}
 
 {% block content %}
-<h2>Are you sure you want to remove {{ object.first_name }}?</h2>
+<h4>Are you sure you want to remove {{ object.first_name }} {{ object.last_name }}?</h4>
 <p>This action cannot be undone.</p>
 
 <form method="post">
     {% csrf_token %}
-    <button class="btn btn-danger" type="submit">Yes remove</button>
-    <a href="{% url 'central_admin:institution_list' %}">Cancel</a>
+    <button class="btn btn-danger me-2" type="submit">Yes remove</button>
+    <a class="btn text-primary" href="{% url 'central_admin:people_list' %}">Cancel</a>
 </form>
 {% endblock %}
