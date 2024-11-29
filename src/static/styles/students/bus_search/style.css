@@ -106,4 +106,65 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   margin-top: 67px;
   padding-top: 3rem;
   padding-bottom: 3rem;
+}
+
+#student-bus-search-form #form-section {
+  padding-top: 3rem;
+  margin-bottom: 3rem;
+}
+#student-bus-search-form #form-section .wrap {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+#student-bus-search-form #form-section .wrap .card {
+  display: flex;
+  width: 100%;
+  height: -moz-fit-content;
+  height: fit-content;
+  padding: 10px;
+}
+#student-bus-search-form #form-section .wrap .card .form {
+  width: 100%;
+}
+#student-bus-search-form #form-section .wrap .card .form h2 {
+  color: #4f46e5;
+  font-weight: 503;
+}
+#student-bus-search-form #form-section .wrap .card .form .form-select {
+  background-color: #f1f5f9;
+}
+#student-bus-search-form #form-section .student-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+@media screen and (max-width: 990px) {
+  #student-bus-search-form #form-section .student-image {
+    margin-top: 2rem;
+  }
+}
+#student-bus-search-form #form-section .student-image .image {
+  width: 100%;
+  height: -moz-fit-content;
+  height: fit-content;
+}
+#student-bus-search-form #form-section .student-image .image .school {
+  -o-object-fit: cover;
+     object-fit: cover;
+  width: 100%;
+  height: 390px;
+  border-radius: 5px;
+}
+#student-bus-search-form #faq-instruction {
+  padding-bottom: 3rem;
+}
+#student-bus-search-form #faq-instruction .frequently-section {
+  margin-top: 3rem !important;
+}
+#student-bus-search-form #faq-instruction .frequently-section .Instruction {
+  margin-bottom: 2rem !important;
+}
+#student-bus-search-form #faq-instruction .frequently-section .Instruction h3 {
+  font-weight: 510;
 }/*# sourceMappingURL=style.css.map */

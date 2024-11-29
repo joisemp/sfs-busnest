@@ -10,14 +10,30 @@
 Hello world
 {% endblock title %}
 
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
 {% block content %}
-<h1>Hello world</h1>
-<p>{{request.user.profile.first_name}} {{request.user.profile.last_name}}</p>
-{% if request.user.is_authenticated %}
-<a href="{% url 'central_admin:institution_list' %}">Admin Institutions</a>
-<a href="{% url 'core:logout' %}">Logout</a>
-{% else %}
-<a href="{% url 'core:login' %}">Login</a>
-<a href="{% url 'core:register' %}">Register now</a>
-{% endif %}
+
+<section id="landing-page">
+    <div class="row">
+        <div class="column col-12 col-lg">
+            <div class="board-info">
+                <div>
+                    <h1>Moving minds,delivering dreams</h1>
+                    <p>Transport made simple,experience,amplified</p>
+                    <button class="btn btn-light btn-sm">Register now</button>
+                    <button class="btn btn-outline-light btn-sm">Login</button>
+                </div>
+            </div>
+        </div>
+        <div class="column col-12 col-lg mb-3">
+            <div class="landing-image">
+                <img class="land" src="{% static 'images/landing.png' %}">
+            </div>
+        </div>
+    </div>
+</section>
+
 {% endblock content %}

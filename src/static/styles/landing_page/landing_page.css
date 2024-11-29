@@ -80,4 +80,28 @@
 }
 .link:hover, .link:focus, .link:active {
   color: #291fd9;
+}
+
+.bg-light {
+  background-color: #4f46e5 !important;
+}
+.bg-light #landing-page {
+  margin-top: 5rem;
+  color: white;
+}
+.bg-light #landing-page .board-info {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  align-items: center;
+}
+.bg-light #landing-page .board-info h1 {
+  font-weight: 520;
+}
+.bg-light .landing-image .land {
+  width: 100%;
+  max-height: 374px;
+  -o-object-fit: cover;
+     object-fit: cover;
+  margin-top: 3rem;
 }/*# sourceMappingURL=landing_page.css.map */

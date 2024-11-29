@@ -224,4 +224,14 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+#ticket-list #offcanvasRightLabel {
+  color: #4f46e5;
+  font-weight: 503;
+  font-size: 31px;
+}
+#ticket-list .Registrations .table-responsive .table thead .font {
+  color: #94a3b8;
+  font-weight: 502;
 }/*# sourceMappingURL=style.css.map */
