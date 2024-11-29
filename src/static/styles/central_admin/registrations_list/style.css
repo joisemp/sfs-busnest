@@ -224,4 +224,28 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+#registration-list .wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+@media screen and (max-width: 805px) {
+  #registration-list .wrap {
+    justify-content: center;
+  }
+}
+#registration-list .wrap .card-wrap {
+  max-width: 20rem;
+  width: 100%;
+  margin: 5px;
+}
+@media screen and (max-width: 805px) {
+  #registration-list .wrap .card-wrap {
+    max-width: 26rem;
+  }
+}
+#registration-list .wrap .card-wrap .card {
+  width: 100%;
+  padding: 30px 20px;
 }/*# sourceMappingURL=style.css.map */
