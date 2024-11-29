@@ -231,15 +231,19 @@
   justify-content: space-between;
   align-items: center;
 }
-#routes .title-section h1 {
+#routes .title-section h3 {
   color: #4f46e5;
+  font-weight: 700;
+}
+#routes .title-section .dropdown .dropdown-menu .dropdown-item {
+  padding: 1rem;
 }
 #routes .route-list .table-responsive {
   display: flex;
   padding: 1rem 0;
 }
 #routes .route-list .table-responsive .card {
-  width: 25rem;
+  width: 20rem;
 }
 
 #stops .title-section {
@@ -247,8 +251,9 @@
   align-items: center;
   justify-content: space-between;
 }
-#stops .title-section h1 {
+#stops .title-section h3 {
   color: #4f46e5;
+  font-weight: 700;
 }
 #stops .title-section input {
   border-radius: 5px;
