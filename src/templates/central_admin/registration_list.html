@@ -21,26 +21,38 @@
         </form>
     </div>
 </div>
-{% for registration in registrations %}
 <section id="registration-list">
     <div class="wrap">
+        {% if registrations %}
+        {% for registration in registrations %}
         <div class="card-wrap">
             <div class="card">
                 <div class="mb-3">
                     <div class="mb-3">
-                        <h5 class="card-title">Academic Year 2023-24</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">Open</h6>
+                        <h5 class="card-title">{{registration.name}}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            {% if registration.status %}
+                            Open
+                            {% else %}
+                            Closed
+                            {% endif %}
+                        </h6>
                     </div>
                 </div>
                 <div class="d-flex justify-content-end">
                     <div class="button-block d-flex">
-                        <a href="#" class="btn btn-outline btn-sm me-2">Archeive<i class="fa-solid fa-box-archive ms-2"></i></a>
-                        <a href="#" class="btn btn-outline btn-sm">View<i class="fa-solid fa-arrow-right ms-2"></i></a>
+                        <a href="{% url 'central_admin:registration_delete' slug=registration.slug %}" class="btn text-danger btn-sm me-3">Archeive<i class="fa-solid fa-box-archive ms-2"></i></a>
+                        <a href="{% url 'central_admin:registration_detail' slug=registration.slug %}" class="btn btn-sm btn-dark">View<i class="fa-solid fa-arrow-right ms-2"></i></a>
                     </div>
                 </div> 
             </div>
         </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center w-100">
+            <span class="text-muted">No registration created yet</span>
+        </div>
+        {% endif %}
     </div>
 </section>
-{% endfor %}
 {% endblock content %}
