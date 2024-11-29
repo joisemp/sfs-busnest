@@ -275,8 +275,13 @@ class TicketListView(ListView):
     
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
-        registration = get_object_or_404(Registration, slug=registration_slug)
-        return Ticket.objects.filter(registration=registration).order_by('-created_at')
+        self.registration = get_object_or_404(Registration, slug=registration_slug)
+        return Ticket.objects.filter(registration=self.registration).order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.registration
+        return context
     
 
 class FAQCreateView(CreateView):

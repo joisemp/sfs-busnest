@@ -12,260 +12,198 @@
 {% block content %}
 
 <section id="ticket-list">
-    <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
-      <div>
-         <a class="btn btn-outline-dark"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-      </div>
-      <div>
-          <form  role="search">
-              <div class="d-flex">
-                  <div class="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                  </div>
-                  <div class="button ms-2">
-                    <button class="btn btn-outline-primary" type="submit">Search<i class="fa-solid fa-magnifying-glass ms-3"></i></button>
-                  </div>
-                  <button class="btn btn-primary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">Filter</button>
-                  <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-                      <div class="offcanvas-header">
-                        <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                      </div>
-                      <div class="offcanvas-body">
-                          <h5>School/College</h5>
-                          <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                                <label class="form-check-label" for="flexCheckDefault">
-                                  SFS Public School
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  SFS College
-                                </label>
-                              </div>
-                          </div>
-                          
-                          <h5>Select stops</h5>
-                          <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                                <label class="form-check-label" for="flexCheckDefault">
-                                  Electronic city
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  Anekal
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  Hosur
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                Hosa road
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" >
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  Madiwala
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  Bommansandra
-                                </label>
-                              </div>
-                          </div>
-                          
-                          <h5>Timming</h5>
-                          <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                                <label class="form-check-label" for="flexCheckDefault">
-                                 Morning/Evening
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  Afternoon
-                                </label>
-                              </div>
-                          </div>
-                          <h5>Class</h5>
-                          <div class="mb-3">
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                                <label class="form-check-label" for="flexCheckDefault">
-                                X
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                <label class="form-check-label" for="flexCheckChecked">
-                                  IX
-                                </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                  VIII
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                      VII
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                   VI
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                      V
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                      IV
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                      III
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                      II
-                                  </label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                                  <label class="form-check-label" for="flexCheckChecked">
-                                      I
-                                  </label>
-                              </div>
-                          </div>
-                      </div>       
-                  </div>
-              </div>
-          </form>
-        
-      </div>
-  </div>
- 
-  <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th scope="col" class="font">Name</th>
-            <th scope="col" class="font">School</th>
-            <th scope="col" class="font">Class</th>
-            <th scope="col" class="font">Timming</th>
-            <th scope="col" class="font">Booking</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-          <tr>
-            <td>Naman Kumar</td>
-            <td>SFS Public School</td>
-            <td>X</td>
-            <td>Morning/Evening</td>
-            <td>3KDFK32</td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
+    <div>
+      <a href="{% url 'central_admin:registration_detail' slug=registration.slug %}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
     </div>
-  </section>
+    <div>
+      <form role="search">
+        <div class="d-flex">
+          <div class="search">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          </div>
+          <div class="button ms-2">
+            <button class="btn btn-secondary" type="submit">Search<i
+                class="fa-solid fa-magnifying-glass ms-2"></i></button>
+          </div>
+          <button class="btn btn-primary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
+            aria-controls="offcanvasRight">Filter <i class="fa-solid fa-filter ms-2"></i></button>
+          <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+            <div class="offcanvas-header">
+              <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+              <h5>School/College</h5>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
+                  <label class="form-check-label" for="flexCheckDefault">
+                    SFS Public School
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    SFS College
+                  </label>
+                </div>
+              </div>
+
+              <h5>Select stops</h5>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
+                  <label class="form-check-label" for="flexCheckDefault">
+                    Electronic city
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Anekal
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Hosur
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Hosa road
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Madiwala
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Bommansandra
+                  </label>
+                </div>
+              </div>
+
+              <h5>Timming</h5>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
+                  <label class="form-check-label" for="flexCheckDefault">
+                    Morning/Evening
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Afternoon
+                  </label>
+                </div>
+              </div>
+              <h5>Class</h5>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
+                  <label class="form-check-label" for="flexCheckDefault">
+                    X
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    IX
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    VIII
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    VII
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    VI
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    V
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    IV
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    III
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    II
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
+                  <label class="form-check-label" for="flexCheckChecked">
+                    I
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" class="font">Student ID</th>
+          <th scope="col" class="font">Name</th>
+          <th scope="col" class="font">School</th>
+          <th scope="col" class="font">Class</th>
+          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Pickup</th>
+          <th scope="col" class="font">Drop</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr>
+          <td>{{ticket.student_id}}</td>
+          <td>{{ticket.student_name}}</td>
+          <td>{{ticket.institution.name}}</td>
+          <td>{{ticket.recipt.student_group.name}}</td>
+          <td>{{ticket.time_slot.name}}</td>
+          <td>{{ticket.pickup_point}}</td>
+          <td>{{ticket.drop_point}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 
 {% endblock content %}
