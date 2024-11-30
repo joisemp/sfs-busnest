@@ -12,12 +12,40 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="{% url 'institution_admin:receipt_create' %}" class="btn btn-primary">Add receipt</a>
+        <a href="{% url 'institution_admin:receipt_create' %}" class="btn btn-primary"><i
+                class="fa-solid fa-plus me-2"></i>Add receipt</a>
     </div>
 </div>
-{% for receipt in receipts %}
-<li>
-{{receipt.receipt_id}} <a href="{% url 'institution_admin:receipt_delete' receipt_slug=receipt.slug %}" class="btn btn-danger btn-sm">Delete</a>
-</li>
-{% endfor %}
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <td class="text-muted">Student ID</td>
+                <td class="text-muted">Reciept ID</td>
+                <td class="text-muted">Student group</td>
+                <td class="text-muted">Action</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receipt in receipts %}
+            <tr>
+                <td>
+                    {{receipt.student_id}}
+                </td>
+                <td>
+                    {{receipt.receipt_id}}
+                </td>
+                <td>
+                    {{receipt.student_group}}
+                </td>
+                <td>
+                    <a href="{% url 'institution_admin:receipt_delete' receipt_slug=receipt.slug %}"
+                        class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock content %}

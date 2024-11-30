@@ -1,1 +1,8 @@
 @import '../../sidebar_navbar_base';
+
+tbody, td, tfoot, th, thead, tr {
+    background: #ffffff00 !important;
+    white-space: nowrap;
+    padding: 1rem;
+    font-weight: 500;
+}
