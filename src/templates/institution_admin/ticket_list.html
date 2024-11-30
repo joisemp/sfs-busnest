@@ -12,200 +12,138 @@
 {% block content %}
 
 <section id="ticket-list">
-    <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
-      <div>
-        <a href="{% url 'institution_admin:registration_list' %}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-      </div>
-      <div>
-        <form role="search">
-          <div class="d-flex">
-            <div class="search">
-              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-            </div>
-            <div class="button ms-2">
-              <button class="btn btn-secondary" type="submit">Search<i
-                  class="fa-solid fa-magnifying-glass ms-2"></i></button>
-            </div>
-            <button class="btn btn-primary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
-              aria-controls="offcanvasRight">Filter <i class="fa-solid fa-filter ms-2"></i></button>
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-              <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
+    <div>
+      <a href="{% url 'institution_admin:registration_list' %}" class="btn btn-dark"><i
+          class="fa-solid fa-arrow-left me-2"></i>Back</a>
+    </div>
+    <div>
+      {% if filters %}
+
+      <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}" class="btn btn-primary">Clear Filters</a>
+      {% else %}
+      <div class="d-flex flex-wrap">
+        <div>
+          <form role="search">
+            <div class="d-flex">
+              <div class="search">
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
               </div>
-              <div class="offcanvas-body">
-                <h5>School/College</h5>
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                    <label class="form-check-label" for="flexCheckDefault">
-                      SFS Public School
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      SFS College
-                    </label>
-                  </div>
-                </div>
-  
-                <h5>Select stops</h5>
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                    <label class="form-check-label" for="flexCheckDefault">
-                      Electronic city
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      Anekal
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      Hosur
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      Hosa road
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      Madiwala
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      Bommansandra
-                    </label>
-                  </div>
-                </div>
-  
-                <h5>Timming</h5>
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                    <label class="form-check-label" for="flexCheckDefault">
-                      Morning/Evening
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      Afternoon
-                    </label>
-                  </div>
-                </div>
-                <h5>Class</h5>
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                    <label class="form-check-label" for="flexCheckDefault">
-                      X
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      IX
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      VIII
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      VII
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      VI
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      V
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      IV
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      III
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      II
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">
-                    <label class="form-check-label" for="flexCheckChecked">
-                      I
-                    </label>
-                  </div>
-                </div>
+              <div class="button ms-2">
+                <button class="btn btn-secondary" type="submit">Search<i
+                    class="fa-solid fa-magnifying-glass ms-2"></i></button>
               </div>
             </div>
-          </div>
-        </form>
-  
+          </form>
+        </div>
+        <div>
+          <button class="btn btn-primary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
+            aria-controls="offcanvasRight">Filter <i class="fa-solid fa-filter ms-2"></i></button>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+
+          <form method="GET" class="p-3 bg-light border rounded">
+            <!-- Pickup Point Checkboxes -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Pickup Point</label>
+              <div id="pickup_points" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="pickup_point" value="" class="form-check-input"> All
+                </label><br>
+                {% for stop in pickup_points %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="pickup_point" value="{{ stop.id }}" class="form-check-input">
+                  {{ stop.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Time Slot Radio Buttons -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Timing</label>
+              <div id="time_slots" class="form-check">
+                <label class="form-check-label">
+                  <input type="radio" name="time_slot" value="" class="form-check-input"> All
+                </label><br>
+                {% for time_slot in time_slots %}
+                <label class="form-check-label">
+                  <input type="radio" name="time_slot" value="{{ time_slot.id }}" class="form-check-input">
+                  {{ time_slot.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Student Group Checkboxes -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Class</label>
+              <div id="student_groups" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="student_group" value="" class="form-check-input"> All
+                </label><br>
+                {% for group in student_groups %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="student_group" value="{{ group.id }}" class="form-check-input">
+                  {{ group.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+          </form>
+
+        </div>
       </div>
     </div>
-  
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th scope="col" class="font">Student ID</th>
-            <th scope="col" class="font">Name</th>
-            <th scope="col" class="font">Class</th>
-            <th scope="col" class="font">Timming</th>
-            <th scope="col" class="font">Pickup</th>
-            <th scope="col" class="font">Drop</th>
-            <th scope="col" class="font">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ticket in tickets %}
-          <tr>
-            <td>{{ticket.student_id}}</td>
-            <td>{{ticket.student_name}}</td>
-            <td>{{ticket.recipt.student_group.name}}</td>
-            <td>{{ticket.time_slot.name}}</td>
-            <td>{{ticket.pickup_point}}</td>
-            <td>{{ticket.drop_point}}</td>
-            <td>
-                <a href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}" class="btn btn-sm btn-dark">Edit</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
+    </form>
+
+  </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" class="font">Student ID</th>
+          <th scope="col" class="font">Name</th>
+          <th scope="col" class="font">Class</th>
+          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Pickup</th>
+          <th scope="col" class="font">Drop</th>
+          <th scope="col" class="font">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr>
+          <td>{{ticket.student_id}}</td>
+          <td>{{ticket.student_name}}</td>
+          <td>{{ticket.recipt.student_group.name}}</td>
+          <td>{{ticket.time_slot.name}}</td>
+          <td>{{ticket.pickup_point}}</td>
+          <td>{{ticket.drop_point}}</td>
+          <td>
+            <a href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"
+              class="btn btn-sm btn-dark">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 
 {% endblock content %}
