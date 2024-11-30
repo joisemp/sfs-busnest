@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from services.models import Institution, Bus, Stop, Route, Registration, Ticket, FAQ
+from services.models import Institution, Bus, Stop, Route, Registration, StudentGroup, Ticket, FAQ, TimeSlot
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -278,11 +278,51 @@ class TicketListView(ListView):
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
-        return Ticket.objects.filter(registration=self.registration).order_by('-created_at')
+        
+        # Base queryset filtered by registration and institution
+        queryset = Ticket.objects.filter(registration=self.registration).order_by('-created_at')
+        
+        # Apply filters based on GET parameters
+        institution = self.request.GET.get('institution')
+        pickup_points = self.request.GET.getlist('pickup_point')
+        drop_points = self.request.GET.getlist('drop_point')
+        time_slot = self.request.GET.get('time_slot')
+        student_group = self.request.GET.get('student_group')
+        filters = False  # Default no filters applied
+
+        # Apply filters based on GET parameters and update the filters flag
+        if institution:
+            queryset = queryset.filter(institution_id=institution)
+            filters = True
+        if pickup_points and not pickup_points == ['']:
+            queryset = queryset.filter(pickup_point_id__in=pickup_points)
+            filters = True
+        if drop_points and not drop_points == ['']:
+            queryset = queryset.filter(drop_point_id__in=drop_points)
+            filters = True
+        if time_slot:
+            queryset = queryset.filter(time_slot_id=time_slot)
+            filters = True
+        
+        # Pass the filters flag to context (done in get_context_data)
+        self.filters = filters  # Store in the instance for later access
+
+        return queryset
     
     def get_context_data(self, **kwargs):
+        # Get default context from parent
         context = super().get_context_data(**kwargs)
+        
+        # Add the filter status to the context
+        context['filters'] = self.filters  # Pass the filters flag to the template
+        
+        # Add the filter options to the context
         context['registration'] = self.registration
+        context['pickup_points'] = Stop.objects.all()
+        context['drop_points'] = Stop.objects.all()
+        context['time_slots'] = TimeSlot.objects.all()
+        context['institutions'] = Institution.objects.filter(org=self.registration.org)
+
         return context
     
 

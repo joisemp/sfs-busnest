@@ -126,11 +126,13 @@ class BusBookingView(CreateView):
         receipt_id = self.request.session.get('receipt_id')
         std_id = self.request.session.get('student_id')
         time_slot_id = self.request.session.get('time_slot')
+        receipt = get_object_or_404(Receipt, id=receipt_id)
         
         ticket.pickup_point = stop
         ticket.drop_point = stop
-        ticket.recipt = get_object_or_404(Receipt, id=receipt_id)
+        ticket.recipt = receipt
         ticket.student_id = std_id
+        ticket.student_group = receipt.student_group
         ticket.time_slot = get_object_or_404(TimeSlot, id=time_slot_id)
         ticket.registration = registration
         ticket.org = registration.org

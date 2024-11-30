@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/institution_admin/registrations_list/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/central_admin/registrations_list/style.css' %}">
 {% endblock style %}
 
 {% block sidebar %}
@@ -10,15 +10,45 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
+<div class="d-flex justify-content-between  align-items-center mb-3">
     <div>
-        <a href="#" class="btn btn-primary">New registration</a>
+        <form class="d-flex" role="search">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-dark" type="submit">Search<i class="fa-solid fa-magnifying-glass ms-3"></i></button>
+        </form>
     </div>
 </div>
-{% for registration in registrations %}
-<li>
-<a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}">{{registration}} </a>
-<a class="btn btn-sm btn-dark ms-2" href="#">Edit</a> | <a class="btn btn-sm btn-danger" href="{% url 'central_admin:registration_delete' slug=registration.slug %}">Delete</a>
-</li>
-{% endfor %}
+<section id="registration-list">
+    <div class="wrap">
+        {% if registrations %}
+        {% for registration in registrations %}
+        <div class="card-wrap">
+            <div class="card">
+                <div class="mb-3">
+                    <div class="mb-3">
+                        <h5 class="card-title">{{registration.name}}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            {% if registration.status %}
+                            Open
+                            {% else %}
+                            Closed
+                            {% endif %}
+                        </h6>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="button-block d-flex">
+                        <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}" class="btn btn-sm btn-dark">View<i class="fa-solid fa-arrow-right ms-2"></i></a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center w-100">
+            <span class="text-muted">No registration created yet</span>
+        </div>
+        {% endif %}
+    </div>
+</section>
 {% endblock content %}

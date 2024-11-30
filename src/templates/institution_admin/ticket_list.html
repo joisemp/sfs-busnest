@@ -10,9 +10,157 @@
 {% endblock sidebar %}
 
 {% block content %}
-{% for ticket in tickets %}
-<li>
-{{ticket}} - <a href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}" class="btn btn-sm btn-dark">Edit</a>
-</li>
-{% endfor %}
+
+<section id="ticket-list">
+  <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
+    <div>
+      <a href="{% url 'institution_admin:registration_list' %}" class="btn btn-dark"><i
+          class="fa-solid fa-arrow-left me-2"></i>Back</a>
+    </div>
+    <div>
+      {% if filters %}
+      <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}"
+        class="btn btn-primary">Clear Filters</a>
+      {% else %}
+      <div class="d-flex flex-wrap">
+        <div>
+          <form role="search">
+            <div class="d-flex">
+              <div class="search">
+                <input class="form-control me-2" type="search" name="search" placeholder="Search" aria-label="Search">
+              </div>
+              <div class="button ms-2">
+                <button class="btn btn-secondary" type="submit">Search<i
+                    class="fa-solid fa-magnifying-glass ms-2"></i></button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div>
+          <button class="btn btn-primary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
+            aria-controls="offcanvasRight">Filter <i class="fa-solid fa-filter ms-2"></i></button>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+
+          <form method="GET" class="p-3 bg-light border rounded">
+
+            <!-- Pickup Point Checkboxes -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Pickup Point</label>
+              <div id="pickup_points" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="pickup_point" value="" class="form-check-input"> All
+                </label><br>
+                {% for stop in pickup_points %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="pickup_point" value="{{ stop.id }}" class="form-check-input">
+                  {{ stop.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Drop Point Checkboxes -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Drop Point</label>
+              <div id="drop_points" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="drop_point" value="" class="form-check-input"> All
+                </label><br>
+                {% for stop in drop_points %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="drop_point" value="{{ stop.id }}" class="form-check-input">
+                  {{ stop.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Time Slot Radio Buttons -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Timing</label>
+              <div id="time_slots" class="form-check">
+                <label class="form-check-label">
+                  <input type="radio" name="time_slot" value="" class="form-check-input"> All
+                </label><br>
+                {% for time_slot in time_slots %}
+                <label class="form-check-label">
+                  <input type="radio" name="time_slot" value="{{ time_slot.id }}" class="form-check-input">
+                  {{ time_slot.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Student Group Checkboxes -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Group</label>
+              <div id="student_groups" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="student_group" value="" class="form-check-input"> All
+                </label><br>
+                {% for group in student_groups %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="student_group" value="{{ group.id }}" class="form-check-input">
+                  {{ group.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+    </form>
+
+  </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" class="font">Student ID</th>
+          <th scope="col" class="font">Name</th>
+          <th scope="col" class="font">Class</th>
+          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Pickup</th>
+          <th scope="col" class="font">Drop</th>
+          <th scope="col" class="font">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr>
+          <td>{{ticket.student_id}}</td>
+          <td>{{ticket.student_name}}</td>
+          <td>{{ticket.recipt.student_group.name}}</td>
+          <td>{{ticket.time_slot.name}}</td>
+          <td>{{ticket.pickup_point}}</td>
+          <td>{{ticket.drop_point}}</td>
+          <td>
+            <a href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"
+              class="btn btn-sm btn-outline-dark"><i class="fa-solid fa-pen-to-square me-2"></i>Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
 {% endblock content %}
