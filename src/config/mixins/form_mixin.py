@@ -55,10 +55,14 @@ class BootstrapFormMixin:
             if field.help_text:
                 help_text_html = f'<small class="form-text text-muted">{field.help_text}</small>'
 
-            # Build the form output as <p> tags
+            # Build the <p> tag for the field
+            label_html = ''
+            if bound_field.label:  # Only add the label if it is not an empty string
+                label_html = f'<label for="{bound_field.id_for_label}" class="mb-1 ps-1">{bound_field.label}</label>'
+
             output.append(f"""
             <p class="form-group">
-                <label for="{bound_field.id_for_label}" class="mb-1 ps-1">{bound_field.label}</label>
+                {label_html}
                 {bound_field}
                 {error_html}
                 {help_text_html}

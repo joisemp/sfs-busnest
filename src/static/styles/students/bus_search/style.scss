@@ -7,20 +7,26 @@
         .wrap{
             display: flex;
             align-items: center;
+            justify-content: center;
             height:100%;
             .card{
                 display: flex;
                 width: 100%;
+                max-width: 410px;
                 height: fit-content;
                 padding: 10px;
+                background-color: transparent;
+                border: none;
                 .form{
                     width:100%;
                     h2{
                         color:$indigo-600;
-                        font-weight: 503;
+                        font-weight: 700;
                     }
                     .form-select{
-                       background-color:$slate-100;
+                       background-color:$indigo-50;
+                       border: none;
+                       height: 50px;
                     }
                 }
         }

@@ -115,24 +115,30 @@ header .navbar .offcanvas-body .nav-item .nav-link {
 #student-bus-search-form #form-section .wrap {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
 }
 #student-bus-search-form #form-section .wrap .card {
   display: flex;
   width: 100%;
+  max-width: 410px;
   height: -moz-fit-content;
   height: fit-content;
   padding: 10px;
+  background-color: transparent;
+  border: none;
 }
 #student-bus-search-form #form-section .wrap .card .form {
   width: 100%;
 }
 #student-bus-search-form #form-section .wrap .card .form h2 {
   color: #4f46e5;
-  font-weight: 503;
+  font-weight: 700;
 }
 #student-bus-search-form #form-section .wrap .card .form .form-select {
-  background-color: #f1f5f9;
+  background-color: #eef2ff;
+  border: none;
+  height: 50px;
 }
 #student-bus-search-form #form-section .student-image {
   display: flex;

@@ -18,8 +18,8 @@ class BusSearchFormView(FormView):
 
     def form_valid(self, form):
         registration = self.get_registration()
-        pickup_point = form.cleaned_data['pickup_point']
-        drop_point = form.cleaned_data['drop_point']
+        pickup_point = form.cleaned_data['stop']
+        drop_point = form.cleaned_data['stop']
         time_slot = form.cleaned_data['time_slot']
 
         # Store search criteria in the session for passing to results view

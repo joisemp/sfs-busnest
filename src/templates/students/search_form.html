@@ -18,7 +18,8 @@
           <div class="wrap">
             <div class="card">
               <div class="form ">
-                <h2 class="mb-3">Book seat</h2>
+                <h2 class="mb-1">Book seat</h2>
+                <p class="text-muted mb-3">Select your stop and timing to find the buses available</p>
                  <form method="post">
                     {% csrf_token %}
                     {{ form.as_p|safe }}
@@ -30,7 +31,7 @@
           </div>
           </div>
         </div>
-        <div class="col-12 col-lg mb-3">
+        <div class="col-12 col-lg mb-3 d-none d-lg-block">
           <div class="student-image">
             <div class="image">
               <img class="school" src="https://img.freepik.com/premium-photo/poster-school-bus-with-children-carrying-school-supplies_783884-22482.jpg">
@@ -39,7 +40,7 @@
         </div>
       </div>
     </section>
-    <hr>
+    <!-- <hr>
     <section id="faq-instruction">
       <div class="frequently-section">
         <div class="Instruction">
@@ -89,7 +90,7 @@
         </div>
 
     </div>
-    </section>
+    </section> -->
   </section>
 
 {% endblock content %}
