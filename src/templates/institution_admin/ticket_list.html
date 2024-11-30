@@ -19,15 +19,15 @@
     </div>
     <div>
       {% if filters %}
-
-      <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}" class="btn btn-primary">Clear Filters</a>
+      <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}"
+        class="btn btn-primary">Clear Filters</a>
       {% else %}
       <div class="d-flex flex-wrap">
         <div>
           <form role="search">
             <div class="d-flex">
               <div class="search">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                <input class="form-control me-2" type="search" name="search" placeholder="Search" aria-label="Search">
               </div>
               <div class="button ms-2">
                 <button class="btn btn-secondary" type="submit">Search<i
