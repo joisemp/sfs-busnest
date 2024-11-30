@@ -18,17 +18,17 @@ Hello world
 
 <section id="landing-page">
     <div class="row">
-        <div class="column col-12 col-lg">
+        <div class="column col-12 col-lg-6">
             <div class="board-info">
-                <div>
-                    <h1>Moving minds,delivering dreams</h1>
-                    <p>Transport made simple,experience,amplified</p>
-                    <button class="btn btn-light btn-sm">Register now</button>
-                    <button class="btn btn-outline-light btn-sm">Login</button>
+                <div class="text-wrap">
+                    <h1>Moving minds, delivering dreams</h1>
+                    <p>Transport made simple, experience, amplified</p>
+                    <a href="{% url 'core:register' %}" class="btn btn-secondary">Register now</a>
+                    <a href="{% url 'core:login' %}" class="btn text-light">Login</a>
                 </div>
             </div>
         </div>
-        <div class="column col-12 col-lg mb-3">
+        <div class="column col-12 col-lg-6 mb-3">
             <div class="landing-image">
                 <img class="land" src="{% static 'images/landing.png' %}">
             </div>

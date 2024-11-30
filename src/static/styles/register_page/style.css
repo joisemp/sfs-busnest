@@ -82,88 +82,45 @@
   color: #291fd9;
 }
 
-header .navbar {
-  background-color: #4f46e5 !important;
-}
-header .navbar .offcanvas-body .nav-item {
-  padding: 0 1rem;
-}
-@media screen and (max-width: 991px) {
-  header .navbar .offcanvas-body .nav-item {
-    margin-bottom: 1rem;
-  }
-}
-header .navbar .offcanvas-body .nav-item .nav-link {
-  color: #ffffff;
-}
-@media screen and (max-width: 991px) {
-  header .navbar .offcanvas-body .nav-item .nav-link {
-    color: #000000;
-  }
-}
-
-.container {
-  margin-top: 67px;
-  padding-top: 3rem;
-  padding-bottom: 3rem;
-}
-
 .bg-light {
-  background-color: #4f46e5 !important;
+  background: #4f46e5 !important;
 }
-.bg-light .container {
-  margin-top: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-.bg-light #landing-page {
-  color: white;
-  margin-top: 6rem;
-}
-@media screen and (min-width: 992px) {
-  .bg-light #landing-page {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    margin-top: 0;
-  }
-}
-.bg-light #landing-page .board-info {
+.bg-light #login-page .wrapper {
   display: flex;
   justify-content: center;
-  height: 100%;
+}
+.bg-light #login-page .wrapper .outer {
   width: 100%;
-  align-items: center;
+  margin: 3rem 0;
+  max-width: 430px;
 }
-@media screen and (max-width: 991px) {
-  .bg-light #landing-page .board-info .text-wrap {
-    max-width: 570px;
-  }
-}
-.bg-light #landing-page .board-info h1 {
-  font-weight: 700;
-  font-size: 56px;
-}
-.bg-light #landing-page .board-info p {
-  margin-top: 0;
-  margin-bottom: 2rem;
-  font-size: 24px;
-}
-.bg-light #landing-page .board-info .btn-secondary {
-  font-weight: 700;
-}
-@media screen and (max-width: 991px) {
-  .bg-light .landing-image {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: center;
-  }
-}
-.bg-light .landing-image .land {
+.bg-light #login-page .wrapper .outer .flex-box {
   width: 100%;
-  max-width: 570px;
-  height: 520px;
-  border-radius: 10px;
-  -o-object-fit: cover;
-     object-fit: cover;
-}/*# sourceMappingURL=landing_page.css.map */
+  background: #ffffff;
+  border-radius: 5px;
+  padding: 15px;
+}
+.bg-light #login-page .wrapper .outer .flex-box .icon {
+  width: 100%;
+  text-align: center;
+  font-size: 43px;
+  margin-bottom: 1rem;
+}
+.bg-light #login-page .wrapper .outer .flex-box .form {
+  width: 100%;
+  background: #ffffff;
+}
+.bg-light #login-page .wrapper .outer .flex-box .form .footer a {
+  text-decoration: none;
+}
+.bg-light #login-page .wrapper .message {
+  width: 100%;
+  display: flex;
+  background: #ffffff;
+  border-radius: 5px;
+  padding: 25px 10px;
+  justify-content: center;
+}
+.bg-light #login-page .wrapper .message a {
+  text-decoration: none;
+}/*# sourceMappingURL=style.css.map */

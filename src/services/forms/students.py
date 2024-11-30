@@ -3,23 +3,19 @@ from services.models import Stop, TimeSlot, Ticket
 from config.mixins import form_mixin
 
 class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
-    pickup_point = forms.ModelChoiceField(
+    stop = forms.ModelChoiceField(
         queryset=Stop.objects.all(),
-        label="Pickup Point",
+        label="",
         required=True,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    drop_point = forms.ModelChoiceField(
-        queryset=Stop.objects.all(),
-        label="Drop Point",
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Select stop'
     )
     time_slot = forms.ModelChoiceField(
         queryset=TimeSlot.objects.all(),
-        label="Timing",
+        label="",
         required=True,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Select timing'
     )
     
 
