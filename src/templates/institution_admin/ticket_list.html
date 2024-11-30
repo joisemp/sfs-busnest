@@ -51,6 +51,7 @@
         <div class="offcanvas-body">
 
           <form method="GET" class="p-3 bg-light border rounded">
+
             <!-- Pickup Point Checkboxes -->
             <div class="mb-3">
               <label class="form-label fw-bold">Pickup Point</label>
@@ -61,6 +62,22 @@
                 {% for stop in pickup_points %}
                 <label class="form-check-label">
                   <input type="checkbox" name="pickup_point" value="{{ stop.id }}" class="form-check-input">
+                  {{ stop.name }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Drop Point Checkboxes -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Drop Point</label>
+              <div id="drop_points" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="drop_point" value="" class="form-check-input"> All
+                </label><br>
+                {% for stop in drop_points %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="drop_point" value="{{ stop.id }}" class="form-check-input">
                   {{ stop.name }}
                 </label><br>
                 {% endfor %}
@@ -85,7 +102,7 @@
 
             <!-- Student Group Checkboxes -->
             <div class="mb-3">
-              <label class="form-label fw-bold">Class</label>
+              <label class="form-label fw-bold">Group</label>
               <div id="student_groups" class="form-check">
                 <label class="form-check-label">
                   <input type="checkbox" name="student_group" value="" class="form-check-input"> All
@@ -137,7 +154,7 @@
           <td>{{ticket.drop_point}}</td>
           <td>
             <a href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"
-              class="btn btn-sm btn-dark">Edit</a>
+              class="btn btn-sm btn-outline-dark"><i class="fa-solid fa-pen-to-square me-2"></i>Edit</a>
           </td>
         </tr>
         {% endfor %}

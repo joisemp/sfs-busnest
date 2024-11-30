@@ -25,6 +25,7 @@ class TicketListView(ListView):
         
         # Apply filters based on GET parameters
         pickup_points = self.request.GET.getlist('pickup_point')
+        drop_points = self.request.GET.getlist('drop_point')
         time_slot = self.request.GET.get('time_slot')
         student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
@@ -32,6 +33,9 @@ class TicketListView(ListView):
         # Apply filters based on GET parameters and update the filters flag
         if pickup_points and not pickup_points == ['']:
             queryset = queryset.filter(pickup_point_id__in=pickup_points)
+            filters = True
+        if drop_points and not drop_points == ['']:
+            queryset = queryset.filter(drop_point_id__in=drop_points)
             filters = True
         if time_slot:
             queryset = queryset.filter(time_slot_id=time_slot)
@@ -55,6 +59,7 @@ class TicketListView(ListView):
         # Add the filter options to the context
         context['registration'] = self.registration
         context['pickup_points'] = Stop.objects.all()
+        context['drop_points'] = Stop.objects.all()
         context['time_slots'] = TimeSlot.objects.all()
         context['student_groups'] = StudentGroup.objects.all()
 
