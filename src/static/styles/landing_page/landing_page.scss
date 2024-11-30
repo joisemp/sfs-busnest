@@ -1,31 +1,62 @@
-@import '../base';
+@import '../logged_out_user_navbar';
 
 .bg-light {
     background-color: $indigo-600 !important;
 
+    .container{
+        margin-top: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
     #landing-page {
-        margin-top: 5rem;
         color: white;
+        margin-top: 6rem;
+        @media screen and (min-width: 992px) {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            margin-top: 0;
+        }
 
         .board-info {
             display: flex;
             justify-content: center;
             height: 100%;
+            width: 100%;
             align-items: center;
-            
-
+            @media screen and (max-width: 991px) {
+                .text-wrap {
+                    max-width: 570px;
+                }
+            }
             h1 {
-                font-weight: 520;
+                font-weight: 700;
+                font-size: 56px;
+            }
+            p {
+                margin-top: 0;
+                margin-bottom: 2rem;
+                font-size: 24px;
+            }
+            .btn-secondary {
+                font-weight: 700;
             }
         }
     }
 
     .landing-image {
+        @media screen and (max-width: 991px) {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+        }
         .land {
             width: 100%;
-            max-height: 374px;
+            max-width: 570px;
+            height: 520px;
+            border-radius: 10px;
             object-fit: cover;
-            margin-top: 3rem;
         }
     }
 }
