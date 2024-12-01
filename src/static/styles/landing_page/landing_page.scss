@@ -1,9 +1,16 @@
-@import '../logged_out_user_navbar';
+@import "../logged_out_user_navbar";
 
 .bg-light {
-    background-color: $indigo-600 !important;
+    background: rgb(120, 112, 255) !important;
+    background: linear-gradient(
+        0deg,
+        rgb(103, 96, 242) 0%,
+        rgb(103, 96, 242) 6%,
+        rgba(79, 70, 229, 1) 66%,
+        rgba(79, 70, 229, 1) 90%
+    ) !important;
 
-    .container{
+    .container {
         margin-top: 0;
         padding-top: 0;
         padding-bottom: 0;
