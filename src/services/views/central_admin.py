@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from services.models import Institution, Bus, Stop, Route, Registration, StudentGroup, Ticket, FAQ, TimeSlot
+from services.models import Institution, Bus, Stop, Route, Registration, Ticket, FAQ, TimeSlot
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -21,11 +21,20 @@ class InstitutionListView(ListView):
     model = Institution
     context_object_name = 'institutions'
     
+    def get_queryset(self):
+        queryset = Institution.objects.filter(org=self.request.user.profile.org)
+        return queryset
+    
 
 class InstitutionCreateView(CreateView):
     template_name = 'central_admin/institution_create.html'
     model = Institution
     form_class = InstitutionForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['incharge'].queryset = UserProfile.objects.filter(org=self.request.user.profile.org, is_institution_admin=True)
+        return form
     
     def form_valid(self, form):
         institution = form.save(commit=False)
@@ -40,6 +49,11 @@ class InstitutionUpdateView(UpdateView):
     form_class = InstitutionForm
     template_name = 'central_admin/institution_update.html'
     success_url = reverse_lazy('central_admin:institution_list')
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['incharge'].queryset = UserProfile.objects.filter(org=self.request.user.profile.org, is_institution_admin=True)
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -55,12 +69,22 @@ class BusListView(ListView):
     model = Bus
     template_name = 'central_admin/bus_list.html'
     context_object_name = 'buses'
+    
+    def get_queryset(self):
+        queryset = Bus.objects.filter(org=self.request.user.profile.org)
+        return queryset
 
 
 class BusCreateView(CreateView):
     template_name = 'central_admin/bus_create.html'
     model = Bus
     form_class = BusForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
+        form.fields['time_slot'].queryset = TimeSlot.objects.filter(org=self.request.user.profile.org)
+        return form
     
     def form_valid(self, form):
         bus = form.save(commit=False)
@@ -75,6 +99,12 @@ class BusUpdateView(UpdateView):
     form_class = BusForm
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
+        form.fields['time_slot'].queryset = TimeSlot.objects.filter(org=self.request.user.profile.org)
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -90,6 +120,10 @@ class PeopleListView(ListView):
     model = UserProfile
     template_name = 'central_admin/people_list.html'
     context_object_name = 'people'
+    
+    def get_queryset(self):
+        queryset = UserProfile.objects.filter(org=self.request.user.profile.org)
+        return queryset
     
 
 class PeopleCreateView(CreateView):
@@ -143,9 +177,13 @@ class RouteListView(ListView):
     template_name = 'central_admin/route_list.html'
     context_object_name = 'routes'
     
+    def get_queryset(self):
+        queryset = Route.objects.filter(org=self.request.user.profile.org)
+        return queryset
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["stops"] = Stop.objects.all()
+        context["stops"] = Stop.objects.filter(org=self.request.user.profile.org)
         return context
         
 
@@ -153,6 +191,11 @@ class RouteCreateView(CreateView):
     template_name = 'central_admin/route_create.html'
     model = Route
     form_class = RouteForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
+        return form
     
     def form_valid(self, form):
         route = form.save(commit=False)
@@ -168,6 +211,11 @@ class RouteUpdateView(UpdateView):
     form_class = RouteForm
     template_name = 'central_admin/route_update.html'
     success_url = reverse_lazy('central_admin:route_list')
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -203,11 +251,20 @@ class RegistraionListView(ListView):
     template_name = 'central_admin/registration_list.html'
     context_object_name = 'registrations'
     
+    def get_queryset(self):
+        queryset = Registration.objects.filter(org=self.request.user.profile.org)
+        return queryset
+    
     
 class RegistrationCreateView(CreateView):
     template_name = 'central_admin/registration_create.html'
     model = Registration
     form_class = RegistrationForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
+        return form
     
     def form_valid(self, form):
         registration = form.save(commit=False)
@@ -249,6 +306,11 @@ class RegistrationUpdateView(UpdateView):
     model = Registration
     form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -280,7 +342,7 @@ class TicketListView(ListView):
         self.registration = get_object_or_404(Registration, slug=registration_slug)
         
         # Base queryset filtered by registration and institution
-        queryset = Ticket.objects.filter(registration=self.registration).order_by('-created_at')
+        queryset = Ticket.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('-created_at')
         
         # Apply filters based on GET parameters
         institution = self.request.GET.get('institution')
@@ -318,9 +380,9 @@ class TicketListView(ListView):
         
         # Add the filter options to the context
         context['registration'] = self.registration
-        context['pickup_points'] = Stop.objects.all()
-        context['drop_points'] = Stop.objects.all()
-        context['time_slots'] = TimeSlot.objects.all()
+        context['pickup_points'] = Stop.objects.filter(org=self.registration.org)
+        context['drop_points'] = Stop.objects.filter(org=self.registration.org)
+        context['time_slots'] = TimeSlot.objects.filter(org=self.registration.org)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
 
         return context

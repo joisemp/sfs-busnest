@@ -1,10 +1,10 @@
 from django.db import transaction
-from django.forms import ValidationError
+from django.http import Http404
 from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
-from services.models import Registration, Bus, Ticket, TimeSlot, Receipt
+from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, Stop
 from django.db.models import Q, Count
 
 class BusSearchFormView(FormView):
@@ -15,9 +15,14 @@ class BusSearchFormView(FormView):
         """Fetch registration using the code from the URL."""
         registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all()
+        return form
 
     def form_valid(self, form):
-        registration = self.get_registration()
         pickup_point = form.cleaned_data['stop']
         drop_point = form.cleaned_data['stop']
         time_slot = form.cleaned_data['time_slot']
@@ -35,7 +40,7 @@ class BusSearchFormView(FormView):
         return context
 
     def get_success_url(self):
-        registration_code = self.kwargs.get('registration_code')
+        registration_code = self.get_registration().code
         return reverse('students:bus_search_results', kwargs={'registration_code': registration_code})
 
 

@@ -295,6 +295,7 @@
 #registration-dashobard .table-content .table td,
 #registration-dashobard .table-content .table th {
   white-space: nowrap;
+  padding: 1rem;
   background-color: rgba(201, 229, 226, 0);
 }
 #registration-dashobard .table-content .table th {

@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import FormView, ListView, CreateView, DeleteView, UpdateView
+from django.views.generic import ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, TimeSlot
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
@@ -8,6 +8,10 @@ class RegistrationListView(ListView):
     model = Registration
     template_name = 'institution_admin/registration_list.html'
     context_object_name = 'registrations'
+    
+    def get_queryset(self):
+        queryset = Registration.objects.filter(org=self.request.user.profile.org)
+        return queryset
     
 
 class TicketListView(ListView):
@@ -58,10 +62,19 @@ class TicketListView(ListView):
         
         # Add the filter options to the context
         context['registration'] = self.registration
-        context['pickup_points'] = Stop.objects.all()
-        context['drop_points'] = Stop.objects.all()
-        context['time_slots'] = TimeSlot.objects.all()
-        context['student_groups'] = StudentGroup.objects.all()
+        context['pickup_points'] = Stop.objects.filter(
+            org = self.request.user.profile.org
+        )
+        context['drop_points'] = Stop.objects.filter(
+            org = self.request.user.profile.org
+        )
+        context['time_slots'] = TimeSlot.objects.filter(
+            org = self.request.user.profile.org
+        )
+        context['student_groups'] = StudentGroup.objects.filter(
+            org = self.request.user.profile.org,
+            institution = self.request.user.profile.institution
+        )
 
         return context
 
@@ -73,10 +86,19 @@ class TicketUpdateView(UpdateView):
     slug_url_kwarg = 'ticket_slug'
 
     def form_valid(self, form):
+        ticket = form.save()
+        
+        if ticket.institution != ticket.recipt.institution:
+            ticket.recipt.institution = ticket.institution
+            ticket.recipt.save()
+            
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse('institution_admin:ticket_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+        return reverse(
+            'institution_admin:ticket_list', 
+            kwargs={'registration_slug': self.kwargs['registration_slug']}
+            )
 
 
 class ReceiptListView(ListView):
@@ -84,6 +106,12 @@ class ReceiptListView(ListView):
     template_name = 'institution_admin/receipt_list.html'
     context_object_name = 'receipts'
     
+    def get_queryset(self):
+        queryset = Receipt.objects.filter(
+            org=self.request.user.profile.org,
+            institution=self.request.user.profile.institution
+            )
+        return queryset
     
 class ReceiptCreateView(CreateView):
     template_name = 'institution_admin/receipt_create.html'
@@ -110,6 +138,13 @@ class StudentGroupListView(ListView):
     model = StudentGroup
     template_name = 'institution_admin/student_group_list.html'
     context_object_name = 'student_groups'  
+    
+    def get_queryset(self):
+        queryset = StudentGroup.objects.filter(
+            org = self.request.user.profile.org,
+            institution = self.request.user.profile.institution
+        )
+        return queryset
     
     
 class StudentGroupCreateView(CreateView):
