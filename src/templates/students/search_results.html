@@ -14,14 +14,15 @@
 <h4>Search Results for {{ registration.name }}</h4>
 
 {% if buses %}
-    <ul>
+    <div class="d-flex flex-wrap">
         {% for bus in buses %}
-        <li>
-            <strong>{{ bus.label }}</strong> ({{ bus.bus_no }}) - 
-            <a href="{% url 'students:validate_student' bus_slug=bus.slug registration_code=registration.code %}">Book Now</a>
-        </li>
+        <div class="card p-3 m-1" style="width: 300px;">
+            <h5>{{ bus.label }}</h5>
+            <span class="text-muted mb-3">{{ bus.bus_no }}</span>
+            <a class="btn btn-secondary" style="width: fit-content;" href="{% url 'students:validate_student' bus_slug=bus.slug registration_code=registration.code %}">Book Now</a>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
 {% else %}
     <p>No buses found matching your criteria. Please try again.</p>
     <a href="{% url 'students:bus_search' registration_code=registration.code %}" class="btn btn-secondary">Back to Search</a>
