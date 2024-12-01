@@ -73,6 +73,12 @@ class TicketUpdateView(UpdateView):
     slug_url_kwarg = 'ticket_slug'
 
     def form_valid(self, form):
+        ticket = form.save()
+        
+        if ticket.institution != ticket.recipt.institution:
+            ticket.recipt.institution = ticket.institution
+            ticket.recipt.save()
+            
         return super().form_valid(form)
     
     def get_success_url(self):
