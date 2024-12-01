@@ -7,12 +7,32 @@
         .wrap {
             width: 500px;
             margin-top: 12px;
+
+            .heading{
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                color: $indigo-600;
+            }
+
             .link-box {
                 padding: 15px 0px;
+                background: rgb(120, 112, 255) !important;
+                background: linear-gradient(
+                    0deg,
+                    rgb(103, 96, 242) 0%,
+                    rgb(103, 96, 242) 6%,
+                    rgba(79, 70, 229, 1) 66%,
+                    rgba(79, 70, 229, 1) 90%
+                ) !important;
+                h5 {
+                    color: #ffff;
+                }
+
                 .link-input {
                     border: none;
-                    border-radius: 0;
-                    background-color: #f3f8ff;
+                    border-radius: 3px;
+                    color: $slate-200;
+                    background-color: $indigo-500;
                 }
                 .button {
                     display: flex;
@@ -20,6 +40,23 @@
                     justify-content: right;
                 }
             }
+
+            .form-card{
+                .card{
+                    border: none !important;
+                    background-color: $indigo-50;
+                    padding: 0.5rem 0;
+                    label{
+                        font-weight: 600;
+                        padding-bottom: 6px;
+                    }
+                    .form-control{
+                        border: none;
+                        min-height: 50px;
+                    }
+                }
+            }
+            
             .form-check-input {
                 &:checked {
                     background-color: $indigo-600;
