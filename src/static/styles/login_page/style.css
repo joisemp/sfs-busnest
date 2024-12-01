@@ -124,4 +124,8 @@
 }
 .bg-light #login-page .wrapper .message a {
   text-decoration: none;
+}
+
+.form-control {
+  min-height: 42px;
 }/*# sourceMappingURL=style.css.map */
