@@ -234,18 +234,42 @@
   width: 500px;
   margin-top: 12px;
 }
+#registeration-update .registration-setting .wrap .heading {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #4f46e5;
+}
 #registeration-update .registration-setting .wrap .link-box {
   padding: 15px 0px;
+  background: rgb(120, 112, 255) !important;
+  background: linear-gradient(0deg, rgb(103, 96, 242) 0%, rgb(103, 96, 242) 6%, rgb(79, 70, 229) 66%, rgb(79, 70, 229) 90%) !important;
+}
+#registeration-update .registration-setting .wrap .link-box h5 {
+  color: white;
 }
 #registeration-update .registration-setting .wrap .link-box .link-input {
   border: none;
-  border-radius: 0;
-  background-color: #f3f8ff;
+  border-radius: 3px;
+  color: #e2e8f0;
+  background-color: #6366f1;
 }
 #registeration-update .registration-setting .wrap .link-box .button {
   display: flex;
   margin-top: 16px;
   justify-content: right;
+}
+#registeration-update .registration-setting .wrap .form-card .card {
+  border: none !important;
+  background-color: #eef2ff;
+  padding: 0.5rem 0;
+}
+#registeration-update .registration-setting .wrap .form-card .card label {
+  font-weight: 600;
+  padding-bottom: 6px;
+}
+#registeration-update .registration-setting .wrap .form-card .card .form-control {
+  border: none;
+  min-height: 50px;
 }
 #registeration-update .registration-setting .wrap .form-check-input:checked {
   background-color: #4f46e5;

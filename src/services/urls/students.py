@@ -5,9 +5,9 @@ app_name = 'students'
 
 
 urlpatterns = [
+     path('<str:registration_code>/', students.ValidateStudentFormView.as_view(), name='validate_student'),
      path('search-bus/<str:registration_code>/', students.BusSearchFormView.as_view(), name='bus_search'),
      path('bus-results/<str:registration_code>/', students.BusSearchResultsView.as_view(), name='bus_search_results'),
-     path('book/<slug:bus_slug>/<str:registration_code>/validate-student/', students.ValidateStudentFormView.as_view(), name='validate_student'),
      path('book/<slug:bus_slug>/<str:registration_code>/', students.BusBookingView.as_view(), name='book_bus'),
      path('book/success/', students.BusBookingSuccessView.as_view(), name='book_success'),
 

@@ -15,33 +15,37 @@
   <div class="registration-setting">
     <div class="wrap">
       <!-- link card -->
-      <div class="card link-box">
+      <div class="card link-box mb-3">
         <div class="card-body">
           <h5 class="card-title" style="font-weight: 502;">Link for Sharing</h5>
           <input class="w-100 link-input form-control" disabled type="text"
-            value="{{ protocol }}://{{ domain }}{% url 'students:bus_search' registration_code=object.code %}"
+            value="{{ protocol }}://{{ domain }}{% url 'students:validate_student' registration_code=object.code %}"
             id="link-input">
           <div class="button">
-            <a href="{% url 'students:bus_search' registration_code=object.code %}" target="_blank"
-              class="btn btn-sm btn-outline-dark card-link">View<i
+            <a href="{% url 'students:validate_student' registration_code=object.code %}" target="_blank"
+              class="btn btn-sm btn-outline-light card-link">View<i
                 class="fa-solid fa-arrow-up-right-from-square ms-2"></i></a>
-            <button class="btn btn-dark btn-sm card-link" onclick="copyLink()">Copy Link<i
+            <button class="btn btn-light btn-sm card-link" onclick="copyLink()">Copy Link<i
                 class="fa-regular fa-copy ms-2"></i></button>
           </div>
         </div>
       </div>
       <!-- form card -->
-      <div class="card form-card mt-2">
-        <div class="card-body">
-          <form action="" method="post">
-            {% csrf_token %}
-            {{form.as_p|safe}}
-            <div class="save-button">
-              <button class="btn btn-sm btn-primary">Save changes</button>
-            </div>
-          </form>
+      <h4 class="heading">Settings</h4>
+      <div class="form-card">
+        <div class="card mt-2">
+          <div class="card-body">
+            <form action="" method="post">
+              {% csrf_token %}
+              {{form.as_p|safe}}
+              <div class="save-button">
+                <button class="btn btn-sm btn-primary">Save changes</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
+<!-- 
       <div class="card mt-2">
         <div class="card-body">
           <div class="head mb-3">
@@ -106,6 +110,7 @@
           </div>
         </div>
       </div>
+       -->
     </div>
   </div>
 </section>

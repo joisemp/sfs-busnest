@@ -7,6 +7,45 @@ from services.forms.students import BusSearchForm, ValidateStudentForm, TicketFo
 from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, Stop
 from django.db.models import Q, Count
 
+
+class ValidateStudentFormView(FormView):
+    template_name = 'students/validate_student_form.html'
+    form_class = ValidateStudentForm  
+    
+    def form_valid(self, form):
+        try:
+            receipt_id = form.cleaned_data['receipt_id']
+            student_id = form.cleaned_data['student_id']
+            
+            # Validate receipt
+            receipt = Receipt.objects.get(receipt_id=receipt_id, student_id=student_id)
+
+            # Store details in the session
+            self.request.session['receipt_id'] = receipt.pk
+            self.request.session['student_id'] = receipt.student_id
+
+            # Check if a ticket already exists for this receipt
+            if Ticket.objects.filter(recipt_id=receipt.pk).exists():
+                form.add_error(None, "A ticket already exists for this receipt.")
+                return self.form_invalid(form)
+
+            return super().form_valid(form)
+
+        except Receipt.DoesNotExist:
+            form.add_error(None, "Receipt or student with the following ID does not exist. Please try again.")
+            return self.form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+    
+    def get_success_url(self):
+        registration_code = self.kwargs.get('registration_code')
+        return reverse('students:bus_search', kwargs={'registration_code': registration_code})
+
+
+
 class BusSearchFormView(FormView):
     template_name = 'students/search_form.html'
     form_class = BusSearchForm
@@ -78,44 +117,6 @@ class BusSearchResultsView(ListView):
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
     
- 
-class ValidateStudentFormView(FormView):
-    template_name = 'students/validate_student_form.html'
-    form_class = ValidateStudentForm  
-    
-    def form_valid(self, form):
-        try:
-            receipt_id = form.cleaned_data['receipt_id']
-            student_id = form.cleaned_data['student_id']
-            
-            # Validate receipt
-            receipt = Receipt.objects.get(receipt_id=receipt_id, student_id=student_id)
-
-            # Store details in the session
-            self.request.session['receipt_id'] = receipt.pk
-            self.request.session['student_id'] = receipt.student_id
-
-            # Check if a ticket already exists for this receipt
-            if Ticket.objects.filter(recipt_id=receipt.pk).exists():
-                form.add_error(None, "A ticket already exists for this receipt.")
-                return self.form_invalid(form)
-
-            return super().form_valid(form)
-
-        except Receipt.DoesNotExist:
-            form.add_error(None, "Receipt or student with the following ID does not exist. Please try again.")
-            return self.form_invalid(form)
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
-        return context
-    
-    def get_success_url(self):
-        registration_code = self.kwargs.get('registration_code')
-        bus_slug = self.kwargs.get('bus_slug')
-        return reverse('students:book_bus', kwargs={'bus_slug':bus_slug, 'registration_code': registration_code})
-
 
 class BusBookingView(CreateView):
     model = Ticket
