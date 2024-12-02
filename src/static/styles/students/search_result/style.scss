@@ -40,8 +40,6 @@
 }
 
 #search-card {
-    display: flex;
-    justify-content: center;
 
     .main-wrap {
         .content-wrap {
@@ -54,7 +52,7 @@
             }
 
             .card-wrap {
-                max-width: 20rem;
+                min-width: 20rem;
                 width: 100%;
                 margin: 5px;
 
