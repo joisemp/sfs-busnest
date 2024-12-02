@@ -136,10 +136,6 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   width: 195px;
 }
 
-#search-card {
-  display: flex;
-  justify-content: center;
-}
 #search-card .main-wrap .content-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -152,7 +148,7 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   }
 }
 #search-card .main-wrap .content-wrap .card-wrap {
-  max-width: 20rem;
+  min-width: 20rem;
   width: 100%;
   margin: 5px;
 }
