@@ -129,6 +129,7 @@ class Bus(models.Model):
     time_slot = models.ForeignKey(TimeSlot, null=True, on_delete=models.SET_NULL, related_name='buses')
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
     driver = models.CharField(max_length=255)
+    capacity = models.PositiveIntegerField(blank=False, null=False)
     slug = models.SlugField(unique=True, db_index=True)
 
     def save(self, *args, **kwargs):
@@ -139,6 +140,18 @@ class Bus(models.Model):
 
     def __str__(self):
         return f"{self.label} - {self.bus_no}"
+    
+
+class BusCapacity(models.Model):
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='capacities')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_capacities')
+    available_seats = models.PositiveIntegerField()  # Seats left for the specific registration
+
+    class Meta:
+        unique_together = ('bus', 'registration')
+
+    def __str__(self):
+        return f"{self.bus.label} - {self.registration.name} ({self.available_seats} seats available)"
 
 
 class Ticket(models.Model):
