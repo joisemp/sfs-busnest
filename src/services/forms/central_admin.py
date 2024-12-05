@@ -37,7 +37,7 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Bus
         fields = [
-            'label', 'bus_no', 'route', 'driver', 'time_slot'
+            'label', 'bus_no', 'route', 'driver', 'time_slot', 'capacity'
         ]
 
 
