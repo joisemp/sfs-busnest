@@ -166,7 +166,22 @@ class BusBookingSuccessView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['ticket'] = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
+        ticket = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
+        context['ticket'] = ticket
+
+        bus = ticket.bus
+        registration = ticket.registration
+
+        bus_capacity, created = BusCapacity.objects.get_or_create(
+            bus=bus,
+            registration=registration,
+            defaults={'available_seats': bus.capacity - 1}
+        )
+        
+        if not created:
+            bus_capacity.available_seats = max(0, bus_capacity.available_seats - 1)
+            bus_capacity.save()
+
         return context
 
         
