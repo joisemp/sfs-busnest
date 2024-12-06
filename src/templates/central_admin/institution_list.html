@@ -11,17 +11,24 @@
 
 {% block content %}
 <div class="d-flex justify-content-between  align-items-center mb-3">
+    {% if not search_term %}
     <div>
-        <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add institution</a>
+        <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary"><i
+                class="fa-solid fa-plus me-2"></i>Add institution</a>
     </div>
     <div>
-        <form class="d-flex" role="search">
-            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-dark" type="submit">Search<i class="fa-solid fa-magnifying-glass ms-3"></i></button>
+        <form class="d-flex" role="search" method="get">
+            <input class="form-control me-2" type="search" name="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-dark" type="submit">Search<i
+                    class="fa-solid fa-magnifying-glass ms-3"></i></button>
         </form>
     </div>
+    {% else %}
+    <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()"><i class="fa-solid fa-xmark me-2"></i>Clear search</button>
+    {% endif %}
 </div>
 <section>
+    {% if institutions %}
     <div class="wrap">
         {% for institute in institutions %}
         <div class="card-wrap">
@@ -35,13 +42,26 @@
                 </div>
                 <div class="d-flex justify-content-end">
                     <div class="button-block d-flex">
-                        <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}" class="btn btn-danger btn-sm me-2">Remove</a>
-                        <a href="{% url 'central_admin:institution_update' slug=institute.slug %}" class="btn btn-outline-dark btn-sm">Edit</a>
+                        <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}"
+                            class="btn btn-danger btn-sm me-2">Remove</a>
+                        <a href="{% url 'central_admin:institution_update' slug=institute.slug %}"
+                            class="btn btn-outline-dark btn-sm">Edit</a>
                     </div>
-                </div> 
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
+    {% else %}
+        {% if search_term %}
+            <div class="text-center">
+                <p>No results for "{{search_term}}"</p>
+            </div>
+        {% else %}
+            <div class="text-center">
+                <p>No institutions have been added yet</p>
+            </div>
+        {% endif %}
+    {% endif %}
 </section>
 {% endblock content %}
