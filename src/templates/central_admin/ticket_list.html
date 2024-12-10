@@ -13,6 +13,7 @@
 
 <section id="ticket-list">
   <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
+    {% if not search_term %}
     <div>
       <a href="{% url 'central_admin:registration_detail' slug=registration.slug %}" class="btn btn-dark"><i
           class="fa-solid fa-arrow-left me-2"></i>Back</a>
@@ -26,13 +27,15 @@
         <div>
           <form role="search">
             <div class="d-flex">
-              <div class="search">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-              </div>
-              <div class="button ms-2">
-                <button class="btn btn-secondary" type="submit">Search<i
-                    class="fa-solid fa-magnifying-glass ms-2"></i></button>
-              </div>
+              <form method="get">
+                <div class="search">
+                  <input class="form-control me-2" type="search" placeholder="Search" name="search" aria-label="Search">
+                </div>
+                <div class="button ms-2">
+                  <button class="btn btn-secondary" type="submit">Search<i
+                      class="fa-solid fa-magnifying-glass ms-2"></i></button>
+                </div>
+              </form>
             </div>
           </form>
         </div>
@@ -124,6 +127,9 @@
         </div>
       </div>
     </div>
+    {% else %}
+    <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()"><i class="fa-solid fa-xmark me-2"></i>Clear search</button>
+    {% endif %}
 
   </div>
   </div>
