@@ -1,0 +1,23 @@
+@import '../../logged_out_user_navbar';
+
+.bg-light{
+    background-color: $indigo-600 !important;
+    #success{
+        display: flex;
+        // height:100vh;
+        margin-top:20px;
+        justify-content: center;
+        align-items: center;
+        .wrap{
+            color:white;
+            height:fit-content;
+            .submit{
+                display: flex;
+                justify-content: center;
+            }
+            .success{
+                text-align: center;
+            }
+        }
+    }
+}
