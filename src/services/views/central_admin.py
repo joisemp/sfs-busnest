@@ -9,6 +9,7 @@ from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import Http404
+from django.db.models import Q
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 
@@ -24,8 +25,21 @@ class InstitutionListView(CentralAdminOnlyAccessMixin, ListView):
     context_object_name = 'institutions'
     
     def get_queryset(self):
+        self.search_term = self.request.GET.get('search', '')
         queryset = Institution.objects.filter(org=self.request.user.profile.org)
+        if self.search_term:
+            queryset = queryset.filter(
+                Q(name__icontains=self.search_term) |
+                Q(label__icontains=self.search_term) |
+                Q(incharge__first_name__icontains=self.search_term) |
+                Q(email__icontains=self.search_term)
+            )
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_term'] = self.search_term
+        return context
     
 
 class InstitutionCreateView(CentralAdminOnlyAccessMixin, CreateView):
@@ -353,6 +367,17 @@ class TicketListView(CentralAdminOnlyAccessMixin, ListView):
         time_slot = self.request.GET.get('time_slot')
         student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
+        
+        self.search_term = self.request.GET.get('search', '')
+        
+        if self.search_term:
+            queryset = Ticket.objects.filter(
+                Q(student_name__icontains=self.search_term) |
+                Q(student_email__icontains=self.search_term) |
+                Q(student_id__icontains=self.search_term) |
+                Q(contact_no__icontains=self.search_term) |
+                Q(alternative_contact_no__icontains=self.search_term)
+            )
 
         # Apply filters based on GET parameters and update the filters flag
         if institution:
@@ -386,6 +411,7 @@ class TicketListView(CentralAdminOnlyAccessMixin, ListView):
         context['drop_points'] = Stop.objects.filter(org=self.registration.org)
         context['time_slots'] = TimeSlot.objects.filter(org=self.registration.org)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
+        context['search_term'] = self.search_term
 
         return context
     
