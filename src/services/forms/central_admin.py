@@ -39,6 +39,10 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         fields = [
             'label', 'bus_no', 'route', 'driver', 'time_slot', 'capacity'
         ]
+    def __init__(self,*args,**kwargs):
+        super(BusForm,self).__init__(*args,**kwargs)
+        self.fields['label'].label="Bus no"
+        self.fields['bus_no'].label="Registration no"
 
 
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
