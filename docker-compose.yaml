@@ -1,19 +1,19 @@
 version: '3.9'
 services:
-  # web:
-  #   depends_on:
-  #     - postgres_db
-  #   build:
-  #     context: ./src
-  #     dockerfile: Dockerfile
-  #   image: bms-sfsinstitutions:v1
-  #   environment:
-  #     - PORT=8020
-  #   env_file:
-  #     - src/.env
-  #   ports:
-  #     - "8001:8020"
-  #   command: sh -c "chmod +x /app/migrate.sh && sh /app/migrate.sh && /app/entrypoint.sh"
+  web:
+    depends_on:
+      - postgres_db
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    image: sfsbusnest:v1
+    environment:
+      - PORT=8020
+    env_file:
+      - src/.env
+    ports:
+      - "8001:8020"
+    command: sh -c "chmod +x /app/migrate.sh && sh /app/migrate.sh && /app/entrypoint.sh"
 
   postgres_db:
     image: postgres
