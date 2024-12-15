@@ -15,7 +15,7 @@
 
 <form method="post">
     {% csrf_token %}
-    <button class="btn btn-danger" type="submit">Yes remove</button>
-    <a href="{% url 'institution_admin:receipt_list' %}">Cancel</a>
+    <button class="btn btn-sm btn-danger" type="submit">Yes remove</button>
+    <a class="btn btn-sm text-primary" href="{% url 'institution_admin:receipt_list' %}">Cancel</a>
 </form>
 {% endblock %}

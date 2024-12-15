@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/students/bus_search/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/students/booking_success/style.css' %}">
 {% endblock style %}
 
 {% block navbar %}
@@ -11,7 +11,20 @@
 
 {% block content %}
 
-<h1 class="text-center">Booking successful</h1>
-<p class="text-center">{{ ticket }}</p>
+<section id="success">
+    <div class="wrap">
+        <div class="submit">
+            <img src="{% static 'images/check-symbol.png' %}">
+        </div>
+        <div class="success">
+            <div>
+                <h1>Booking Success</h1>
+                <p>{{ ticket }}</p>
+                <a href="#" class="btn btn-outline-light">Book another<i class="fa-solid fa-arrow-right ms-2"></i></a>
+            </div>
+        </div>
+    </div>
+</section>
+<p class="text-center"></p>
 
 {% endblock content %}
