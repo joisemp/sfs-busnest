@@ -16,7 +16,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str(os.environ.get("DEBUG"))=="1"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -74,31 +74,25 @@ DATABASES = {
     }
 }
 
-DB_USERNAME=os.environ.get("POSTGRES_USER")
-DB_PASSWORD=os.environ.get("POSTGRES_PASSWORD")
-DB_DATABASE=os.environ.get("POSTGRES_DB")
-DB_HOST=os.environ.get("POSTGRES_HOST")
-DB_PORT=os.environ.get("POSTGRES_PORT")
-DB_IS_AVAIL = all([
-    DB_USERNAME,
-    DB_PASSWORD,
-    DB_DATABASE,
-    DB_HOST,
-    DB_PORT
-])
+# CSRF_TRUSTED_ORIGINS = [
+#     'https://sfsbusnest-h7h7c.ondigitalocean.app',
+#     'https://orca-app-l6s37.ondigitalocean.app',
+# ]
 
-if DB_IS_AVAIL:
-    DATABASES = {
-        "default":{
-            "ENGINE":"django.db.backends.postgresql",
-            "NAME":DB_DATABASE,
-            "USER":DB_USERNAME,
-            "PASSWORD":DB_PASSWORD,
-            "HOST":DB_HOST,
-            "PORT":DB_PORT
-        }
-    }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('POSTGRES_DB'),
+#         'USER': os.getenv('POSTGRES_USER'),
+#         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+#         'HOST': os.getenv('POSTGRES_HOST'),
+#         'PORT': os.getenv('POSTGRES_PORT', '5432'),
+#         'OPTIONS': {
+#             'sslmode': os.getenv('POSTGRES_SSLMODE', 'require')
+#         }
+#     }
+# }
 
 
 # Password validation
