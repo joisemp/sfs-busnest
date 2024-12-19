@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from services.models import Institution, Bus, Stop, Route, Registration, Ticket, FAQ, TimeSlot
 from core.models import UserProfile
 from django.db import transaction
@@ -440,3 +440,7 @@ class FAQDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
     
     def get_success_url(self):
         return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
+    
+    
+class MoreMenuView(CentralAdminOnlyAccessMixin, TemplateView):
+    template_name = 'central_admin/more_menu.html'
