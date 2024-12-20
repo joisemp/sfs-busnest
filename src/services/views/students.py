@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models.functions import Coalesce
+from django.http import HttpResponseRedirect
 from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
@@ -120,9 +121,25 @@ class BusSearchResultsView(ListView):
         )
 
         return buses
+    
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if not self.object_list.exists():
+            registration_code = self.kwargs.get('registration_code')
+            return HttpResponseRedirect(reverse('students:bus_not_found', kwargs={'registration_code': registration_code}))
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+
+
+class BusNotFoundView(TemplateView):
+    template_name = 'students/bus_not_found.html'
+    
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
