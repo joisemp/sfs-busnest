@@ -248,5 +248,31 @@ class FAQ(models.Model):
         
     def __str__(self):
         return f"{self.receipt_id}"
+    
+
+class BusRequest(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_requests')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='bus_requests')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_requests')
+    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE)
+    group = models.ForeignKey(StudentGroup, null=True, on_delete=models.SET_NULL)
+    student_name = models.CharField(max_length=300)
+    pickup_address = models.CharField(max_length=500)
+    drop_address = models.CharField(max_length=500)
+    contact_no = models.CharField(
+        max_length=12,
+        validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
+    )
+    contact_email = models.EmailField()
+    slug = models.SlugField(unique=True, db_index=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"faq-{self.registration}-{self.student_name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return self.student_name
   
   
