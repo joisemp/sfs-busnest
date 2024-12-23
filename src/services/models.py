@@ -255,7 +255,7 @@ class BusRequest(models.Model):
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='bus_requests')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_requests')
     receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE)
-    group = models.ForeignKey(StudentGroup, null=True, on_delete=models.SET_NULL)
+    student_group = models.ForeignKey(StudentGroup, null=True, on_delete=models.SET_NULL)
     student_name = models.CharField(max_length=300)
     pickup_address = models.CharField(max_length=500)
     drop_address = models.CharField(max_length=500)

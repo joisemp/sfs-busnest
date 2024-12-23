@@ -5,7 +5,7 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
-from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, BusCapacity
+from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, BusCapacity, BusRequest
 from django.db.models import F, Q, Count, Subquery, OuterRef
 
 
@@ -143,6 +143,29 @@ class BusNotFoundView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
+    
+
+class BusRequestFormView(CreateView):
+    model = BusRequest
+    template_name = 'students/bus_request.html'
+    fields = ["student_name", "pickup_address", "drop_address", "contact_no", "contact_email"]
+    
+    @transaction.atomic
+    def form_valid(self, form):
+        bus_request = form.save(commit=False)
+        registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        receipt = get_object_or_404(Receipt, id=self.request.session.get('receipt_id'))
+        bus_request.org = registration.org
+        bus_request.registration = registration
+        bus_request.receipt = receipt
+        bus_request.institution = receipt.institution
+        bus_request.student_group = receipt.student_group
+        bus_request.save()
+        return HttpResponseRedirect(reverse('students:bus_request_success', kwargs={'registration_code':registration.code}))
+    
+
+class BusRequestSuccessView(TemplateView):
+    template_name = 'students/bus_request_success.html'
     
 
 class BusBookingView(CreateView):

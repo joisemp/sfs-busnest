@@ -1,0 +1,30 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/booking_success/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+
+<section id="success">
+    <div class="wrap">
+        <div class="submit">
+            <img src="{% static 'images/check-symbol.png' %}">
+        </div>
+        <div class="success">
+            <div>
+                <h1>Request submitted successfully</h1>
+                <p>Our representative will contact you soon.</p>
+                <a href="#" class="btn text-light">Book another<i class="fa-solid fa-arrow-right ms-2"></i></a>
+            </div>
+        </div>
+    </div>
+</section>
+<p class="text-center"></p>
+
+{% endblock content %}
