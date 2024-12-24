@@ -287,7 +287,6 @@ class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cr
         registration = form.save(commit=False)
         user = self.request.user
         registration.org = user.profile.org
-        registration.code = generate_unique_code(Registration)
         registration.save()
         return redirect('central_admin:registration_list')
     

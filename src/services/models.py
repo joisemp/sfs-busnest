@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
-from config.utils import generate_unique_slug
+from config.utils import generate_unique_slug, generate_unique_code
 
 
 class Organisation(models.Model):
@@ -99,6 +99,8 @@ class Registration(models.Model):
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
+        if not self.code:
+            self.code = generate_unique_code(self, unique_field='code')
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -161,6 +163,7 @@ class Ticket(models.Model):
     student_group = models.ForeignKey('services.StudentGroup', on_delete=models.CASCADE, related_name='tickets')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='tickets')
     recipt = models.OneToOneField('services.Receipt', on_delete=models.CASCADE, related_name='ticket')
+    ticket_id = models.CharField(max_length=300, unique=True)
     student_id = models.CharField(max_length=100)
     student_name = models.CharField(max_length=200)
     student_email = models.EmailField()
@@ -184,6 +187,8 @@ class Ticket(models.Model):
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.student_name}-{self.bus.label}")
             self.slug = generate_unique_slug(self, base_slug)
+        if not self.ticket_id:
+            self.ticket_id = generate_unique_code(self.__class__, no_of_char=12, unique_field='ticket_id')
         super().save(*args, **kwargs)
 
     def __str__(self):
