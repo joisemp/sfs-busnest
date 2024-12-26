@@ -1,0 +1,36 @@
+@import '../../logged_out_user_navbar';
+.bg-light{
+    background-color: $indigo-600 !important;
+    .container{
+        margin-top: 0px;
+        padding-top: 0rem;
+        padding-bottom: 0rem;
+        display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    }
+
+    #content{
+        .wrap{
+            display: flex;
+            justify-content: center;
+            margin-top:3rem;
+            h1{
+                font-weight: 503;
+            }
+                .book{
+                    margin-right: 2rem;
+                    background-color:$indigo-600 ;
+                }
+            .content{
+                display:flex;
+                margin-top: 2rem;
+                width:363px;
+                font-weight: 400;
+                justify-items: center;
+                color: white;
+            }
+        }
+    }
+}

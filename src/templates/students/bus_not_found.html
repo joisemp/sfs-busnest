@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/students/search_result/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/students/bus_not_found/style.css' %}">
 {% endblock style %}
 
 {% block navbar %}
@@ -10,6 +10,18 @@
 {% endblock navbar %}
 
 {% block content %}
-<h1>Not found</h1>
-<a href="{% url 'students:bus_request' registration_code=registration.code %}">Request for bus</a>
+<section id="content">
+<div class="wrap">
+    <div class="image">
+        <img src="{% static 'styles/students/bus_not_found/not_found.svg' %}" class="book">
+    </div>
+    <div class="content">
+        <div>
+            <h1>Bus not found</h1>
+            <p>No buses are available for this routes.Click on the button below and request for a bus</p>
+            <a href="{% url 'students:bus_request' registration_code=registration.code %}" class="btn btn-light">Request bus<i class="fa-solid fa-arrow-right ms-2"></i></a>
+        </div>
+    </div>
+</div>
+</section>
 {% endblock content %}
