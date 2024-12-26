@@ -4,10 +4,10 @@ from django.http import HttpResponseRedirect
 from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
-from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
+from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm, BusRequestForm
 from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, BusCapacity, BusRequest
 from django.db.models import F, Q, Count, Subquery, OuterRef
-
+from config.utils import generate_unique_code
 
 class ValidateStudentFormView(FormView):
     template_name = 'students/validate_student_form.html'
@@ -148,7 +148,7 @@ class BusNotFoundView(TemplateView):
 class BusRequestFormView(CreateView):
     model = BusRequest
     template_name = 'students/bus_request.html'
-    fields = ["student_name", "pickup_address", "drop_address", "contact_no", "contact_email"]
+    form_class = BusRequestForm
     
     @transaction.atomic
     def form_valid(self, form):
@@ -166,6 +166,11 @@ class BusRequestFormView(CreateView):
 
 class BusRequestSuccessView(TemplateView):
     template_name = 'students/bus_request_success.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
     
 
 class BusBookingView(CreateView):

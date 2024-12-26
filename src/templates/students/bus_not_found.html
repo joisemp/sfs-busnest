@@ -11,5 +11,5 @@
 
 {% block content %}
 <h1>Not found</h1>
-<a href="#">Request for bus</a>
+<a href="{% url 'students:bus_request' registration_code=registration.code %}">Request for bus</a>
 {% endblock content %}

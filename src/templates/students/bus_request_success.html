@@ -20,7 +20,7 @@
             <div>
                 <h1>Request submitted successfully</h1>
                 <p>Our representative will contact you soon.</p>
-                <a href="#" class="btn text-light">Book another<i class="fa-solid fa-arrow-right ms-2"></i></a>
+                <a href="{% url 'students:validate_student' registration_code=registration.code %}" class="btn text-light">Book another<i class="fa-solid fa-arrow-right ms-2"></i></a>
             </div>
         </div>
     </div>

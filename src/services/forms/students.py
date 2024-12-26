@@ -1,5 +1,5 @@
 from django import forms
-from services.models import Stop, TimeSlot, Ticket
+from services.models import Stop, TimeSlot, Ticket, BusRequest
 from config.mixins import form_mixin
 
 class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
@@ -38,3 +38,10 @@ class TicketForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             'institution', 'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'stop'
         ]
 
+
+class BusRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = BusRequest
+        fields = [
+            "student_name", "pickup_address", "drop_address", "contact_no", "contact_email"
+            ]
