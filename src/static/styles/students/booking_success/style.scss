@@ -2,10 +2,16 @@
 
 .bg-light{
     background-color: $indigo-600 !important;
+
+    .container {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
     #success{
         display: flex;
-        // height:100vh;
-        margin-top:20px;
+        height:100vh;
         justify-content: center;
         align-items: center;
         .wrap{
@@ -14,6 +20,10 @@
             .submit{
                 display: flex;
                 justify-content: center;
+                img{
+                    width: 100px;
+                    margin-bottom: 1rem;
+                }
             }
             .success{
                 text-align: center;

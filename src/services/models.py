@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
-from config.utils import generate_unique_slug
+from config.utils import generate_unique_slug, generate_unique_code
 
 
 class Organisation(models.Model):
@@ -99,6 +99,8 @@ class Registration(models.Model):
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
+        if not self.code:
+            self.code = generate_unique_code(self, unique_field='code')
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -161,6 +163,7 @@ class Ticket(models.Model):
     student_group = models.ForeignKey('services.StudentGroup', on_delete=models.CASCADE, related_name='tickets')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='tickets')
     recipt = models.OneToOneField('services.Receipt', on_delete=models.CASCADE, related_name='ticket')
+    ticket_id = models.CharField(max_length=300, unique=True)
     student_id = models.CharField(max_length=100)
     student_name = models.CharField(max_length=200)
     student_email = models.EmailField()
@@ -248,5 +251,31 @@ class FAQ(models.Model):
         
     def __str__(self):
         return f"{self.receipt_id}"
+    
+
+class BusRequest(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_requests')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='bus_requests')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_requests')
+    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE)
+    student_group = models.ForeignKey(StudentGroup, null=True, on_delete=models.SET_NULL)
+    student_name = models.CharField(max_length=300)
+    pickup_address = models.CharField(max_length=500)
+    drop_address = models.CharField(max_length=500)
+    contact_no = models.CharField(
+        max_length=12,
+        validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
+    )
+    contact_email = models.EmailField()
+    slug = models.SlugField(unique=True, db_index=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"faq-{self.registration}-{self.student_name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return self.student_name
   
   

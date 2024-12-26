@@ -111,9 +111,14 @@ header .navbar .offcanvas-body .nav-item .nav-link {
 .bg-light {
   background-color: #4f46e5 !important;
 }
+.bg-light .container {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
 .bg-light #success {
   display: flex;
-  margin-top: 20px;
+  height: 100vh;
   justify-content: center;
   align-items: center;
 }
@@ -125,6 +130,10 @@ header .navbar .offcanvas-body .nav-item .nav-link {
 .bg-light #success .wrap .submit {
   display: flex;
   justify-content: center;
+}
+.bg-light #success .wrap .submit img {
+  width: 100px;
+  margin-bottom: 1rem;
 }
 .bg-light #success .wrap .success {
   text-align: center;

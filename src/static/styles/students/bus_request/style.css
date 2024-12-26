@@ -108,58 +108,6 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   padding-bottom: 3rem;
 }
 
-.container {
-  padding-top: 2rem;
-}
-
-#details-bar .table-content {
-  display: flex;
-  align-items: center;
-}
-#details-bar .table-content p {
-  width: 171px;
-  font-weight: 507;
-}
-#details-bar .table-content p span {
-  font-weight: 500;
-}
-#details-bar .table-content .table thead tr,
-#details-bar .table-content .table thead td {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  margin-top: 9px;
-  background-color: rgba(114, 114, 114, 0.027);
-}
-#details-bar .table-content .table thead tr p,
-#details-bar .table-content .table thead td p {
-  width: 195px;
-}
-
-#search-card .main-wrap .content-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  width: -moz-fit-content;
-  width: fit-content;
-}
-@media screen and (max-width: 805px) {
-  #search-card .main-wrap .content-wrap {
-    justify-content: center;
-  }
-}
-#search-card .main-wrap .content-wrap .card-wrap {
-  min-width: 20rem;
-  max-width: -moz-fit-content !important;
-  max-width: fit-content !important;
-  width: 100%;
-  margin: 5px;
-}
-@media screen and (max-width: 805px) {
-  #search-card .main-wrap .content-wrap .card-wrap {
-    min-width: 100%;
-  }
-}
-#search-card .main-wrap .content-wrap .card-wrap .card {
-  width: 100%;
-  padding: 30px 20px;
+.form-control {
+  height: 42px;
 }/*# sourceMappingURL=style.css.map */

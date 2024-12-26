@@ -1,0 +1,21 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/bus_request/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+<button onclick="history.back()" class="btn text-dark mb-4"><i class="fa-solid fa-angle-left me-2"></i>Go back</button>
+
+<form method="post">
+    {% csrf_token %}
+    {{form.as_p | safe}}
+    <button type="submit" class="btn btn-primary">Submit request</button>
+</form>
+
+{% endblock content %}

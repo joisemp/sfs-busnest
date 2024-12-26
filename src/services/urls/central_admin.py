@@ -36,4 +36,6 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),
      
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
+     
+     path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
 ]

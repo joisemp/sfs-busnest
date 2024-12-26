@@ -1,12 +1,13 @@
 from django.db import transaction
 from django.db.models.functions import Coalesce
+from django.http import HttpResponseRedirect
 from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
-from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm
-from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, BusCapacity
+from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm, BusRequestForm
+from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, BusCapacity, BusRequest
 from django.db.models import F, Q, Count, Subquery, OuterRef
-
+from config.utils import generate_unique_code
 
 class ValidateStudentFormView(FormView):
     template_name = 'students/validate_student_form.html'
@@ -120,9 +121,53 @@ class BusSearchResultsView(ListView):
         )
 
         return buses
+    
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if not self.object_list.exists():
+            registration_code = self.kwargs.get('registration_code')
+            return HttpResponseRedirect(reverse('students:bus_not_found', kwargs={'registration_code': registration_code}))
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+
+
+class BusNotFoundView(TemplateView):
+    template_name = 'students/bus_not_found.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+    
+
+class BusRequestFormView(CreateView):
+    model = BusRequest
+    template_name = 'students/bus_request.html'
+    form_class = BusRequestForm
+    
+    @transaction.atomic
+    def form_valid(self, form):
+        bus_request = form.save(commit=False)
+        registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        receipt = get_object_or_404(Receipt, id=self.request.session.get('receipt_id'))
+        bus_request.org = registration.org
+        bus_request.registration = registration
+        bus_request.receipt = receipt
+        bus_request.institution = receipt.institution
+        bus_request.student_group = receipt.student_group
+        bus_request.save()
+        return HttpResponseRedirect(reverse('students:bus_request_success', kwargs={'registration_code':registration.code}))
+    
+
+class BusRequestSuccessView(TemplateView):
+    template_name = 'students/bus_request_success.html'
+    
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context

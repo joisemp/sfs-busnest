@@ -4,8 +4,9 @@ from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, TimeSlot
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-class RegistrationListView(InsitutionAdminOnlyAccessMixin, ListView):
+class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
     template_name = 'institution_admin/registration_list.html'
     context_object_name = 'registrations'
@@ -15,7 +16,7 @@ class RegistrationListView(InsitutionAdminOnlyAccessMixin, ListView):
         return queryset
     
 
-class TicketListView(InsitutionAdminOnlyAccessMixin, ListView):
+class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Ticket
     template_name = 'institution_admin/ticket_list.html'
     context_object_name = 'tickets'
@@ -80,7 +81,7 @@ class TicketListView(InsitutionAdminOnlyAccessMixin, ListView):
         return context
 
 
-class TicketUpdateView(InsitutionAdminOnlyAccessMixin, UpdateView):
+class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
     model = Ticket
     form_class = TicketForm
     template_name = 'institution_admin/ticket_update.html'
@@ -102,7 +103,7 @@ class TicketUpdateView(InsitutionAdminOnlyAccessMixin, UpdateView):
             )
 
 
-class ReceiptListView(InsitutionAdminOnlyAccessMixin, ListView):
+class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Receipt
     template_name = 'institution_admin/receipt_list.html'
     context_object_name = 'receipts'
@@ -115,7 +116,7 @@ class ReceiptListView(InsitutionAdminOnlyAccessMixin, ListView):
         return queryset
     
     
-class ReceiptCreateView(InsitutionAdminOnlyAccessMixin, CreateView):
+class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
     template_name = 'institution_admin/receipt_create.html'
     model = Receipt
     form_class = ReceiptForm
@@ -129,14 +130,14 @@ class ReceiptCreateView(InsitutionAdminOnlyAccessMixin, CreateView):
         return redirect('institution_admin:receipt_list')
     
 
-class ReceiptDeleteView(InsitutionAdminOnlyAccessMixin, DeleteView):
+class ReceiptDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
     model = Receipt
     template_name = 'institution_admin/receipt_confirm_delete.html'
     slug_url_kwarg = 'receipt_slug'
     success_url = reverse_lazy('institution_admin:receipt_list')
     
     
-class StudentGroupListView(InsitutionAdminOnlyAccessMixin, ListView):
+class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = StudentGroup
     template_name = 'institution_admin/student_group_list.html'
     context_object_name = 'student_groups'  
@@ -149,7 +150,7 @@ class StudentGroupListView(InsitutionAdminOnlyAccessMixin, ListView):
         return queryset
     
     
-class StudentGroupCreateView(InsitutionAdminOnlyAccessMixin, CreateView):
+class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
     template_name = 'institution_admin/student_group_create.html'
     model = StudentGroup
     form_class = StudentGroupForm
@@ -163,7 +164,7 @@ class StudentGroupCreateView(InsitutionAdminOnlyAccessMixin, CreateView):
         return redirect('institution_admin:student_group_list') 
     
     
-class StudentGroupUpdateView(InsitutionAdminOnlyAccessMixin, UpdateView):
+class StudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
     model = StudentGroup
     form_class = StudentGroupForm
     template_name = 'institution_admin/student_group_update.html'
@@ -174,7 +175,7 @@ class StudentGroupUpdateView(InsitutionAdminOnlyAccessMixin, UpdateView):
         return super().form_valid(form)
     
     
-class StudentGroupDeleteView(InsitutionAdminOnlyAccessMixin, DeleteView):
+class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
     model = StudentGroup
     template_name = 'institution_admin/student_group_confirm_delete.html'
     slug_url_kwarg = 'student_group_slug'

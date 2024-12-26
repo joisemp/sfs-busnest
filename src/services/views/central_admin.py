@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from services.models import Institution, Bus, Stop, Route, Registration, Ticket, FAQ, TimeSlot
 from core.models import UserProfile
 from django.db import transaction
@@ -12,6 +12,7 @@ from django.http import Http404
 from django.db.models import Q
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm
 
@@ -19,7 +20,7 @@ from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, Ins
 User = get_user_model()
 
 
-class InstitutionListView(CentralAdminOnlyAccessMixin, ListView):
+class InstitutionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     template_name = 'central_admin/institution_list.html'
     model = Institution
     context_object_name = 'institutions'
@@ -42,7 +43,7 @@ class InstitutionListView(CentralAdminOnlyAccessMixin, ListView):
         return context
     
 
-class InstitutionCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class InstitutionCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/institution_create.html'
     model = Institution
     form_class = InstitutionForm
@@ -60,7 +61,7 @@ class InstitutionCreateView(CentralAdminOnlyAccessMixin, CreateView):
         return redirect('central_admin:institution_list')
     
 
-class InstitutionUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
+class InstitutionUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = Institution
     form_class = InstitutionForm
     template_name = 'central_admin/institution_update.html'
@@ -75,13 +76,13 @@ class InstitutionUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
         return super().form_valid(form)
 
 
-class InstitutionDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class InstitutionDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Institution
     template_name = 'central_admin/institution_confirm_delete.html'
     success_url = reverse_lazy('central_admin:institution_list')
 
 
-class BusListView(CentralAdminOnlyAccessMixin, ListView):
+class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Bus
     template_name = 'central_admin/bus_list.html'
     context_object_name = 'buses'
@@ -91,7 +92,7 @@ class BusListView(CentralAdminOnlyAccessMixin, ListView):
         return queryset
 
 
-class BusCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/bus_create.html'
     model = Bus
     form_class = BusForm
@@ -110,7 +111,7 @@ class BusCreateView(CentralAdminOnlyAccessMixin, CreateView):
         return redirect('central_admin:bus_list')
     
     
-class BusUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
+class BusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = Bus
     form_class = BusForm
     template_name = 'central_admin/bus_update.html'
@@ -126,13 +127,13 @@ class BusUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
         return super().form_valid(form)
 
 
-class BusDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Bus
     template_name = 'central_admin/bus_confirm_delete.html'
     success_url = reverse_lazy('central_admin:bus_list')
     
     
-class PeopleListView(CentralAdminOnlyAccessMixin, ListView):
+class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
     template_name = 'central_admin/people_list.html'
     context_object_name = 'people'
@@ -142,7 +143,7 @@ class PeopleListView(CentralAdminOnlyAccessMixin, ListView):
         return queryset
     
 
-class PeopleCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     model = UserProfile
     template_name = 'central_admin/people_create.html'
     form_class = PeopleCreateForm
@@ -172,7 +173,7 @@ class PeopleCreateView(CentralAdminOnlyAccessMixin, CreateView):
             return self.form_invalid(form)
         
         
-class PeopleUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
+class PeopleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = UserProfile
     form_class = PeopleUpdateForm
     template_name = 'central_admin/people_update.html'
@@ -182,13 +183,13 @@ class PeopleUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
         return super().form_valid(form)
     
 
-class PeopleDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class PeopleDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = UserProfile
     template_name = 'central_admin/people_confirm_delete.html'
     success_url = reverse_lazy('central_admin:people_list')
 
 
-class RouteListView(CentralAdminOnlyAccessMixin, ListView):
+class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Route
     template_name = 'central_admin/route_list.html'
     context_object_name = 'routes'
@@ -203,7 +204,7 @@ class RouteListView(CentralAdminOnlyAccessMixin, ListView):
         return context
         
 
-class RouteCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/route_create.html'
     model = Route
     form_class = RouteForm
@@ -222,7 +223,7 @@ class RouteCreateView(CentralAdminOnlyAccessMixin, CreateView):
         return redirect('central_admin:route_list')
     
     
-class RouteUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
+class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = Route
     form_class = RouteForm
     template_name = 'central_admin/route_update.html'
@@ -237,13 +238,13 @@ class RouteUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
         return super().form_valid(form)
     
     
-class RouteDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Route
     template_name = 'central_admin/route_confirm_delete.html'
     success_url = reverse_lazy('central_admin:route_list')
     
 
-class StopCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/stop_create.html'
     model = Stop
     form_class = StopForm
@@ -256,13 +257,13 @@ class StopCreateView(CentralAdminOnlyAccessMixin, CreateView):
         return redirect('central_admin:route_list')
     
 
-class StopDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Stop
     template_name = 'central_admin/stop_confirm_delete.html'
     success_url = reverse_lazy('central_admin:route_list')
 
 
-class RegistraionListView(CentralAdminOnlyAccessMixin, ListView):
+class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Registration
     template_name = 'central_admin/registration_list.html'
     context_object_name = 'registrations'
@@ -272,7 +273,7 @@ class RegistraionListView(CentralAdminOnlyAccessMixin, ListView):
         return queryset
     
     
-class RegistrationCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/registration_create.html'
     model = Registration
     form_class = RegistrationForm
@@ -286,12 +287,11 @@ class RegistrationCreateView(CentralAdminOnlyAccessMixin, CreateView):
         registration = form.save(commit=False)
         user = self.request.user
         registration.org = user.profile.org
-        registration.code = generate_unique_code(Registration)
         registration.save()
         return redirect('central_admin:registration_list')
     
     
-class RegistrationDetailView(CentralAdminOnlyAccessMixin, DetailView):
+class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView):
     template_name = 'central_admin/registration_detail.html'
     model = Registration
     context_object_name = 'registration'
@@ -318,7 +318,7 @@ class RegistrationDetailView(CentralAdminOnlyAccessMixin, DetailView):
         return context
 
 
-class RegistrationUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
+class RegistrationUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = Registration
     form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
@@ -342,13 +342,13 @@ class RegistrationUpdateView(CentralAdminOnlyAccessMixin, UpdateView):
         return reverse('central_admin:registration_detail', kwargs={'slug': self.kwargs['slug']})
     
 
-class RegistrationDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Registration
     template_name = 'central_admin/registration_confirm_delete.html'
     success_url = reverse_lazy('central_admin:registration_list')
     
     
-class TicketListView(CentralAdminOnlyAccessMixin, ListView):
+class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Ticket
     template_name = 'central_admin/ticket_list.html'
     context_object_name = 'tickets'
@@ -416,7 +416,7 @@ class TicketListView(CentralAdminOnlyAccessMixin, ListView):
         return context
     
 
-class FAQCreateView(CentralAdminOnlyAccessMixin, CreateView):
+class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/registration_create.html'
     model = FAQ
     form_class = FAQForm
@@ -433,10 +433,14 @@ class FAQCreateView(CentralAdminOnlyAccessMixin, CreateView):
         return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
     
     
-class FAQDeleteView(CentralAdminOnlyAccessMixin, DeleteView):
+class FAQDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = FAQ
     template_name = 'central_admin/registration_confirm_delete.html'
     slug_url_kwarg = 'faq_slug'
     
     def get_success_url(self):
         return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
+    
+    
+class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    template_name = 'central_admin/more_menu.html'
