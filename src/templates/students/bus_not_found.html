@@ -1,0 +1,15 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/search_result/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+<h1>Not found</h1>
+<a href="{% url 'students:bus_request' registration_code=registration.code %}">Request for bus</a>
+{% endblock content %}

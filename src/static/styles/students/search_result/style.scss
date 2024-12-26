@@ -53,12 +53,13 @@
 
             .card-wrap {
                 min-width: 20rem;
+                max-width: fit-content !important;
                 width: 100%;
                 margin: 5px;
 
                 // For tablet and mobile
                 @media screen and (max-width: 805px) {
-                    max-width: 26rem;
+                    min-width: 100%;
                 }
 
                 .card {
