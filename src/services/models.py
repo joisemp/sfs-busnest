@@ -187,6 +187,8 @@ class Ticket(models.Model):
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.student_name}-{self.bus.label}")
             self.slug = generate_unique_slug(self, base_slug)
+        if not self.ticket_id:
+            self.ticket_id = generate_unique_code(self, no_of_char=12, unique_field='ticket_id')
         super().save(*args, **kwargs)
 
     def __str__(self):
