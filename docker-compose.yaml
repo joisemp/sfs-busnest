@@ -5,7 +5,7 @@ services:
     build: ./src
     image: sfs-busnest
     container_name: sfs-busnest-container
-    command: /app/entrypoint.sh
+    command: sh -c "chmod +x /app/entrypoint.sh"
     ports:
       - "8000:8000"
     volumes:
