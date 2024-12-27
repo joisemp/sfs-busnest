@@ -1,33 +1,11 @@
-version: '3.9'
+name: sfs-busnest-project
+
 services:
-  web:
-    depends_on:
-      - postgres_db
-    build:
-      context: ./src
-      dockerfile: Dockerfile
-    image: sfsbusnest:v1
-    environment:
-      - PORT=8020
-    env_file:
-      - src/.env
+  app:
+    image: sfs-busnest
+    container_name: sfs-busnest-container
     ports:
-      - "8001:8020"
-    command: sh -c "chmod +x /app/migrate.sh && sh /app/migrate.sh && /app/entrypoint.sh"
-
-  postgres_db:
-    image: postgres
-    restart: always
-    command: -p 5434
-    env_file:
-      - src/.env
-    expose:
-      - 5434
-    ports:
-      - "5434:5434"
+      - "8001:8000"
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./src:/app
 
-
-volumes:
-  postgres_data:
