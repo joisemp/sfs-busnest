@@ -1,13 +1,19 @@
 FROM python:3.12.3-slim
 
-COPY . /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERD=1
+
 WORKDIR /app
 
+COPY requirements.txt .
 
-RUN python3 -m venv /opt/venv
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-RUN /opt/venv/bin/pip install pip --upgrade && \
-    /opt/venv/bin/pip install -r requirements.txt && \
-    chmod +x entrypoint.sh
+COPY . .
 
-CMD ["/app/entrypoint.sh"]
+EXPOSE 8000
+
+CMD [ "python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+# CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
