@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
-from services.models import Institution, Bus, Stop, Route, Registration, Ticket, FAQ, TimeSlot
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, TimeSlot
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -229,6 +229,19 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["stops"] = Stop.objects.filter(org=self.request.user.profile.org)
         return context
+    
+
+class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    template_name = 'central_admin/route_file_upload.html'
+    model = RouteFile
+    fields = ['name', 'file']
+    
+    def form_valid(self, form):
+        route_file = form.save(commit=False)
+        user = self.request.user
+        route_file.org = user.profile.org
+        route_file.save()
+        return redirect('central_admin:route_list')
         
 
 class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
