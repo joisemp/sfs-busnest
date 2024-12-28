@@ -1,6 +1,9 @@
+import os
+from uuid import uuid4
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
+from config.validators import validate_csv_file
 from config.utils import generate_unique_slug, generate_unique_code
 
 
@@ -85,11 +88,17 @@ class Route(models.Model):
     def __str__(self):
         return f"{self.name}"
     
+    
+def rename_uploaded_file(instance, filename):
+    base_name = os.path.splitext(filename)[0]
+    ext = os.path.splitext(filename)[1]
+    return f"{instance.org.slug}/route_files/{slugify(base_name)}-{uuid4()}{ext}"
+
 
 class RouteFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='route_files')
     name = models.CharField(max_length=200)
-    file = models.FileField(upload_to='route_files/')
+    file = models.FileField(upload_to=rename_uploaded_file, validators=[validate_csv_file])
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

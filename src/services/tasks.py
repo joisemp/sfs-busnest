@@ -1,6 +1,9 @@
+import csv
+import os
 from celery import shared_task
-import time
+from django.conf import settings
 import logging
+import time
 from django.core.mail import send_mail
 
 logger = logging.getLogger(__name__)
@@ -38,4 +41,21 @@ def send_email_task(subject, message, recipient_list, from_email=None):
         return "Email sent successfully"
     except Exception as e:
         logger.error(f"Failed to send email to {recipient_list}: {e}")
+        raise
+
+
+@shared_task(name='process_uploaded_csv')
+def process_uploaded_csv(file_path):
+    try:
+        logger.info(f"Processing file: {file_path}")
+        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        with open(full_path, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                logger.info(f"Row: {row}")
+
+        logger.info("CSV PROCESSING COMPLETED SUCCESSFULLY!")
+    except Exception as e:
+        logger.error(f"Error while processing CSV: {e}")
         raise

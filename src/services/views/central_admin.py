@@ -19,7 +19,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm
 
-from services.tasks import send_email_task
+from services.tasks import process_uploaded_csv, send_email_task
 
 
 User = get_user_model()
@@ -241,6 +241,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         user = self.request.user
         route_file.org = user.profile.org
         route_file.save()
+        process_uploaded_csv.delay(route_file.file.name)
         return redirect('central_admin:route_list')
         
 
