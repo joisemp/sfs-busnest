@@ -5,6 +5,8 @@ from django.conf import settings
 import logging
 import time
 from django.core.mail import send_mail
+from services.models import Organisation, Stop, Route
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -45,17 +47,57 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 
 
 @shared_task(name='process_uploaded_csv')
-def process_uploaded_csv(file_path):
+def process_uploaded_csv(file_path, org_id, route_name):
     try:
-        logger.info(f"Processing file: {file_path}")
+        logger.info(f"Task Started: Processing file: {file_path}")
         full_path = os.path.join(settings.MEDIA_ROOT, file_path)
 
-        with open(full_path, 'r') as csvfile:
-            reader = csv.reader(csvfile)
-            for row in reader:
-                logger.info(f"Row: {row}")
+        with transaction.atomic():
+            try:
+                org = Organisation.objects.get(id=org_id)
+                logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
+            except Organisation.DoesNotExist:
+                logger.error(f"Organisation with ID {org_id} does not exist.")
+                return
 
-        logger.info("CSV PROCESSING COMPLETED SUCCESSFULLY!")
+            route = Route.objects.create(org=org, name=route_name)
+            logger.info(f"Created Route: {route.name} (ID: {route.id})")
+
+            with open(full_path, 'r') as csvfile:
+                logger.info(f"Opened file: {full_path}")
+                reader = csv.reader(csvfile)
+                for row_number, row in enumerate(reader, start=1):
+                    try:
+                        logger.info(f"Processing Row {row_number}: {row}")
+
+                        stop_name = row[0].strip().upper()
+                        map_link = row[1].strip()
+                        logger.info(f"Row {row_number} - Stop Name: {stop_name}, Map Link: {map_link}")
+
+                        stop, created = Stop.objects.get_or_create(
+                            org=org,
+                            name=stop_name,
+                            defaults={'map_link': map_link},
+                        )
+
+                        if created:
+                            logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
+                        else:
+                            logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
+
+                        route.stops.add(stop)
+                        logger.info(f"Row {row_number}: Stop {stop.name} added to Route {route.name} (ID: {route.id})")
+                    except IndexError:
+                        logger.warning(f"Row {row_number} is malformed or incomplete: {row}")
+                        raise ValueError(f"Malformed row at line {row_number}. Rolling back the operation.")
+                    except Exception as e:
+                        logger.error(f"Error processing Row {row_number}: {row}. Error: {e}")
+                        raise
+
+            logger.info("CSV processing completed successfully.")
+
     except Exception as e:
         logger.error(f"Error while processing CSV: {e}")
         raise
+    finally:
+        logger.info("Task Ended: process_uploaded_csv")

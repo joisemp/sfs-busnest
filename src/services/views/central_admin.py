@@ -241,7 +241,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         user = self.request.user
         route_file.org = user.profile.org
         route_file.save()
-        process_uploaded_csv.delay(route_file.file.name)
+        process_uploaded_csv.delay(route_file.file.name, user.profile.org.id, route_file.name)
         return redirect('central_admin:route_list')
         
 
