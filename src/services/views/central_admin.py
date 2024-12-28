@@ -10,11 +10,16 @@ from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import Http404
 from django.db.models import Q
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm
+
+from services.tasks import send_email_task
 
 
 User = get_user_model()
@@ -166,6 +171,28 @@ class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVi
             userprofile.user = user
             userprofile.org = self.request.user.profile.org
             userprofile.save()
+            
+            # Generate password reset link
+            token_generator = PasswordResetTokenGenerator()
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = token_generator.make_token(user)
+
+            reset_link = self.request.build_absolute_uri(
+                reverse('core:confirm_password_reset', kwargs={'uidb64': uid, 'token': token})
+            )
+            
+            subject = "Welcome to SFS Busnest"
+            message = (
+            f"Hello,\n\n"
+            f"Welcome to our BusNest! You have been added to the system by "
+            f"{self.request.user.profile.first_name} {self.request.user.profile.last_name}. "
+            f"Please set your password using the link below.\n\n"
+            f"{reset_link}\n\n"
+            f"Best regards,\nSFSBusNest Team"
+            )
+            recipient_list = [f"{user.email}"]
+            
+            send_email_task.delay(subject, message, recipient_list)
             
             return redirect(self.success_url)
         except Exception as e:
