@@ -12,5 +12,27 @@
 {% block content %}
 
 <h1>More</h1>
+<ul>
+    <li>
+        <a href="{% url 'central_admin:route_list' %}">Routes</a>
+    </li>
+    <li>
+        <a href="{% url 'central_admin:bus_list' %}">Buses</a>
+    </li>
+    <li>
+        <a href="{% url 'central_admin:schedule_list' %}">Schedules</a>
+    </li>
+    <li>
+        <a href="#">Receipts</a>
+    </li>
+    <li>
+        <a href="#">Requests</a>
+    </li>
+    <li>
+        <a href="#">Archives</a>
+    </li>
+</ul>
+
+
 
 {% endblock content %}

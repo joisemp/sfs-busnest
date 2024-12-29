@@ -1,9 +1,8 @@
 <section class="sidebar">
     <div class="nav">
         <a href="{% url 'central_admin:institution_list' %}" class="navlink {% if request.resolver_match.url_name == 'institution_list' %}active{% endif %}"> <i class="fa-solid fa-graduation-cap me-2"></i><span>Institution</span></a>
-        <a href="{% url 'central_admin:bus_list' %}" class="navlink {% if request.resolver_match.url_name == 'bus_list' %}active{% endif %}"><i class="fa-solid fa-bus me-2"></i><span>Buses</span></a>
         <a href="{% url 'central_admin:people_list' %}" class="navlink {% if request.resolver_match.url_name == 'people_list' %}active{% endif %}"><i class="fa-solid fa-user-group me-2"></i><span>People</span></a>
-        <a href="{% url 'central_admin:route_list' %}" class="navlink {% if request.resolver_match.url_name == 'route_list' %}active{% endif %}"><i class="fa-solid fa-map me-2"></i><span>Routes</span></a>
         <a href="{% url 'central_admin:registration_list' %}" class="navlink {% if request.resolver_match.url_name == 'registration_list' %}active{% endif %}"><i class="fa-solid fa-book-open-reader me-2"></i><span>Registration</span></a>
+        <a href="{% url 'central_admin:more_menu' %}" class="navlink {% if request.resolver_match.url_name == 'more_menu' %}active{% endif %}"><b><i class="fa-solid fa-bars me-2"></i></b><span>More</span></a>
     </div>
 </section>
