@@ -1,5 +1,5 @@
 from django import forms
-from services.models import Stop, TimeSlot, Ticket, BusRequest
+from services.models import Stop, Schedule, Ticket, BusRequest
 from config.mixins import form_mixin
 
 class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
@@ -10,8 +10,8 @@ class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label='Select stop'
     )
-    time_slot = forms.ModelChoiceField(
-        queryset=TimeSlot.objects.all(),
+    schedule = forms.ModelChoiceField(
+        queryset=Schedule.objects.all(),
         label="",
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'}),

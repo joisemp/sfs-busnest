@@ -18,7 +18,7 @@ class StudentGroupForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class TicketForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['institution', 'student_group', 'bus', 'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'pickup_point', 'drop_point', 'time_slot', 'status']
+        fields = ['institution', 'student_group', 'bus', 'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'pickup_point', 'drop_point', 'schedule', 'status']
         
         
         

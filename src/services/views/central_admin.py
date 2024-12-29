@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, TimeSlot
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, TimeSlotForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm
 
 from services.tasks import process_uploaded_route_csv, send_email_task
 
@@ -105,7 +105,7 @@ class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView)
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        form.fields['time_slot'].queryset = TimeSlot.objects.filter(org=self.request.user.profile.org)
+        form.fields['schedule'].queryset = Schedule.objects.filter(org=self.request.user.profile.org)
         return form
     
     def form_valid(self, form):
@@ -125,7 +125,7 @@ class BusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView)
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        form.fields['time_slot'].queryset = TimeSlot.objects.filter(org=self.request.user.profile.org)
+        form.fields['schedule'].queryset = Schedule.objects.filter(org=self.request.user.profile.org)
         return form
 
     def form_valid(self, form):
@@ -342,21 +342,8 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tickets = self.object.tickets.all().order_by('-created_at')  # Get all tickets for the registration
-        
-        # Pagination logic
-        paginator = Paginator(tickets, 10)  # Show 10 tickets per page
-        page_number = self.request.GET.get('page', 1)  # Get page number from query params
-        try:
-            page_obj = paginator.get_page(page_number)
-        except:
-            raise Http404("Invalid page number")
-        
-        context['page_obj'] = page_obj
-        context['paginator'] = paginator
-        
-        # Assuming each Registration object has related tickets
-        context['recent_tickets'] = self.object.tickets.all().order_by('-created_at')[:20]
+        tickets = self.object.tickets.filter(org=self.request.user.profile.org).order_by('-created_at')[:10]
+        context['recent_tickets'] = tickets
         return context
 
 
@@ -406,7 +393,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         institution = self.request.GET.get('institution')
         pickup_points = self.request.GET.getlist('pickup_point')
         drop_points = self.request.GET.getlist('drop_point')
-        time_slot = self.request.GET.get('time_slot')
+        schedule = self.request.GET.get('schedule')
         student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
         
@@ -431,8 +418,8 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         if drop_points and not drop_points == ['']:
             queryset = queryset.filter(drop_point_id__in=drop_points)
             filters = True
-        if time_slot:
-            queryset = queryset.filter(time_slot_id=time_slot)
+        if schedule:
+            queryset = queryset.filter(schedule_id=schedule)
             filters = True
         
         # Pass the filters flag to context (done in get_context_data)
@@ -451,7 +438,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context['registration'] = self.registration
         context['pickup_points'] = Stop.objects.filter(org=self.registration.org)
         context['drop_points'] = Stop.objects.filter(org=self.registration.org)
-        context['time_slots'] = TimeSlot.objects.filter(org=self.registration.org)
+        context['schedules'] = Schedule.objects.filter(org=self.registration.org)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['search_term'] = self.search_term
 
@@ -484,39 +471,39 @@ class FAQDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
         return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
     
 
-class TimeSlotListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
-    model = TimeSlot
-    template_name = 'central_admin/time_slot_list.html'
-    context_object_name = 'time_slots'
+class ScheduleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = Schedule
+    template_name = 'central_admin/schedule_list.html'
+    context_object_name = 'schedules'
     
     def get_queryset(self):
-        queryset = TimeSlot.objects.filter(org=self.request.user.profile.org)
+        queryset = Schedule.objects.filter(org=self.request.user.profile.org)
         return queryset
 
 
-class TimeSlotCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
-    model = TimeSlot
-    template_name = 'central_admin/time_slot_create.html'
-    form_class = TimeSlotForm
+class ScheduleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = Schedule
+    template_name = 'central_admin/schedule_create.html'
+    form_class = ScheduleForm
     
     def form_valid(self, form):
-        time_slot = form.save(commit=False)
-        time_slot.org = self.request.user.profile.org
-        time_slot.save()
+        schedule = form.save(commit=False)
+        schedule.org = self.request.user.profile.org
+        schedule.save()
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse('central_admin:time_slot_list')
+        return reverse('central_admin:schedule_list')
     
 
-class TimeSlotUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
-    model = TimeSlot
-    template_name = 'central_admin/time_slot_update.html'
-    form_class = TimeSlotForm
-    slug_url_kwarg = 'time_slot_slug'
+class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = Schedule
+    template_name = 'central_admin/schedule_update.html'
+    form_class = ScheduleForm
+    slug_url_kwarg = 'schedule_slug'
     
     def get_success_url(self):
-        return reverse('central_admin:time_slot_list')
+        return reverse('central_admin:schedule_list')
 
     
 class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):

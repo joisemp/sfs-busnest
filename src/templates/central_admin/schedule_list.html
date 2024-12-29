@@ -1,0 +1,7 @@
+<h3>Schedules</h3>
+
+<ul>
+    {% for schedule in schedules %}
+        <li>{{ schedule }} -> <a href="{% url 'central_admin:schedule_update' schedule_slug=schedule.slug %}">Update</a></li>
+    {% endfor %}
+</ul>

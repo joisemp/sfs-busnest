@@ -1,0 +1,7 @@
+<section class="sidebar">
+    <div class="nav">
+        <a href="{% url 'central_admin:bus_list' %}" class="navlink {% if request.resolver_match.url_name == 'bus_list' %}active{% endif %}"><i class="fa-solid fa-bus me-2"></i><span>Buses</span></a>
+        <a href="{% url 'central_admin:route_list' %}" class="navlink {% if request.resolver_match.url_name == 'route_list' %}active{% endif %}"><i class="fa-solid fa-map me-2"></i><span>Routes</span></a>
+        <a href="{% url 'central_admin:schedule_list' %}" class="navlink {% if request.resolver_match.url_name == 'schedule_list' %}active{% endif %}"><i class="fa-solid fa-clock me-2"></i><span>Schedules</span></a>
+    </div>
+</section>

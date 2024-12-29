@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, TimeSlot
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -37,7 +37,7 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Bus
         fields = [
-            'label', 'bus_no', 'route', 'driver', 'time_slot', 'capacity'
+            'label', 'bus_no', 'route', 'driver', 'schedule', 'capacity'
         ]
     def __init__(self,*args,**kwargs):
         super(BusForm,self).__init__(*args,**kwargs)
@@ -120,9 +120,9 @@ class FAQForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         ]
 
 
-class TimeSlotForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+class ScheduleForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
-        model = TimeSlot
+        model = Schedule
         fields = ['name', 'start_time', 'end_time']
         widgets = {
             'start_time': forms.TimeInput(attrs={'type': 'time'}),

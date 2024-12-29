@@ -5,7 +5,7 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm, BusRequestForm
-from services.models import Registration, Bus, Ticket, TimeSlot, Receipt, BusCapacity, BusRequest
+from services.models import Registration, Bus, Ticket, Schedule, Receipt, BusCapacity, BusRequest
 from django.db.models import F, Q, Count, Subquery, OuterRef
 from config.utils import generate_unique_code
 
@@ -64,12 +64,12 @@ class BusSearchFormView(FormView):
     def form_valid(self, form):
         pickup_point = form.cleaned_data['stop']
         drop_point = form.cleaned_data['stop']
-        time_slot = form.cleaned_data['time_slot']
+        schedule = form.cleaned_data['schedule']
 
         # Store search criteria in the session for passing to results view
         self.request.session['pickup_point'] = pickup_point.id
         self.request.session['drop_point'] = drop_point.id
-        self.request.session['time_slot'] = time_slot.id
+        self.request.session['schedule'] = schedule.id
 
         return super().form_valid(form)
     
@@ -93,14 +93,14 @@ class BusSearchResultsView(ListView):
 
         pickup_point_id = self.request.session.get('pickup_point')
         drop_point_id = self.request.session.get('drop_point')
-        time_slot_id = self.request.session.get('time_slot')
+        schedule_id = self.request.session.get('schedule')
 
-        if not (pickup_point_id and drop_point_id and time_slot_id):
+        if not (pickup_point_id and drop_point_id and schedule_id):
             return Bus.objects.none()
         
         buses = Bus.objects.filter(
             org=registration.org,
-            time_slot_id=time_slot_id,
+            schedule_id=schedule_id,
         ).filter(
             Q(route__stops__id=pickup_point_id) if pickup_point_id == drop_point_id else Q(route__stops__id__in=[pickup_point_id, drop_point_id])
         ).annotate(
@@ -186,7 +186,7 @@ class BusBookingView(CreateView):
         stop=form.cleaned_data.get('stop')
         receipt_id = self.request.session.get('receipt_id')
         std_id = self.request.session.get('student_id')
-        time_slot_id = self.request.session.get('time_slot')
+        schedule_id = self.request.session.get('schedule')
         receipt = get_object_or_404(Receipt, id=receipt_id)
         
         ticket.pickup_point = stop
@@ -194,7 +194,7 @@ class BusBookingView(CreateView):
         ticket.recipt = receipt
         ticket.student_id = std_id
         ticket.student_group = receipt.student_group
-        ticket.time_slot = get_object_or_404(TimeSlot, id=time_slot_id)
+        ticket.schedule = get_object_or_404(Schedule, id=schedule_id)
         ticket.registration = registration
         ticket.org = registration.org
         ticket.status = True
