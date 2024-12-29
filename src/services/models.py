@@ -264,6 +264,32 @@ class Receipt(models.Model):
         return f"{self.receipt_id}"
     
 
+def rename_uploaded_file_receipt(instance, filename):
+    base_name = os.path.splitext(filename)[0]
+    ext = os.path.splitext(filename)[1]
+    return f"{instance.org.slug}/{instance.institution.slug}/receipt_files/{slugify(base_name)}-{uuid4()}{ext}"
+
+
+class ReceiptFile(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipt_files')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipt_files')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipt_files')
+    file = models.FileField(upload_to=rename_uploaded_file_receipt, validators=[validate_csv_file])
+    added = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.institution.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.name}"
+    
+
 class FAQ(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='faqs')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='faqs')

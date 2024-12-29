@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
-from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, TimeSlot
+from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, TimeSlot, ReceiptFile
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
+from services.tasks import process_uploaded_receipt_data_csv
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
@@ -114,6 +115,21 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
             institution=self.request.user.profile.institution
             )
         return queryset
+    
+
+class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    model = ReceiptFile
+    fields = ['registration', 'file']
+    template_name = 'institution_admin/receipt_file_upload.html'
+    
+    def form_valid(self, form):
+        receipt_data_file = form.save(commit=False)
+        user = self.request.user
+        receipt_data_file.org = user.profile.org
+        receipt_data_file.institution = user.profile.institution
+        receipt_data_file.save()
+        process_uploaded_receipt_data_csv.delay(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
+        return redirect('institution_admin:receipt_list')
     
     
 class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
