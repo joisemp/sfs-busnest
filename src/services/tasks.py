@@ -143,7 +143,9 @@ def process_uploaded_receipt_data_csv(file_path, org_id, institution_id, reg_id)
                         # Extract data from row
                         receipt_id = row[0].strip()
                         student_id = row[1].strip()
-                        group_name = row[2].strip()
+                        class_name = row[2].strip()
+                        class_section = row[3].strip()
+                        group_name = f"{class_name} - {class_section}"
 
                         logger.info(f"Row {row_number} - Receipt ID: {receipt_id}, Student ID: {student_id}, Group: {group_name}")
 
