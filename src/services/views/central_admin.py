@@ -342,21 +342,8 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tickets = self.object.tickets.all().order_by('-created_at')  # Get all tickets for the registration
-        
-        # Pagination logic
-        paginator = Paginator(tickets, 10)  # Show 10 tickets per page
-        page_number = self.request.GET.get('page', 1)  # Get page number from query params
-        try:
-            page_obj = paginator.get_page(page_number)
-        except:
-            raise Http404("Invalid page number")
-        
-        context['page_obj'] = page_obj
-        context['paginator'] = paginator
-        
-        # Assuming each Registration object has related tickets
-        context['recent_tickets'] = self.object.tickets.all().order_by('-created_at')[:20]
+        tickets = self.object.tickets.filter(org=self.request.user.profile.org).order_by('-created_at')[:10]
+        context['recent_tickets'] = tickets
         return context
 
 

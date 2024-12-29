@@ -89,8 +89,8 @@
                                 <th scope="col">Student ID</th>
                                 <th scope="col">Name</th>
                                 <th scope="col">School</th>
-                                <th scope="col">Student Group</th>
-                                <th scope="col">Timming</th>
+                                <th scope="col">Schedule</th>
+                                <th scope="col">Ticket ID</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -99,8 +99,8 @@
                                 <td>{{ticket.student_id}}</td>
                                 <td>{{ticket.student_name}}</td>
                                 <td>{{ticket.institution.name}}</td>
-                                <td>{{ticket.student_group}}</td>
-                                <td>{{ticket.time_slot.name}}</td>
+                                <td>{{ticket.schedule.name}}</td>
+                                <td>{{ticket.ticket_id}}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
