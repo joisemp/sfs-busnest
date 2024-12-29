@@ -77,7 +77,7 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         context['student_groups'] = StudentGroup.objects.filter(
             org = self.request.user.profile.org,
             institution = self.request.user.profile.institution
-        )
+        ).order_by('name')
 
         return context
 
@@ -163,7 +163,7 @@ class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         queryset = StudentGroup.objects.filter(
             org = self.request.user.profile.org,
             institution = self.request.user.profile.institution
-        )
+        ).order_by('name')
         return queryset
     
     
