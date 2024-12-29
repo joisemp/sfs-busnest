@@ -1,0 +1,7 @@
+<h3>Update {{object.name}}</h3>
+
+<form method="post">
+    {% csrf_token %}
+    {{form}}
+    <button type="submit">Update</button>
+</form>

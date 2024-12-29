@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, TimeSlotForm
 
 from services.tasks import process_uploaded_csv, send_email_task
 
@@ -482,6 +482,41 @@ class FAQDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
     def get_success_url(self):
         return reverse('central_admin:registration_update', kwargs={'slug': self.kwargs['registration_slug']})
     
+
+class TimeSlotListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = TimeSlot
+    template_name = 'central_admin/time_slot_list.html'
+    context_object_name = 'time_slots'
+    
+    def get_queryset(self):
+        queryset = TimeSlot.objects.filter(org=self.request.user.profile.org)
+        return queryset
+
+
+class TimeSlotCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = TimeSlot
+    template_name = 'central_admin/time_slot_create.html'
+    form_class = TimeSlotForm
+    
+    def form_valid(self, form):
+        time_slot = form.save(commit=False)
+        time_slot.org = self.request.user.profile.org
+        time_slot.save()
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('central_admin:time_slot_list')
+    
+
+class TimeSlotUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = TimeSlot
+    template_name = 'central_admin/time_slot_update.html'
+    form_class = TimeSlotForm
+    slug_url_kwarg = 'time_slot_slug'
+    
+    def get_success_url(self):
+        return reverse('central_admin:time_slot_list')
+
     
 class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     template_name = 'central_admin/more_menu.html'
