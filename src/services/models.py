@@ -135,8 +135,8 @@ class Registration(models.Model):
         return f"{self.org}{self.name}"
     
 
-class TimeSlot(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='time_slots')
+class Schedule(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='schedules')
     name = models.CharField(max_length=50)  # Example: "Morning", "Afternoon", "Evening"
     start_time = models.TimeField()  # Example: 08:00 AM
     end_time = models.TimeField()    # Example: 11:00 AM
@@ -156,7 +156,7 @@ class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
     label = models.CharField(max_length=255)
     bus_no = models.CharField(max_length=15)
-    time_slot = models.ForeignKey(TimeSlot, null=True, on_delete=models.SET_NULL, related_name='buses')
+    schedule = models.ForeignKey(Schedule, null=True, on_delete=models.SET_NULL, related_name='buses')
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
     driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
@@ -205,7 +205,7 @@ class Ticket(models.Model):
     )
     pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_pickups')
     drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_drops')
-    time_slot = models.ForeignKey(TimeSlot, on_delete=models.SET_NULL, null=True, related_name='tickets')
+    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='tickets')
     status = models.BooleanField(default=False)  # Indicates if the ticket is confirmed or pending
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -220,7 +220,7 @@ class Ticket(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Ticket for {self.student_name} on {self.bus.label} ({self.time_slot.name})"
+        return f"Ticket for {self.student_name} on {self.bus.label} ({self.schedule.name})"
 
 
 class StudentGroup(models.Model):

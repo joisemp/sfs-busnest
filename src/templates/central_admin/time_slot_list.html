@@ -1,7 +1,0 @@
-<h3>Time Slots</h3>
-
-<ul>
-    {% for time_slot in time_slots %}
-        <li>{{ time_slot }} -> <a href="{% url 'central_admin:time_slot_update' time_slot_slug=time_slot.slug %}">Update</a></li>
-    {% endfor %}
-</ul>

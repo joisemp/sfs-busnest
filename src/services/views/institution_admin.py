@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView
 from django.urls import reverse, reverse_lazy
-from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, TimeSlot, ReceiptFile
+from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -33,7 +33,7 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         # Apply filters based on GET parameters
         pickup_points = self.request.GET.getlist('pickup_point')
         drop_points = self.request.GET.getlist('drop_point')
-        time_slot = self.request.GET.get('time_slot')
+        schedule = self.request.GET.get('schedule')
         student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
 
@@ -44,8 +44,8 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         if drop_points and not drop_points == ['']:
             queryset = queryset.filter(drop_point_id__in=drop_points)
             filters = True
-        if time_slot:
-            queryset = queryset.filter(time_slot_id=time_slot)
+        if schedule:
+            queryset = queryset.filter(schedule_id=schedule)
             filters = True
         if student_group:
             queryset = queryset.filter(student_group_id=student_group)
@@ -71,7 +71,7 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         context['drop_points'] = Stop.objects.filter(
             org = self.request.user.profile.org
         )
-        context['time_slots'] = TimeSlot.objects.filter(
+        context['schedules'] = Schedule.objects.filter(
             org = self.request.user.profile.org
         )
         context['student_groups'] = StudentGroup.objects.filter(

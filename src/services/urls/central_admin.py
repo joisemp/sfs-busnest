@@ -38,9 +38,9 @@ urlpatterns = [
      
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
      
-     path('time-slots/', central_admin.TimeSlotListView.as_view(), name='time_slot_list'),
-     path('time-slots/create/', central_admin.TimeSlotCreateView.as_view(), name='time_slot_create'),
-     path('time-slots/<slug:time_slot_slug>/update/', central_admin.TimeSlotUpdateView.as_view(), name='time_slot_update'),
+     path('schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
+     path('schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
+     path('schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
 ]

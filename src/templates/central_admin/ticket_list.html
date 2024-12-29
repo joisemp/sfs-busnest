@@ -102,17 +102,17 @@
               </div>
             </div>
 
-            <!-- Time Slot Radio Buttons -->
+            <!-- Schedules Radio Buttons -->
             <div class="mb-3">
               <label class="form-label fw-bold">Timing</label>
-              <div id="time_slots" class="form-check">
+              <div id="schedules" class="form-check">
                 <label class="form-check-label">
-                  <input type="radio" name="time_slot" value="" class="form-check-input"> All
+                  <input type="radio" name="schedule" value="" class="form-check-input"> All
                 </label><br>
-                {% for time_slot in time_slots %}
+                {% for schedule in schedules %}
                 <label class="form-check-label">
-                  <input type="radio" name="time_slot" value="{{ time_slot.id }}" class="form-check-input">
-                  {{ time_slot.name }}
+                  <input type="radio" name="schedule" value="{{ schedule.id }}" class="form-check-input">
+                  {{ schedule.name }}
                 </label><br>
                 {% endfor %}
               </div>
@@ -154,7 +154,7 @@
           <td>{{ticket.student_name}}</td>
           <td>{{ticket.institution.name}}</td>
           <td>{{ticket.bus.label}}</td>
-          <td>{{ticket.time_slot.name}}</td>
+          <td>{{ticket.schedule.name}}</td>
           <td>{{ticket.pickup_point}}</td>
           <td>{{ticket.drop_point}}</td>
         </tr>
