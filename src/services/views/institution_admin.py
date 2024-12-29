@@ -108,6 +108,7 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
     model = Receipt
     template_name = 'institution_admin/receipt_list.html'
     context_object_name = 'receipts'
+    paginate_by = 30
     
     def get_queryset(self):
         queryset = Receipt.objects.filter(
