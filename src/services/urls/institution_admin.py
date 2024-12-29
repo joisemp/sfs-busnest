@@ -11,6 +11,7 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/', institution_admin.TicketUpdateView.as_view(), name='ticket_update'),
      
      path('receipts/', institution_admin.ReceiptListView.as_view(), name='receipt_list'),
+     path('receipts/upload/', institution_admin.ReceiptDataFileUploadView.as_view(), name='receipt_data_file_upload'),
      path('receipts/add/', institution_admin.ReceiptCreateView.as_view(), name='receipt_create'),
      path('receipts/<slug:receipt_slug>/delete/', institution_admin.ReceiptDeleteView.as_view(), name='receipt_delete'),
      

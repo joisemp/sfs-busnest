@@ -140,6 +140,9 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   border: none;
   height: 50px;
 }
+#student-bus-search-form #form-section .wrap .card .form .form-control {
+  height: 50px;
+}
 #student-bus-search-form #form-section .student-image {
   display: flex;
   justify-content: center;
