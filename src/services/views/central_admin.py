@@ -329,6 +329,7 @@ class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cr
         user = self.request.user
         registration.org = user.profile.org
         registration.save()
+        form.save_m2m()
         return redirect('central_admin:registration_list')
     
     
