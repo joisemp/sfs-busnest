@@ -1,12 +1,18 @@
-import csv
-import os
 from celery import shared_task
+from django.shortcuts import get_object_or_404
+import openpyxl
+from openpyxl.styles import Font
+from io import BytesIO
 from django.conf import settings
-import logging
-import time
+import logging, time, os, csv
 from django.core.mail import send_mail
-from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup
+from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile
 from django.db import transaction
+from django.contrib.auth import get_user_model
+from django.core.files import File
+from django.urls import reverse
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -190,3 +196,74 @@ def process_uploaded_receipt_data_csv(file_path, org_id, institution_id, reg_id)
         raise
     finally:
         logger.info("Task Ended: process_uploaded_receipts_csv")
+
+
+def send_export_email(user, exported_file):
+    download_url = reverse('central_admin:exported_file_download', kwargs={'file_id': exported_file.id})
+    email_subject = 'Your Ticket Export is Ready'
+    email_message = f"Hello {user.profile.first_name} {user.profile.last_name},\n\nYour ticket export is ready. You can download the file using the following link:\n{settings.SITE_URL}{download_url}\n\nBest regards,\nYour Team"
+    
+    send_mail(
+        email_subject,
+        email_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email]
+    )
+
+
+@shared_task(name='export_tickets_to_excel')
+def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=None):
+    user = User.objects.get(id=user_id)
+    registration = get_object_or_404(Registration, slug=registration_slug)
+    
+    # Base queryset filtered by registration and institution
+    queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
+    
+    
+    if filters:
+        if filters.get('institution'):
+            queryset = queryset.filter(institution_id=filters['institution'])
+        if filters.get('pickup_points'):
+            queryset = queryset.filter(pickup_point_id__in=filters['pickup_points'])
+        if filters.get('drop_points'):
+            queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
+        if filters.get('schedule'):
+            queryset = queryset.filter(schedule_id=filters['schedule'])
+
+    # Creating Excel file
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tickets"
+
+    # Set headers
+    headers = ['Ticket ID', 'Student Name', 'Student Email', 'Contact No', 'Pickup Point', 'Drop Point', 'Schedule', 'Status', 'Created At']
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+    
+    # Add ticket data
+    for ticket in queryset:
+        ws.append([
+            ticket.ticket_id,
+            ticket.student_name,
+            ticket.student_email,
+            ticket.contact_no,
+            ticket.pickup_point.name if ticket.pickup_point else '',
+            ticket.drop_point.name if ticket.drop_point else '',
+            ticket.schedule.name if ticket.schedule else '',
+            'Confirmed' if ticket.status else 'Pending',
+            ticket.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+    
+    # Save to BytesIO and create the exported file in one step
+    file_stream = BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+
+    # Directly create and save the ExportedFile instance
+    exported_file = ExportedFile.objects.create(user=user, file=File(file_stream, name=f"{registration_slug}_export.xlsx"))
+
+    # Now that the file is saved, we can send the email
+    send_export_email(user, exported_file)
+    
+    return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} {user.email}"

@@ -1,7 +1,14 @@
 from django.urls import path
 from services.views import central_admin
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse
+from services.models import ExportedFile
 
 app_name = 'central_admin'
+
+def exported_file_download(request, file_id):
+    exported_file = get_object_or_404(ExportedFile, id=file_id)
+    return FileResponse(exported_file.file, as_attachment=True, filename='ticket_export.xlsx')
 
 urlpatterns = [
      path('institutions/', central_admin.InstitutionListView.as_view(), name='institution_list'),
@@ -43,4 +50,8 @@ urlpatterns = [
      path('schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
+     
+     path('export/<slug:registration_slug>/', central_admin.TicketExportView.as_view(), name='ticket_export'),
+     path('exported-file/<int:file_id>/', exported_file_download, name='exported_file_download'),
+
 ]

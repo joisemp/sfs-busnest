@@ -12,11 +12,13 @@
 {% block content %}
 
 <section id="ticket-list">
-  <div class="d-flex justify-content-between  align-items-center mt-3 mb-3">
+  <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
     {% if not search_term %}
     <div>
       <a href="{% url 'central_admin:registration_detail' slug=registration.slug %}" class="btn btn-dark"><i
           class="fa-solid fa-arrow-left me-2"></i>Back</a>
+          <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i
+            class="fa-solid fa-file-excel ms-2"></i></button>
     </div>
     <div>
       {% if filters %}
@@ -40,7 +42,7 @@
           </form>
         </div>
         <div>
-          <button class="btn btn-primary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
+          <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
             aria-controls="offcanvasRight">Filter <i class="fa-solid fa-filter ms-2"></i></button>
         </div>
       </div>
@@ -51,9 +53,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-
           <form method="GET" class="p-3 bg-light border rounded">
-
             <!-- Institution Radio Buttons -->
             <div class="mb-3">
               <label class="form-label fw-bold">Institution</label>
@@ -69,7 +69,6 @@
                 {% endfor %}
               </div>
             </div>
-
             <!-- Pickup Point Checkboxes -->
             <div class="mb-3">
               <label class="form-label fw-bold">Pickup Point</label>
@@ -85,7 +84,6 @@
                 {% endfor %}
               </div>
             </div>
-
             <!-- Drop Point Checkboxes -->
             <div class="mb-3">
               <label class="form-label fw-bold">Drop Point</label>
@@ -101,7 +99,6 @@
                 {% endfor %}
               </div>
             </div>
-
             <!-- Schedules Radio Buttons -->
             <div class="mb-3">
               <label class="form-label fw-bold">Timing</label>
@@ -117,21 +114,18 @@
                 {% endfor %}
               </div>
             </div>
-
             <!-- Submit Button -->
             <div class="d-flex justify-content-end">
               <button type="submit" class="btn btn-primary">Apply Filters</button>
             </div>
           </form>
-
         </div>
       </div>
     </div>
     {% else %}
-    <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()"><i class="fa-solid fa-xmark me-2"></i>Clear search</button>
+    <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()"><i
+        class="fa-solid fa-xmark me-2"></i>Clear search</button>
     {% endif %}
-
-  </div>
   </div>
 
   <div class="table-responsive">
@@ -165,5 +159,41 @@
     </table>
   </div>
 </section>
+
+{% block scripts %}
+<script>
+  function exportData() {
+    // Get the current URL
+    let currentUrl = window.location.href;
+
+    // Get the URL's query parameters
+    let urlParams = new URLSearchParams(window.location.search);
+
+    // Extract the registration_slug from the Django template context (already passed in the URL tag)
+    let fetchUrl = "{% url 'central_admin:ticket_export' registration_slug=registration.slug %}";
+
+    // Check if there are any query parameters and append them to the fetch URL
+    if (urlParams.toString()) {
+      fetchUrl += '?' + urlParams.toString();  // Append query parameters if present
+    }
+
+    // Perform the fetch request
+    fetch(fetchUrl, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+      })
+      .catch(error => {
+        console.error('Error exporting data:', error);
+      });
+  }
+
+</script>
+{% endblock scripts %}
 
 {% endblock content %}

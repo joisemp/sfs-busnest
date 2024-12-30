@@ -5,6 +5,7 @@ from django.utils.text import slugify
 from django.core.validators import RegexValidator
 from config.validators import validate_csv_file
 from config.utils import generate_unique_slug, generate_unique_code
+from django.conf import settings
 
 
 class Organisation(models.Model):
@@ -333,5 +334,14 @@ class BusRequest(models.Model):
         
     def __str__(self):
         return self.student_name
+    
+
+class ExportedFile(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # User who requested the export
+    file = models.FileField(upload_to='exports/')  # Path to the file
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Exported File for {self.user.username} - {self.created_at}"
   
   
