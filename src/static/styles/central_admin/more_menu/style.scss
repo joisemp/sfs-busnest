@@ -1,46 +1,48 @@
-@import '../../sidebar_navbar_base';
+@import "../../sidebar_navbar_base";
 
-#more{
-    .container{
-
-       .wrap{
-        display:flex !important;
+#more {
+    .wrap {
+        display: flex !important;
         justify-content: center !important;
         flex-wrap: wrap;
         justify-content: space-between;
-        width:100%;
-        .card{
-            margin:1rem;
-            border:2px solid $indigo-100 !important;
-            .card-body{
-                display:grid;
+        width: 100%;
+
+        a {
+            text-decoration: none;
+        }
+
+        .card {
+            @media screen and (min-width: 1000px) {
+                margin: 1rem;
+            }
+            margin: 10px 0px;
+            border: 2px solid $indigo-100 !important;
+            .card-body {
+                display: grid;
                 justify-content: center;
-                .circle{
-                    border-radius: 50% ;
-                    display:flex;
+                .circle {
+                    border-radius: 50%;
+                    display: flex;
                     justify-content: center;
                     align-items: center;
-                    height: 100px;
-                    width: 100px;
-                    background-color:$indigo-300 ;
-                    i{
-                       color:$indigo-600;
-                       font-size: 50px;
-                       font-weight: 10;
+                    height: 80px;
+                    width: 80px;
+                    background-color: $indigo-300;
+                    i {
+                        color: $indigo-600;
+                        font-size: 25px;
                     }
                 }
-                .info{
-                    margin-top:5px;
-                    a{
-                        text-decoration: none;
-                    }
-                    h6{
+                .info {
+                    margin-top: 5px;
+
+                    h6 {
                         text-align: center !important;
-                        color:$indigo-600;
+                        color: $indigo-600;
                     }
                 }
             }
         }
-       }
     }
 }

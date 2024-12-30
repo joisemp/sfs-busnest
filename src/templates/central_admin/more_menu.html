@@ -11,69 +11,81 @@
 
 {% block content %}
 <section id="more">
-    <div class="container">
-        <div class="wrap">
-            <div class="card" style="width: 27rem;">
+
+    <div class="wrap">
+        <a href="{% url 'central_admin:schedule_list' %}" class="card" style="width: 27rem;">
+            <div>
                 <div class="card-body">
                     <div class="circle mb-3">
-                      <i class="fa-regular fa-clock"></i>
-                    </div> 
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
                     <div class="info">
-                        <a href="{% url 'central_admin:schedule_list' %}"><h6>Schedule</h6></a>
+                        <h6>Schedule</h6>
                     </div>
                 </div>
             </div>
-            <div class="card" style="width: 27rem;">
+        </a>
+        <a href="{% url 'central_admin:route_list' %}" class="card" style="width: 27rem;">
+            <div>
                 <div class="card-body">
                     <div class="circle mb-3">
-                        <i class="fa-solid fa-map"></i> 
-                    </div> 
+                        <i class="fa-solid fa-map"></i>
+                    </div>
                     <div class="info">
-                         <a href="{% url 'central_admin:route_list' %}"><h6>Routes</h6></a>
+                        <h6>Routes</h6>
                     </div>
                 </div>
             </div>
-            <div class="card" style="width: 27rem;">
+        </a>
+        <a href="{% url 'central_admin:bus_list' %}" class="card" style="width: 27rem;">
+            <div>
                 <div class="card-body">
                     <div class="circle mb-3">
                         <i class="fa-solid fa-bus"></i>
-                    </div> 
+                    </div>
                     <div class="info">
-                        <a href="{% url 'central_admin:bus_list' %}"><h6>Buses</h6></a>
+                        <h6>Buses</h6>
                     </div>
                 </div>
             </div>
-            <div class="card" style="width: 27rem;">
-                <div class="card-body">
-                    <div class="circle mb-3">
-                      <i class="fa-solid fa-receipt"></i>
-                    </div> 
-                    <div class="info">
-                        <a href="#"><h6>Receipts</h6></a>
-                    </div>
+        </a>
+        <div class="card" style="width: 27rem;">
+            <div class="card-body">
+                <div class="circle mb-3">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+                <div class="info">
+                    <a href="#">
+                        <h6>Receipts</h6>
+                    </a>
                 </div>
             </div>
-            <div class="card" style="width: 27rem;">
-                <div class="card-body">
-                    <div class="circle mb-3">
-                        <i class="fa-regular fa-envelope"></i>
-                    </div> 
-                    <div class="info">
-                        <a href="#"><h6>Request</h6></a>
-                    </div>
+        </div>
+        <div class="card" style="width: 27rem;">
+            <div class="card-body">
+                <div class="circle mb-3">
+                    <i class="fa-solid fa-envelope"></i>
+                </div>
+                <div class="info">
+                    <a href="#">
+                        <h6>Request</h6>
+                    </a>
                 </div>
             </div>
-            <div class="card" style="width: 27rem;">
-                <div class="card-body">
-                    <div class="circle mb-3">
-                        <i class="fa-solid fa-box-archive"></i>
-                    </div> 
-                    <div class="info">
-                        <a href="#"><h6>Archives</h6></a>
-                    </div>
+        </div>
+        <div class="card" style="width: 27rem;">
+            <div class="card-body">
+                <div class="circle mb-3">
+                    <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <div class="info">
+                    <a href="#">
+                        <h6>Archives</h6>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+
 </section>
 {% endblock content %}
