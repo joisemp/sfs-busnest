@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
 from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule
 from core.models import UserProfile
 from django.db import transaction
@@ -8,7 +8,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.db.models import Q
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
@@ -19,7 +19,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm
 
-from services.tasks import process_uploaded_route_csv, send_email_task
+from services.tasks import process_uploaded_route_csv, send_email_task, export_tickets_to_excel
 
 
 User = get_user_model()
@@ -508,3 +508,50 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
     
 class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     template_name = 'central_admin/more_menu.html'
+
+
+class TicketExportView(View):
+    def post(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        search_term = request.GET.get('search', '')
+        institution = request.GET.get('institution')
+        pickup_points = request.GET.getlist('pickup_point')
+        drop_points = request.GET.getlist('drop_point')
+        schedule = request.GET.get('schedule')
+        
+        # Base queryset filtered by registration and institution
+        queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
+        
+        # Apply search term filters
+        if search_term:
+            queryset = queryset.filter(
+                Q(student_name__icontains=search_term) |
+                Q(student_email__icontains=search_term) |
+                Q(student_id__icontains=search_term) |
+                Q(contact_no__icontains=search_term) |
+                Q(alternative_contact_no__icontains=search_term)
+            )
+        
+        # Apply other filters
+        if institution:
+            queryset = queryset.filter(institution_id=institution)
+        if pickup_points and pickup_points != ['']:
+            queryset = queryset.filter(pickup_point_id__in=pickup_points)
+        if drop_points and drop_points != ['']:
+            queryset = queryset.filter(drop_point_id__in=drop_points)
+        if schedule:
+            queryset = queryset.filter(schedule_id=schedule)
+        
+        # Send the filtered queryset to the Celery task for export
+        export_tickets_to_excel.apply_async(
+            args=[request.user.id, registration_slug, search_term, {
+                'institution': institution,
+                'pickup_points': pickup_points,
+                'drop_points': drop_points,
+                'schedule': schedule
+            }]
+        )
+        
+        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})

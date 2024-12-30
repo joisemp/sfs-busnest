@@ -18,6 +18,8 @@ DEBUG = str(os.environ.get("DEBUG"))=="1"
 
 ALLOWED_HOSTS = ["*"]
 
+SITE_URL = 'http://localhost:8000/'
+
 
 # Application definition
 
