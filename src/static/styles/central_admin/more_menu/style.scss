@@ -1,3 +1,46 @@
 @import '../../sidebar_navbar_base';
 
+#more{
+    .container{
 
+       .wrap{
+        display:flex !important;
+        justify-content: center !important;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width:100%;
+        .card{
+            margin:1rem;
+            border:2px solid $indigo-100 !important;
+            .card-body{
+                display:grid;
+                justify-content: center;
+                .circle{
+                    border-radius: 50% ;
+                    display:flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100px;
+                    width: 100px;
+                    background-color:$indigo-300 ;
+                    i{
+                       color:$indigo-600;
+                       font-size: 50px;
+                       font-weight: 10;
+                    }
+                }
+                .info{
+                    margin-top:5px;
+                    a{
+                        text-decoration: none;
+                    }
+                    h6{
+                        text-align: center !important;
+                        color:$indigo-600;
+                    }
+                }
+            }
+        }
+       }
+    }
+}
