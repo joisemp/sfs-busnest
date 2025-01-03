@@ -1,3 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/schedule_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/more_menu_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
 <h3>Schedules</h3>
 
 <ul>
@@ -5,3 +18,5 @@
         <li>{{ schedule }} -> <a href="{% url 'central_admin:schedule_update' schedule_slug=schedule.slug %}">Update</a></li>
     {% endfor %}
 </ul>
+
+{% endblock content %}
