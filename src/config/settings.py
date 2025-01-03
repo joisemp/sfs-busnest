@@ -1,5 +1,11 @@
 import os
 from pathlib import Path
+from environ import Env
+
+env = Env()
+Env.read_env()
+
+ENVIRONMENT = env('ENVIRONMENT', default="development")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,15 +16,18 @@ AUTH_USER_MODEL = 'core.User'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
+if ENVIRONMENT == 'development':
+    DEBUG = True
+else:
+    DEBUG = False
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY = env('SECRET_KEY', default="secret_key")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = str(os.environ.get("DEBUG"))=="1"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='example.com').split(',')
 
-SITE_URL = 'http://localhost:8000/'
+SITE_URL = env('SITE_URL', default='http://localhost:8000/')
 
 
 # Application definition
@@ -70,42 +79,34 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Development Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'postgres',
-        'PORT': 5432,
+if ENVIRONMENT == 'development':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': 'postgres',
+            'PORT': 5432,
+        }
     }
-}
-
-# CSRF_TRUSTED_ORIGINS = [
-#     'https://sfsbusnest-h7h7c.ondigitalocean.app',
-#     'https://orca-app-l6s37.ondigitalocean.app',
-# ]
-
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('POSTGRES_DB'),
-#         'USER': os.getenv('POSTGRES_USER'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-#         'HOST': os.getenv('POSTGRES_HOST'),
-#         'PORT': os.getenv('POSTGRES_PORT', '5432'),
-#         'OPTIONS': {
-#             'sslmode': os.getenv('POSTGRES_SSLMODE', 'require')
-#         }
-#     }
-# }
+    
+    CELERY_BROKER_URL = 'redis://redis:6379/0'
+else:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.parse(env('DATABASE_URL', default='postgresql://'))
+    }
+    CELERY_BROKER_URL = env('REDIS_URL', default='rediss://')
 
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_EXTENDED = True
+
+
+CSRF_TRUSTED_ORIGINS = [
+    url.strip() for url in env('CSRF_TRUSTED_ORIGINS', default='https://example.com').split(',')
+]
 
 
 # Password validation

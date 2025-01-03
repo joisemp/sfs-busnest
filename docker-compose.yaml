@@ -10,6 +10,8 @@ services:
       - "8000:8000"
     volumes:
       - ./src:/app
+    env_file:
+      - ./src/.env
     depends_on:
       - postgres
       - redis
@@ -42,6 +44,8 @@ services:
     command: celery -A config worker -E -l info
     volumes:
       - ./src:/app
+    env_file:
+      - ./src/.env
     depends_on:
       - postgres
       - redis
@@ -53,6 +57,8 @@ services:
     command: celery -A config flower --basic_auth=admin:password123
     ports:
       - "5555:5555"
+    env_file:
+      - ./src/.env
     depends_on:
       - redis
 
