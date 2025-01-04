@@ -3,7 +3,7 @@ from uuid import uuid4
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
-from config.validators import validate_csv_file
+from config.validators import validate_excel_file
 from config.utils import generate_unique_slug, generate_unique_code
 from django.conf import settings
 
@@ -99,7 +99,7 @@ def rename_uploaded_file(instance, filename):
 class RouteFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='route_files')
     name = models.CharField(max_length=200)
-    file = models.FileField(upload_to=rename_uploaded_file, validators=[validate_csv_file])
+    file = models.FileField(upload_to=rename_uploaded_file, validators=[validate_excel_file])
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -275,7 +275,7 @@ class ReceiptFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipt_files')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipt_files')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipt_files')
-    file = models.FileField(upload_to=rename_uploaded_file_receipt, validators=[validate_csv_file])
+    file = models.FileField(upload_to=rename_uploaded_file_receipt, validators=[validate_excel_file])
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,7 +1,20 @@
-<h3>Update {{object.name}}</h3>
+{% extends 'base.html' %}
+{% load static %}
 
-<form method="post">
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/route_update/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/more_menu_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<form action="" method="post">
     {% csrf_token %}
-    {{form}}
-    <button type="submit">Update</button>
+    {{form.as_p|safe}}
+    <button type="submit" class="btn-primary">Update</button>
 </form>
+
+{% endblock content %}
