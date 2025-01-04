@@ -11,12 +11,30 @@
 
 {% block content %}
 
-<h3>Schedules</h3>
-
-<ul>
-    {% for schedule in schedules %}
-        <li>{{ schedule }} -> <a href="{% url 'central_admin:schedule_update' schedule_slug=schedule.slug %}">Update</a></li>
-    {% endfor %}
-</ul>
+<section id="schedule">
+    <div class="button-group">
+        <a href="{% url 'central_admin:schedule_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule</a>
+    </div>
+    <div class="main-wrap">
+        <div class="wrap">
+            {% for schedule in schedules %}
+            <div class="card" style="max-width:115rem;">
+                <div class="card-body">
+                    <div class="content">
+                        <h5 class="card-title mb-3">{{ schedule.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">{{ schedule.start_time }} - {{ schedule.end_time }}</h6>
+                    </div>
+                    <div class="button">
+                        <a href="#" class=" btn btn-sm text-danger card-link">Delete<i
+                                class="fa-solid fa-trash-can ms-2"></i></a>
+                        <a href="{% url 'central_admin:schedule_update' schedule_slug=schedule.slug %}" class=" btn btn-sm btn-dark card-link">Edit<i
+                                class="fa-regular fa-pen-to-square ms-2"></i></a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
 
 {% endblock content %}

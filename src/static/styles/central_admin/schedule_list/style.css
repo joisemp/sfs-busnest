@@ -224,4 +224,27 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+.container {
+  padding: 0;
+}
+
+#schedule .main-wrap {
+  display: flex;
+  justify-content: center;
+}
+#schedule .main-wrap .wrap {
+  width: 500px;
+}
+#schedule .main-wrap .wrap .card {
+  padding: 10px;
+  margin: 5px;
+}
+#schedule .main-wrap .wrap .card .card-subtitle {
+  text-transform: capitalize;
+}
+#schedule .main-wrap .wrap .card .card-body .button {
+  margin-top: 1.5rem;
+  text-align: right;
 }/*# sourceMappingURL=style.css.map */
