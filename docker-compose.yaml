@@ -11,7 +11,7 @@ services:
     volumes:
       - ./src:/app
     env_file:
-      - ./src/.env
+      - ./src/config/.env
     depends_on:
       - postgres
       - redis
@@ -45,7 +45,7 @@ services:
     volumes:
       - ./src:/app
     env_file:
-      - ./src/.env
+      - ./src/config/.env
     depends_on:
       - postgres
       - redis
@@ -58,7 +58,7 @@ services:
     ports:
       - "5555:5555"
     env_file:
-      - ./src/.env
+      - ./src/config/.env
     depends_on:
       - redis
 
