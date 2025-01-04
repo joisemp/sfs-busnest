@@ -49,6 +49,8 @@ urlpatterns = [
      path('schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
      path('schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
+     path('bus-requests/', central_admin.BusRequestListView.as_view(), name='bus_request_list'),
+     
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
      
      path('export/<slug:registration_slug>/', central_admin.TicketExportView.as_view(), name='ticket_export'),
