@@ -229,6 +229,8 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
         if filters.get('schedule'):
             queryset = queryset.filter(schedule_id=filters['schedule'])
+        if filters.get('buses'):
+            queryset = queryset.filter(bus_id__in=filters['buses'])
 
     # Creating Excel file
     wb = openpyxl.Workbook()
@@ -236,7 +238,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     ws.title = "Tickets"
 
     # Set headers
-    headers = ['Ticket ID', 'Student Name', 'Student Email', 'Contact No', 'Pickup Point', 'Drop Point', 'Schedule', 'Status', 'Created At']
+    headers = ['Ticket ID', 'Student Name', 'Student Email', 'Contact No', 'Alternative No', 'Bus', 'Pickup Point', 'Drop Point', 'Schedule', 'Status', 'Created At']
     ws.append(headers)
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -248,6 +250,8 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             ticket.student_name,
             ticket.student_email,
             ticket.contact_no,
+            ticket.alternative_contact_no,
+            ticket.bus.label,
             ticket.pickup_point.name if ticket.pickup_point else '',
             ticket.drop_point.name if ticket.drop_point else '',
             ticket.schedule.name if ticket.schedule else '',
