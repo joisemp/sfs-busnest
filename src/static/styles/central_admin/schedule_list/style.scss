@@ -1,1 +1,29 @@
-@import '../../sidebar_navbar_base';
+@import "../../sidebar_navbar_base";
+
+.container{
+    padding: 0;
+}
+
+#schedule {
+    .main-wrap {
+        display: flex;
+        justify-content: center;
+        .wrap {
+            width: 500px;
+            .card {
+                padding: 10px;
+                margin: 5px;
+                .card-subtitle {
+                    text-transform: capitalize;
+                }
+
+                .card-body {
+                    .button {
+                        margin-top: 1.5rem;
+                        text-align: right;
+                    }
+                }
+            }
+        }
+    }
+}

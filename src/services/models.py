@@ -17,7 +17,7 @@ class Organisation(models.Model):
         null=True
     )
     email = models.EmailField(unique=True, db_index=True, null=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -41,7 +41,7 @@ class Institution(models.Model):
         db_index=True
     )
     email = models.EmailField(unique=True, db_index=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
     incharge = models.OneToOneField('core.UserProfile', max_length=200, null=True, on_delete=models.SET_NULL, related_name='institution')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -60,7 +60,7 @@ class Stop(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
     name = models.CharField(max_length=200)
     map_link = models.CharField(max_length=255, null=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -78,7 +78,7 @@ class Route(models.Model):
     stops = models.ManyToManyField(Stop, related_name='stops')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -103,7 +103,7 @@ class RouteFile(models.Model):
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -122,7 +122,7 @@ class Registration(models.Model):
     stops = models.ManyToManyField(Stop, related_name='registration_stops')
     status = models.BooleanField(default=False)
     code = models.CharField(max_length=100, unique=True, null=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -141,7 +141,7 @@ class Schedule(models.Model):
     name = models.CharField(max_length=50)  # Example: "Morning", "Afternoon", "Evening"
     start_time = models.TimeField()  # Example: 08:00 AM
     end_time = models.TimeField()    # Example: 11:00 AM
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -161,7 +161,7 @@ class Bus(models.Model):
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
     driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -210,7 +210,7 @@ class Ticket(models.Model):
     status = models.BooleanField(default=False)  # Indicates if the ticket is confirmed or pending
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -230,7 +230,7 @@ class StudentGroup(models.Model):
     name = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -251,7 +251,7 @@ class Receipt(models.Model):
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if self.student_id:
@@ -279,7 +279,7 @@ class ReceiptFile(models.Model):
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -298,7 +298,7 @@ class FAQ(models.Model):
     answer = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -324,7 +324,7 @@ class BusRequest(models.Model):
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
     contact_email = models.EmailField()
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
     
     def save(self, *args, **kwargs):
         if not self.slug:

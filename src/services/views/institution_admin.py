@@ -5,7 +5,7 @@ from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, S
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
-from services.tasks import process_uploaded_receipt_data_csv
+from services.tasks import process_uploaded_receipt_data_excel
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
@@ -129,7 +129,7 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         receipt_data_file.org = user.profile.org
         receipt_data_file.institution = user.profile.institution
         receipt_data_file.save()
-        process_uploaded_receipt_data_csv.delay(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
+        process_uploaded_receipt_data_excel.delay(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
         return redirect('institution_admin:receipt_list')
     
     

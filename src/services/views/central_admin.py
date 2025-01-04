@@ -1,13 +1,11 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
-from config.utils import generate_unique_code
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator
 from django.http import Http404, JsonResponse
 from django.db.models import Q
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -563,3 +561,15 @@ class TicketExportView(View):
         )
         
         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
+    
+
+class BusRequestListView(ListView):
+    model = BusRequest
+    template_name = 'central_admin/bus_request_list.html'
+    context_object_name = 'bus_requests'
+    
+    def get_queryset(self):
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
+        return queryset
+    
+    
