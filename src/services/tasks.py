@@ -52,8 +52,8 @@ def send_email_task(subject, message, recipient_list, from_email=None):
         raise
 
 
-@shared_task(name='process_uploaded_route_csv')
-def process_uploaded_route_csv(file_path, org_id, route_name):
+@shared_task(name='process_uploaded_route_excel')
+def process_uploaded_route_excel(file_path, org_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
         full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -66,47 +66,69 @@ def process_uploaded_route_csv(file_path, org_id, route_name):
                 logger.error(f"Organisation with ID {org_id} does not exist.")
                 return
 
-            route = Route.objects.create(org=org, name=route_name)
-            logger.info(f"Created Route: {route.name} (ID: {route.id})")
+            # Open the Excel file
+            try:
+                from openpyxl import load_workbook
+                workbook = load_workbook(full_path)
+                sheet = workbook.active
+                logger.info(f"Excel file opened successfully: {full_path}")
+            except Exception as e:
+                logger.error(f"Failed to open the Excel file: {e}")
+                raise
 
-            with open(full_path, 'r') as csvfile:
-                logger.info(f"Opened file: {full_path}")
-                reader = csv.reader(csvfile)
-                for row_number, row in enumerate(reader, start=1):
-                    try:
-                        logger.info(f"Processing Row {row_number}: {row}")
+            # Process the sheet headers and data
+            headers = [cell.value for cell in sheet[1]]  # First row as headers
+            logger.info(f"Extracted headers (route names): {headers}")
 
-                        stop_name = row[0].strip().upper()
-                        map_link = row[1].strip()
-                        logger.info(f"Row {row_number} - Stop Name: {stop_name}, Map Link: {map_link}")
+            for col_index, route_name in enumerate(headers, start=1):
+                if not route_name:
+                    logger.warning(f"Skipping empty header in column {col_index}.")
+                    continue
 
-                        stop, created = Stop.objects.get_or_create(
-                            org=org,
-                            name=stop_name,
-                            defaults={'map_link': map_link},
-                        )
+                try:
+                    route = Route.objects.create(org=org, name=route_name.strip())
+                    logger.info(f"Created Route: {route.name} (ID: {route.id})")
 
-                        if created:
-                            logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
-                        else:
-                            logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
+                    # Iterate over the rows below the header in the same column
+                    for row_number, row in enumerate(sheet.iter_rows(min_row=2, min_col=col_index, max_col=col_index), start=2):
+                        stop_name = row[0].value
+                        if not stop_name:
+                            logger.warning(f"Row {row_number} in column {col_index} is empty. Skipping.")
+                            continue
 
-                        route.stops.add(stop)
-                        logger.info(f"Row {row_number}: Stop {stop.name} added to Route {route.name} (ID: {route.id})")
-                    except IndexError:
-                        logger.warning(f"Row {row_number} is malformed or incomplete: {row}")
-                        raise ValueError(f"Malformed row at line {row_number}. Rolling back the operation.")
-                    except Exception as e:
-                        logger.error(f"Error processing Row {row_number}: {row}. Error: {e}")
-                        raise
+                        stop_name = stop_name.strip().upper()
+                        map_link = None  # Modify if a map link is expected elsewhere in the Excel structure
 
-            logger.info("CSV processing completed successfully.")
+                        try:
+                            stop, created = Stop.objects.get_or_create(
+                                org=org,
+                                name=stop_name,
+                                defaults={'map_link': map_link},
+                            )
+
+                            if created:
+                                logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
+                            else:
+                                logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
+
+                            route.stops.add(stop)
+                            logger.info(f"Row {row_number}: Stop {stop.name} added to Route {route.name} (ID: {route.id})")
+                        except Exception as e:
+                            logger.error(f"Error processing Row {row_number} in column {col_index}: {e}")
+                            raise
+
+                except Exception as e:
+                    logger.error(f"Error creating Route {route_name}: {e}")
+                    raise
+
+            logger.info("Excel processing completed successfully.")
 
     except Exception as e:
-        logger.error(f"Error while processing CSV: {e}")
+        logger.error(f"Error while processing Excel file: {e}")
         raise
     finally:
-        logger.info("Task Ended: process_uploaded_csv")
+        logger.info("Task Ended: process_uploaded_route_excel")
+
         
         
 
