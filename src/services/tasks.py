@@ -132,8 +132,8 @@ def process_uploaded_route_excel(file_path, org_id):
         
         
 
-@shared_task(name='process_uploaded_receipt_data_csv')
-def process_uploaded_receipt_data_csv(file_path, org_id, institution_id, reg_id):
+@shared_task(name='process_uploaded_receipt_data_excel')
+def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
         full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -153,26 +153,43 @@ def process_uploaded_receipt_data_csv(file_path, org_id, institution_id, reg_id)
             except Institution.DoesNotExist:
                 logger.error(f"Institution with ID {institution_id} does not exist.")
                 return
-            
+
             # Ensure Registration exists (optional, based on your use case)
             try:
                 registration = Registration.objects.get(id=reg_id)
             except Registration.DoesNotExist:
                 logger.error(f"Registration with ID {reg_id} does not exist.")
 
-            # Process CSV File
-            with open(full_path, 'r') as csvfile:
+            # Process Excel File
+            try:
+                import openpyxl
+                workbook = openpyxl.load_workbook(full_path)
+                sheet = workbook.active
+
                 logger.info(f"Opened file: {full_path}")
-                reader = csv.reader(csvfile)
-                for row_number, row in enumerate(reader, start=1):
+
+                # Validate headings
+                headings = [cell.value.strip().lower() for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
+                expected_headings = ['receipt id', 'student id', 'class', 'section']
+
+                if headings != expected_headings:
+                    logger.error(f"Invalid headings in Excel file. Expected: {expected_headings}, Found: {headings}")
+                    raise ValueError("Invalid headings in Excel file.")
+
+                # Process rows
+                for row_number, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                     try:
                         logger.info(f"Processing Row {row_number}: {row}")
 
                         # Extract data from row
-                        receipt_id = row[0].strip()
-                        student_id = row[1].strip()
-                        class_name = row[2].strip()
-                        class_section = row[3].strip()
+                        receipt_id, student_id, class_name, class_section = [
+                            str(cell).strip() if cell is not None else '' for cell in row
+                        ]
+
+                        if not (receipt_id and student_id and class_name and class_section):
+                            logger.warning(f"Row {row_number} is incomplete: {row}")
+                            raise ValueError(f"Incomplete data in row {row_number}. Rolling back the operation.")
+
                         group_name = f"{class_name} - {class_section}"
 
                         logger.info(f"Row {row_number} - Receipt ID: {receipt_id}, Student ID: {student_id}, Group: {group_name}")
@@ -189,7 +206,6 @@ def process_uploaded_receipt_data_csv(file_path, org_id, institution_id, reg_id)
                         else:
                             logger.info(f"Row {row_number}: Student Group already exists - {student_group.name} (ID: {student_group.id})")
 
-
                         # Create Receipt
                         receipt, created = Receipt.objects.get_or_create(
                             org=org,
@@ -204,20 +220,23 @@ def process_uploaded_receipt_data_csv(file_path, org_id, institution_id, reg_id)
                             logger.info(f"Row {row_number}: Receipt created - {receipt.receipt_id} (ID: {receipt.id})")
                         else:
                             logger.info(f"Row {row_number}: Receipt already exists - {receipt.receipt_id} (ID: {receipt.id})")
-                    except IndexError:
-                        logger.warning(f"Row {row_number} is malformed or incomplete: {row}")
-                        raise ValueError(f"Malformed row at line {row_number}. Rolling back the operation.")
+
                     except Exception as e:
                         logger.error(f"Error processing Row {row_number}: {row}. Error: {e}")
                         raise
 
-            logger.info("CSV processing completed successfully.")
+                logger.info("Excel processing completed successfully.")
+
+            except Exception as e:
+                logger.error(f"Error while processing Excel file: {e}")
+                raise
 
     except Exception as e:
-        logger.error(f"Error while processing CSV: {e}")
+        logger.error(f"Error while processing Excel: {e}")
         raise
     finally:
-        logger.info("Task Ended: process_uploaded_receipts_csv")
+        logger.info("Task Ended: process_uploaded_receipt_data_excel")
+
 
 
 def send_export_email(user, exported_file):
