@@ -29,6 +29,7 @@ ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='example.com').split(',')
 
 SITE_URL = env('SITE_URL', default='http://localhost:8000/')
 
+SESSION_COOKIE_AGE = 60 * 60 * 24  # 1 day
 
 # Application definition
 
