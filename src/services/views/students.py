@@ -178,11 +178,16 @@ class BusBookingView(CreateView):
     template_name = 'students/bus_booking.html'
     form_class = TicketForm
     
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        self.bus = get_object_or_404(Bus, slug=self.kwargs.get('bus_slug'))
+        form.fields['stop'].queryset = self.bus.route.stops.all()
+        return form
+    
     @transaction.atomic
     def form_valid(self, form):
         ticket = form.save(commit=False)
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
-        bus = get_object_or_404(Bus, slug=self.kwargs.get('bus_slug'))
         stop=form.cleaned_data.get('stop')
         receipt_id = self.request.session.get('receipt_id')
         std_id = self.request.session.get('student_id')
@@ -194,11 +199,12 @@ class BusBookingView(CreateView):
         ticket.recipt = receipt
         ticket.student_id = std_id
         ticket.student_group = receipt.student_group
+        ticket.institution = receipt.institution
         ticket.schedule = get_object_or_404(Schedule, id=schedule_id)
         ticket.registration = registration
         ticket.org = registration.org
+        ticket.bus = self.bus
         ticket.status = True
-        ticket.bus = bus
         ticket.save()
         
         self.request.session['ticket_id'] = ticket.id

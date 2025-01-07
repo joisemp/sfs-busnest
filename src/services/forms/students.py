@@ -35,7 +35,7 @@ class TicketForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Ticket
         fields = [
-            'institution', 'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'stop'
+            'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'stop'
         ]
 
 

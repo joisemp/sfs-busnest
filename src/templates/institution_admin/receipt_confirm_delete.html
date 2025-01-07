@@ -11,7 +11,13 @@
 
 {% block content %}
 <h5>Remove recipt with id -{{ object.receipt_id }}- of student with id {{ object.student_id }}?</h5>
-<p>This action cannot be undone.</p>
+
+<p>
+    {% if object.ticket %}
+    <i class="text-danger">If this receipt get deleted you also cancel ticket for {{ object.ticket.student_name }} from {{ object.student_group }}</i> <br>
+    {% endif %}
+    This action cannot be undone.
+</p>
 
 <form method="post">
     {% csrf_token %}
