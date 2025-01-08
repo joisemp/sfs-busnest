@@ -104,6 +104,18 @@ class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Updat
             )
 
 
+class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    model = Ticket
+    template_name = 'institution_admin/ticket_confirm_delete.html'
+    slug_url_kwarg = 'ticket_slug'
+    
+    def get_success_url(self):
+        return reverse(
+            'institution_admin:ticket_list', 
+            kwargs={'registration_slug': self.kwargs['registration_slug']}
+            )
+
+
 class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Receipt
     template_name = 'institution_admin/receipt_list.html'
