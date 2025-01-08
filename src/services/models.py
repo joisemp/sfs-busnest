@@ -6,6 +6,8 @@ from django.core.validators import RegexValidator
 from config.validators import validate_excel_file
 from config.utils import generate_unique_slug, generate_unique_code
 from django.conf import settings
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 class Organisation(models.Model):
@@ -344,4 +346,14 @@ class ExportedFile(models.Model):
     def __str__(self):
         return f"Exported File for {self.user.username} - {self.created_at}"
   
-  
+
+@receiver(post_delete, sender=Ticket)
+def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):
+    try:
+        # Find the associated BusCapacity instance
+        bus_capacity = BusCapacity.objects.get(bus=instance.bus, registration=instance.registration)
+        # Increment the available seats
+        bus_capacity.available_seats += 1
+        bus_capacity.save()
+    except BusCapacity.DoesNotExist:
+        pass
