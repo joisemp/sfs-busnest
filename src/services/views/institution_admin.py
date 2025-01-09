@@ -1,8 +1,8 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, DeleteView, UpdateView
+from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
 from django.urls import reverse, reverse_lazy
 from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
-from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
+from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from services.tasks import process_uploaded_receipt_data_excel
@@ -211,4 +211,41 @@ class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
     success_url = reverse_lazy('institution_admin:student_group_list')
     
     
+class BusSearchFormView(FormView):
+    template_name = 'institution_admin/bus_search_form.html'
+    form_class = BusSearchForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['pickup_point'].queryset = registration.stops.all()
+        form.fields['drop_point'].queryset = registration.stops.all()
+        return form
+
+    def form_valid(self, form):
+        pickup_point = form.cleaned_data['pickup_point']
+        drop_point = form.cleaned_data['drop_point']
+        schedule = form.cleaned_data['schedule']
+
+        # Store search criteria in the session for passing to results view
+        self.request.session['pickup_point'] = pickup_point.id
+        self.request.session['drop_point'] = drop_point.id
+        self.request.session['schedule'] = schedule.id
+
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        return reverse('institution_admin:bus_search_results', kwargs={'registration_code': registration_code})
+
     
