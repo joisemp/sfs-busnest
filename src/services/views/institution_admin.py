@@ -1,6 +1,6 @@
-from django.http import HttpResponseRedirect
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
+from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
 from services.models import Bus, BusCapacity, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
@@ -301,5 +301,56 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         context['drop_point'] = get_object_or_404(Stop, id=self.drop_point_id)
         context['schedule'] = get_object_or_404(Schedule, id=self.schedule_id)
         return context
+    
+
+class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    @transaction.atomic
+    def get(self, request, registration_code, ticket_id, bus_slug):
+        registration = get_object_or_404(Registration, code=registration_code)
+        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+        bus = get_object_or_404(Bus, slug=bus_slug)
+        
+        pickup_point_id = self.request.session.get('pickup_point')
+        drop_point_id = self.request.session.get('drop_point')
+        schedule_id = self.request.session.get('schedule')
+        
+        pickup_point = get_object_or_404(Stop, id=pickup_point_id)
+        drop_point = get_object_or_404(Stop, id=drop_point_id)
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        
+        bus_capacity = BusCapacity.objects.get(
+            bus=ticket.bus, 
+            registration=registration
+            )
+
+        bus_capacity.available_seats += 1
+        bus_capacity.save()
+        
+        # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
+        
+        ticket.bus = bus
+        ticket.pickup_point = pickup_point
+        ticket.drop_point = drop_point
+        ticket.schedule = schedule
+        ticket.save()
+        
+        bus_capacity, created = BusCapacity.objects.get_or_create(
+            bus=ticket.bus, 
+            registration=registration, 
+            defaults={'available_seats': bus.capacity - 1}
+            )
+        
+        if not created:
+            bus_capacity.available_seats -= 1
+
+        bus_capacity.save()
+        
+        # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
+        
+        return redirect(
+            reverse('institution_admin:ticket_list', 
+                    kwargs={'registration_slug': registration.slug}
+                )
+            )
 
     
