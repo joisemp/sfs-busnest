@@ -138,6 +138,7 @@
           <th scope="col" class="font">Name</th>
           <th scope="col" class="font">Class</th>
           <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Bus</th>
           <th scope="col" class="font">Pickup</th>
           <th scope="col" class="font">Drop</th>
           <th scope="col" class="font">Action</th>
@@ -150,6 +151,7 @@
           <td>{{ticket.student_name}}</td>
           <td>{{ticket.recipt.student_group.name}}</td>
           <td>{{ticket.schedule.name}}</td>
+          <td>{{ticket.bus.label}}</td>
           <td>{{ticket.pickup_point}}</td>
           <td>{{ticket.drop_point}}</td>
           <td>
@@ -189,7 +191,7 @@
                       </button>
                       <ul class="dropdown-menu shadow-lg">
                         <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-user me-2"></i>Update student info</a></li>
-                        <li class="p-3"><a class="dropdown-item" href="#"><i class="fa-solid fa-bus me-2"></i>Update bus/stop</a></li>
+                        <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}"><i class="fa-solid fa-bus me-2"></i>Update bus/stop</a></li>
                         <li class="p-3"><a class="dropdown-item text-danger" href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
                       </ul>
                     </div>

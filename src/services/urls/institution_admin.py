@@ -11,6 +11,10 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/', institution_admin.TicketUpdateView.as_view(), name='ticket_update'),
      path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/delete/', institution_admin.TicketDeleteView.as_view(), name='ticket_delete'),
      
+     path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/', institution_admin.BusSearchFormView.as_view(), name='bus_search'),
+     path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/available-buses/', institution_admin.BusSearchResultsView.as_view(), name='bus_search_results'),
+     path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/select-bus/<slug:bus_slug>/update-ticket/', institution_admin.UpdateBusInfoView.as_view(), name='update_bus_info'),
+     
      path('receipts/', institution_admin.ReceiptListView.as_view(), name='receipt_list'),
      path('receipts/upload/', institution_admin.ReceiptDataFileUploadView.as_view(), name='receipt_data_file_upload'),
      path('receipts/add/', institution_admin.ReceiptCreateView.as_view(), name='receipt_create'),

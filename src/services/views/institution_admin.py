@@ -1,10 +1,13 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, DeleteView, UpdateView
+from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
-from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
-from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm
+from services.models import Bus, BusCapacity, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
+from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import F, Q, Count, Subquery, OuterRef
+from django.db.models.functions import Coalesce
 from services.tasks import process_uploaded_receipt_data_excel
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -211,4 +214,143 @@ class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
     success_url = reverse_lazy('institution_admin:student_group_list')
     
     
+class BusSearchFormView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
+    template_name = 'institution_admin/bus_search_form.html'
+    form_class = BusSearchForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['pickup_point'].queryset = registration.stops.all()
+        form.fields['drop_point'].queryset = registration.stops.all()
+        return form
+
+    def form_valid(self, form):
+        pickup_point = form.cleaned_data['pickup_point']
+        drop_point = form.cleaned_data['drop_point']
+        schedule = form.cleaned_data['schedule']
+
+        # Store search criteria in the session for passing to results view
+        self.request.session['pickup_point'] = pickup_point.id
+        self.request.session['drop_point'] = drop_point.id
+        self.request.session['schedule'] = schedule.id
+
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        ticket_id = self.kwargs.get('ticket_id')
+        return reverse('institution_admin:bus_search_results', kwargs={'ticket_id': ticket_id, 'registration_code': registration_code})
+    
+
+class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    template_name = 'institution_admin/bus_search_results.html'
+    context_object_name = 'buses'
+
+    def get_queryset(self):
+        registration_code = self.kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+
+        self.pickup_point_id = self.request.session.get('pickup_point')
+        self.drop_point_id = self.request.session.get('drop_point')
+        self.schedule_id = self.request.session.get('schedule')
+
+        if not (self.pickup_point_id and self.drop_point_id and self.schedule_id):
+            return Bus.objects.none()
+        
+        buses = Bus.objects.filter(
+            org=registration.org,
+            schedule_id=self.schedule_id,
+        ).filter(
+            Q(route__stops__id=self.pickup_point_id) if self.pickup_point_id == self.drop_point_id else Q(route__stops__id__in=[self.pickup_point_id, self.drop_point_id])
+        ).annotate(
+            matching_stops=Count('route__stops', filter=Q(route__stops__id__in=[self.pickup_point_id, self.drop_point_id]))
+        ).filter(
+            matching_stops=1 if self.pickup_point_id == self.drop_point_id else 2
+        ).distinct()
+
+        # Subquery to fetch available seats from BusCapacity
+        bus_capacity_subquery = BusCapacity.objects.filter(
+            bus=OuterRef('pk'),
+            registration=registration
+        ).values('available_seats')
+
+        # Annotate buses with available seats or fallback to total capacity
+        buses = buses.annotate(
+            available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
+        )
+
+        return buses
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
+        context['pickup_point'] = get_object_or_404(Stop, id=self.pickup_point_id)
+        context['drop_point'] = get_object_or_404(Stop, id=self.drop_point_id)
+        context['schedule'] = get_object_or_404(Schedule, id=self.schedule_id)
+        return context
+    
+
+class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    @transaction.atomic
+    def get(self, request, registration_code, ticket_id, bus_slug):
+        registration = get_object_or_404(Registration, code=registration_code)
+        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+        bus = get_object_or_404(Bus, slug=bus_slug)
+        
+        pickup_point_id = self.request.session.get('pickup_point')
+        drop_point_id = self.request.session.get('drop_point')
+        schedule_id = self.request.session.get('schedule')
+        
+        pickup_point = get_object_or_404(Stop, id=pickup_point_id)
+        drop_point = get_object_or_404(Stop, id=drop_point_id)
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        
+        bus_capacity = BusCapacity.objects.get(
+            bus=ticket.bus, 
+            registration=registration
+            )
+
+        bus_capacity.available_seats += 1
+        bus_capacity.save()
+        
+        # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
+        
+        ticket.bus = bus
+        ticket.pickup_point = pickup_point
+        ticket.drop_point = drop_point
+        ticket.schedule = schedule
+        ticket.save()
+        
+        bus_capacity, created = BusCapacity.objects.get_or_create(
+            bus=ticket.bus, 
+            registration=registration, 
+            defaults={'available_seats': bus.capacity - 1}
+            )
+        
+        if not created:
+            bus_capacity.available_seats -= 1
+
+        bus_capacity.save()
+        
+        # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
+        
+        return redirect(
+            reverse('institution_admin:ticket_list', 
+                    kwargs={'registration_slug': registration.slug}
+                )
+            )
+
     
