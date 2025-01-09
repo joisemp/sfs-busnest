@@ -1,10 +1,13 @@
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
 from django.urls import reverse, reverse_lazy
-from services.models import Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
+from services.models import Bus, BusCapacity, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import F, Q, Count, Subquery, OuterRef
+from django.db.models.functions import Coalesce
 from services.tasks import process_uploaded_receipt_data_excel
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -211,7 +214,7 @@ class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
     success_url = reverse_lazy('institution_admin:student_group_list')
     
     
-class BusSearchFormView(FormView):
+class BusSearchFormView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
     template_name = 'institution_admin/bus_search_form.html'
     form_class = BusSearchForm
 
@@ -246,6 +249,57 @@ class BusSearchFormView(FormView):
 
     def get_success_url(self):
         registration_code = self.get_registration().code
-        return reverse('institution_admin:bus_search_results', kwargs={'registration_code': registration_code})
+        ticket_id = self.kwargs.get('ticket_id')
+        return reverse('institution_admin:bus_search_results', kwargs={'ticket_id': ticket_id, 'registration_code': registration_code})
+    
+
+class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    template_name = 'institution_admin/bus_search_results.html'
+    context_object_name = 'buses'
+
+    def get_queryset(self):
+        registration_code = self.kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+
+        self.pickup_point_id = self.request.session.get('pickup_point')
+        self.drop_point_id = self.request.session.get('drop_point')
+        self.schedule_id = self.request.session.get('schedule')
+
+        if not (self.pickup_point_id and self.drop_point_id and self.schedule_id):
+            return Bus.objects.none()
+        
+        buses = Bus.objects.filter(
+            org=registration.org,
+            schedule_id=self.schedule_id,
+        ).filter(
+            Q(route__stops__id=self.pickup_point_id) if self.pickup_point_id == self.drop_point_id else Q(route__stops__id__in=[self.pickup_point_id, self.drop_point_id])
+        ).annotate(
+            matching_stops=Count('route__stops', filter=Q(route__stops__id__in=[self.pickup_point_id, self.drop_point_id]))
+        ).filter(
+            matching_stops=1 if self.pickup_point_id == self.drop_point_id else 2
+        ).distinct()
+
+        # Subquery to fetch available seats from BusCapacity
+        bus_capacity_subquery = BusCapacity.objects.filter(
+            bus=OuterRef('pk'),
+            registration=registration
+        ).values('available_seats')
+
+        # Annotate buses with available seats or fallback to total capacity
+        buses = buses.annotate(
+            available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
+        )
+
+        return buses
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
+        context['pickup_point'] = get_object_or_404(Stop, id=self.pickup_point_id)
+        context['drop_point'] = get_object_or_404(Stop, id=self.drop_point_id)
+        context['schedule'] = get_object_or_404(Schedule, id=self.schedule_id)
+        return context
 
     

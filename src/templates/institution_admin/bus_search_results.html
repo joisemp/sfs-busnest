@@ -1,0 +1,82 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/search_result/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+<section id="details-bar">
+    <div class="table-content">
+        <p><a href="#" onclick="history.back()" style="text-decoration: none; color:black"><i
+                    class="fa-solid fa-angle-left me-2"></i>Go back</a>
+        </p>
+        <!-- <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td><p>Stop:<span>Electronic city</span></p></td>
+                        <td> <p>Timming:<span>Morning-Evening</span></p></td>
+                        <td><p><i class="fa-regular fa-pen-to-square ms-2"></i></p></td>
+                      </tr>
+                </thead>
+            </table>
+          </div> -->
+    </div>
+</section>
+<section id="search-card">
+    <div class="main-wrap">
+        <div class="content-wrap">
+            {% for bus in buses %}
+            <div class="card-wrap">
+                <div class="card">
+                    <div class="mb-3">
+                        <div class="mb-3">
+                            <h5 class="card-title">{{bus.label}}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{bus.bus_no}}</h6>
+                        </div>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ bus.available_seats }} seats available</h6>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <div class="button-block d-flex">
+
+
+                            <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#confirmModal{{bus.id}}">Select bus<i
+                                    class="fa-solid fa-arrow-right ms-2"></i></a>
+
+                            <div class="modal fade" id="confirmModal{{bus.id}}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="confirmModalLabel">Please confirm</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p><span class="text-muted">Bus</span> : <span class="text-danger">{{ticket.bus.label}}</span> <i class="fa-solid fa-arrow-right mx-2"></i> {{bus.label}}</p>
+                                            <p><span class="text-muted">Pickup point</span> : <span class="text-danger">{{ticket.pickup_point.name}}</span> <i class="fa-solid fa-arrow-right mx-2"></i> {{pickup_point.name}}</p>
+                                            <p><span class="text-muted">Drop point</span> : <span class="text-danger">{{ticket.drop_point.name}}</span> <i class="fa-solid fa-arrow-right mx-2"></i> {{drop_point.name}}</p>
+                                            <p><span class="text-muted">Schedule</span> : <span class="text-danger">{{ticket.schedule.name}}</span> <i class="fa-solid fa-arrow-right mx-2"></i> {{schedule.name}}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <a href="#" class="btn btn-primary">Save changes</a>
+                                          </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock content %}
