@@ -11,6 +11,10 @@
 
 {% block content %}
 
+<div class="mb-3">
+    <a class="btn btn-secondary me-2" href="{% url 'central_admin:more_menu' %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+</div>
+
 <ul>
     {% for request in bus_requests %}
     <li>{{request}}</li>
