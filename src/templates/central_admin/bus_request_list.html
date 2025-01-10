@@ -1,5 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/bus_request_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/more_menu_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
 <ul>
     {% for request in bus_requests %}
     <li>{{request}}</li>
     {% endfor %}
 </ul>
+
+{% endblock content %}
+
