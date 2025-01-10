@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <div class="route-list mb-4">
+    <div class="route-list mb-5">
         <div class="table-responsive">
             <table class="table table-borderless">
 
@@ -40,12 +40,12 @@
                 <div class="col">
                     <div class="card me-2">
                         <div class="card-body">
-                            <h5 class="card-title">{{route.name}}</h5>
-                            <p class="card-subtitle mb-2 text-body-secondary mb-4">
+                            <h5 class="card-title mb-3">{{route.name}}</h5>
+                            <!-- <p class="card-subtitle mb-2 text-body-secondary mb-4">
                                 {% for stop in route.stops.all %}
                                 {{stop}}, 
                                 {% endfor %}
-                            </p>
+                            </p> -->
                             <a href="{% url 'central_admin:route_delete' slug=route.slug %}" class="btn btn-sm text-danger">Remove<i class="fa-regular fa-trash-can ms-1"></i></a>
                             <a href="{% url 'central_admin:route_update' slug=route.slug %}" class="btn btn-sm btn-dark">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
                         </div>
@@ -61,14 +61,14 @@
 
 <section id="stops">
     <div class="title-section mb-3">
-        <h3>Stops</h3>
+        <h4>Recently added stops</h4>
         <!-- search bar -->
-        <div class="search-feild">
+        <!-- <div class="search-feild">
             <form class="d-flex" id="search-feild" role="search">
                 <input class="form-control me-2 ms-3" type="search" placeholder="Search" aria-label="Search">
                 <a href="#" class="btn btn-primary ms-2" type="submit" style="width: 150px;">Search <i class="fa-solid fa-magnifying-glass ms-2"></i></a>
             </form>
-        </div>
+        </div> -->
     </div>
 
     <div class="stop-list">
@@ -77,8 +77,7 @@
             <li class="list-group-item">
                 <h6>{{stop.name}}</h6>
                 <div>
-                    <a href="{{stop.map_link}}" class="btn text-primary">View in map<i class="fa-solid fa-map-location-dot ms-2"></i></a>
-                    <a href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn btn-danger btn-sm">Delete<i class="fa-solid fa-trash ms-2"></i></a>
+                    <a href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn text-danger btn-sm">Delete<i class="fa-solid fa-trash ms-2"></i></a>
                 </div>
             </li>
             {% endfor %}

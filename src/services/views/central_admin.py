@@ -225,7 +225,7 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["stops"] = Stop.objects.filter(org=self.request.user.profile.org)
+        context["stops"] = Stop.objects.filter(org=self.request.user.profile.org).order_by('-id')[:15]
         return context
     
 
