@@ -59,7 +59,8 @@ class Institution(models.Model):
     
 
 class Stop(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='org_stops')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='registration_stops')
     name = models.CharField(max_length=200)
     map_link = models.CharField(max_length=255, null=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -76,6 +77,7 @@ class Stop(models.Model):
 
 class Route(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
     stops = models.ManyToManyField(Stop, related_name='stops')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -140,6 +142,7 @@ class Registration(models.Model):
 
 class Schedule(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='schedules')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='schedules')
     name = models.CharField(max_length=50)  # Example: "Morning", "Afternoon", "Evening"
     start_time = models.TimeField()  # Example: 08:00 AM
     end_time = models.TimeField()    # Example: 11:00 AM
