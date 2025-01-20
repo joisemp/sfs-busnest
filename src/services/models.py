@@ -59,8 +59,8 @@ class Institution(models.Model):
     
 
 class Stop(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='org_stops')
-    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='registration_stops')
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
     name = models.CharField(max_length=200)
     map_link = models.CharField(max_length=255, null=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -123,7 +123,6 @@ class Registration(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='registrations')
     name = models.CharField(max_length=200)
     instructions = models.TextField()
-    stops = models.ManyToManyField(Stop, related_name='registration_stops')
     status = models.BooleanField(default=False)
     code = models.CharField(max_length=100, unique=True, null=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
