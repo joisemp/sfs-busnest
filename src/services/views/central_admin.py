@@ -227,7 +227,8 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         user = self.request.user
         route_file.org = user.profile.org
         route_file.save()
-        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id)
+        registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
         return redirect('central_admin:route_list')
         
 
