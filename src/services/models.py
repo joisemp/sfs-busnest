@@ -62,7 +62,6 @@ class Stop(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
     registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
     name = models.CharField(max_length=200)
-    map_link = models.CharField(max_length=255, null=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):

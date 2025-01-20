@@ -305,11 +305,6 @@ class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cr
     model = Registration
     form_class = RegistrationForm
     
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
-    
     def form_valid(self, form):
         registration = form.save(commit=False)
         user = self.request.user

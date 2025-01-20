@@ -84,33 +84,22 @@ class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Stop
         fields = [
-            'name', 'map_link'
+            'name',
         ]
 
 
 class RegistrationForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Registration
-        fields = ['name', 'instructions', 'stops', 'status']
+        fields = ['name', 'instructions', 'status']
         labels = {
             'status': 'Open registration',
         }
-    
-    # Customizing the 'stops' field
-    stops = forms.ModelMultipleChoiceField(
-        queryset=Stop.objects.all(),
-        widget=forms.SelectMultiple(attrs={'size': '10'}),
-        label="Select Stops",
-        required=True,
-        help_text="Hold Ctrl (Cmd) to select multiple stops"
-    )
         
-    def clean_stops(self):
-        stops = self.cleaned_data.get('stops')
-        if not stops:
-            raise forms.ValidationError("You must select at least one stop.")
-        return stops
-
+    def __init__(self,*args,**kwargs):
+        super(RegistrationForm, self).__init__(*args,**kwargs)
+        self.fields['status'].is_switch = True
+        
 
 class FAQForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
