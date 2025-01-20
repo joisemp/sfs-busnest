@@ -24,8 +24,8 @@
                     <span class="me-2"><i class="fa-solid fa-plus me-2"></i>Create</span> 
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'central_admin:route_create' %}"><i class="fa-solid fa-map me-2"></i>Route</a></li>
-                    <li><a class="dropdown-item" href="{% url 'central_admin:stop_create' %}"><i class="fa-solid fa-location-dot me-2"></i>Stop</a></li>
+                    <li><a class="dropdown-item" href="{% url 'central_admin:route_create' registration_slug=registration.slug %}"><i class="fa-solid fa-map me-2"></i>Route</a></li>
+                    <li><a class="dropdown-item" href="{% url 'central_admin:stop_create' registration_slug=registration.slug %}"><i class="fa-solid fa-location-dot me-2"></i>Stop</a></li>
                 </ul>
             </div>
         </div>
@@ -46,8 +46,8 @@
                                 {{stop}}, 
                                 {% endfor %}
                             </p> -->
-                            <a href="{% url 'central_admin:route_delete' slug=route.slug %}" class="btn btn-sm text-danger">Remove<i class="fa-regular fa-trash-can ms-1"></i></a>
-                            <a href="{% url 'central_admin:route_update' slug=route.slug %}" class="btn btn-sm btn-dark">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
+                            <a href="{% url 'central_admin:route_delete' registration_slug=registration.slug route_slug=route.slug %}" class="btn btn-sm text-danger">Remove<i class="fa-regular fa-trash-can ms-1"></i></a>
+                            <a href="{% url 'central_admin:route_update' registration_slug=registration.slug route_slug=route.slug %}" class="btn btn-sm btn-dark">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
                         </div>
                     </div>
                 </div>
@@ -77,7 +77,7 @@
             <li class="list-group-item">
                 <h6>{{stop.name}}</h6>
                 <div>
-                    <a href="{% url 'central_admin:stop_delete' slug=stop.slug %}" class="btn text-danger btn-sm">Delete<i class="fa-solid fa-trash ms-2"></i></a>
+                    <a href="{% url 'central_admin:stop_delete' registration_slug=registration.slug stop_slug=stop.slug %}" class="btn text-danger btn-sm">Delete<i class="fa-solid fa-trash ms-2"></i></a>
                 </div>
             </li>
             {% endfor %}

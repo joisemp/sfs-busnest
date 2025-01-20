@@ -26,31 +26,30 @@ urlpatterns = [
      path('people/<slug:slug>/update/', central_admin.PeopleUpdateView.as_view(), name='people_update'),
      path('people/<slug:slug>/delete/', central_admin.PeopleDeleteView.as_view(), name='people_delete'),
      
-     path('routes/', central_admin.RouteListView.as_view(), name='route_list'),
-     path('routes/create/', central_admin.RouteCreateView.as_view(), name='route_create'),
-     path('routes/<slug:slug>/update/', central_admin.RouteUpdateView.as_view(), name='route_update'),
-     path('routes/<slug:slug>/delete/', central_admin.RouteDeleteView.as_view(), name='route_delete'),
-     path('routes/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
-     path('routes/stops/<slug:slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
-     
      path('registrations/', central_admin.RegistraionListView.as_view(), name='registration_list'),
      path('registrations/create/', central_admin.RegistrationCreateView.as_view(), name='registration_create'),
-     path('registrations/<slug:slug>/', central_admin.RegistrationDetailView.as_view(), name='registration_detail'),
-     path('registrations/<slug:slug>/update/', central_admin.RegistrationUpdateView.as_view(), name='registration_update'),
-     path('registrations/<slug:slug>/delete/', central_admin.RegistrationDeleteView.as_view(), name='registration_delete'),
+     path('registrations/<slug:registration_slug>/', central_admin.RegistrationDetailView.as_view(), name='registration_detail'),
+     path('registrations/<slug:registration_slug>/update/', central_admin.RegistrationUpdateView.as_view(), name='registration_update'),
+     path('registrations/<slug:registration_slug>/delete/', central_admin.RegistrationDeleteView.as_view(), name='registration_delete'),
      
+     path('registrations/<slug:registration_slug>/routes/', central_admin.RouteListView.as_view(), name='route_list'),
      path('registrations/<slug:registration_slug>/routes/upload/', central_admin.RouteFileUploadView.as_view(), name='route_file_upload'),
+     path('registrations/<slug:registration_slug>/routes/create/', central_admin.RouteCreateView.as_view(), name='route_create'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/update/', central_admin.RouteUpdateView.as_view(), name='route_update'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/delete/', central_admin.RouteDeleteView.as_view(), name='route_delete'),
+     path('registrations/<slug:registration_slug>/routes/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
+     path('registrations/<slug:registration_slug>/routes/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),
      
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
      
-     path('schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
-     path('schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
-     path('schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
+     path('registrations/<slug:registration_slug>/schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
+     path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
+     path('registrations/<slug:registration_slug>/schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
-     path('bus-requests/', central_admin.BusRequestListView.as_view(), name='bus_request_list'),
+     path('registrations/<slug:registration_slug>/bus-requests/', central_admin.BusRequestListView.as_view(), name='bus_request_list'),
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
      
