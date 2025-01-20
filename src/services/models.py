@@ -157,22 +157,20 @@ class Schedule(models.Model):
 
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
-    label = models.CharField(max_length=255)
-    bus_no = models.CharField(max_length=15)
-    schedule = models.ForeignKey(Schedule, null=True, on_delete=models.SET_NULL, related_name='buses')
-    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    registration_no = models.CharField(max_length=15)
     driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
+    is_available = models.BooleanField(default=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.bus_no)
+            base_slug = slugify(f"{self.registration_no}-{self.capacity}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.label} - {self.bus_no}"
+        return self.registration_no
     
 
 class BusCapacity(models.Model):

@@ -37,12 +37,12 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Bus
         fields = [
-            'label', 'bus_no', 'route', 'driver', 'schedule', 'capacity'
+            'registration_no', 'driver', 'capacity', 'is_available'
         ]
     def __init__(self,*args,**kwargs):
         super(BusForm,self).__init__(*args,**kwargs)
-        self.fields['label'].label="Bus no"
-        self.fields['bus_no'].label="Registration no"
+        self.fields['is_available'].label="Available for service"
+        self.fields['is_available'].is_switch = True
 
 
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

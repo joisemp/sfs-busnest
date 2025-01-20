@@ -10,20 +10,23 @@ class BootstrapFormMixin:
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             widget = field.widget
+
             # Add 'form-control' class to all fields except Checkboxes and RadioSelect
-            if isinstance(widget, (forms.CheckboxInput, forms.RadioSelect)):
+            if isinstance(widget, forms.CheckboxInput):
+                widget.attrs['class'] = widget.attrs.get('class', '') + ' form-check-input'
+            elif isinstance(widget, forms.RadioSelect):
                 widget.attrs['class'] = widget.attrs.get('class', '') + ' form-check-input'
             else:
                 widget.attrs['class'] = widget.attrs.get('class', '') + ' form-control'
-            
+
             # Special handling for select elements
             if isinstance(widget, forms.Select):
                 widget.attrs['class'] += ' form-select'
-            
+
             # Add Bootstrap class for error styling
             if field_name in self.errors:
                 widget.attrs['class'] += ' is-invalid'
-                
+
     def as_p(self):
         """
         Render the form fields as <p> elements with Bootstrap styling, error messages,
@@ -55,18 +58,46 @@ class BootstrapFormMixin:
             if field.help_text:
                 help_text_html = f'<small class="form-text text-muted">{field.help_text}</small>'
 
-            # Build the <p> tag for the field
-            label_html = ''
-            if bound_field.label:  # Only add the label if it is not an empty string
-                label_html = f'<label for="{bound_field.id_for_label}" class="mb-1 ps-1">{bound_field.label}</label>'
+            # Check if the field should be rendered as a switch
+            is_switch = getattr(field, 'is_switch', False)
 
-            output.append(f"""
-            <p class="form-group">
-                {label_html}
-                {bound_field}
-                {error_html}
-                {help_text_html}
-            </p>
-            """)
+            if isinstance(bound_field.field.widget, forms.CheckboxInput) and is_switch:
+                # Render as a switch
+                output.append(f"""
+                <div class="form-check form-switch mb-3">
+                    {bound_field}
+                    <label class="form-check-label" for="{bound_field.id_for_label}">
+                        {bound_field.label}
+                    </label>
+                    {error_html}
+                    {help_text_html}
+                </div>
+                """)
+            elif isinstance(bound_field.field.widget, forms.CheckboxInput):
+                # Render as a regular checkbox
+                output.append(f"""
+                <div class="form-check mb-3">
+                    {bound_field}
+                    <label class="form-check-label" for="{bound_field.id_for_label}">
+                        {bound_field.label}
+                    </label>
+                    {error_html}
+                    {help_text_html}
+                </div>
+                """)
+            else:
+                # Render other fields normally
+                label_html = ''
+                if bound_field.label:  # Only add the label if it is not an empty string
+                    label_html = f'<label for="{bound_field.id_for_label}" class="mb-1 ps-1">{bound_field.label}</label>'
+
+                output.append(f"""
+                <p class="form-group">
+                    {label_html}
+                    {bound_field}
+                    {error_html}
+                    {help_text_html}
+                </p>
+                """)
 
         return ''.join(output)

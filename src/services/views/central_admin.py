@@ -100,12 +100,6 @@ class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView)
     model = Bus
     form_class = BusForm
     
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        form.fields['schedule'].queryset = Schedule.objects.filter(org=self.request.user.profile.org)
-        return form
-    
     def form_valid(self, form):
         bus = form.save(commit=False)
         user = self.request.user
@@ -119,12 +113,6 @@ class BusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView)
     form_class = BusForm
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
-    
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        form.fields['schedule'].queryset = Schedule.objects.filter(org=self.request.user.profile.org)
-        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
