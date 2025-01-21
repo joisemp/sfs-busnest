@@ -1,0 +1,10 @@
+<h3>Bus records for {{registration}}</h3>
+
+<a href="#">Create bus record</a>
+
+<ul>
+    {% for record in bus_records %}
+    <li>{{record.label}}</li>
+    {% endfor %}
+</ul>
+

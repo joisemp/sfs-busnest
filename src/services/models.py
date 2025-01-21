@@ -1,6 +1,7 @@
 import os
 from uuid import uuid4
 from django.db import models
+from django.forms import ValidationError
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
 from config.validators import validate_excel_file
@@ -158,7 +159,7 @@ class Schedule(models.Model):
 
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
-    registration_no = models.CharField(max_length=15)
+    registration_no = models.CharField(max_length=15, unique=True)
     driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
     is_available = models.BooleanField(default=True)
@@ -166,7 +167,7 @@ class Bus(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.registration_no}-{self.capacity}")
+            base_slug = slugify(f"bus-{self.registration_no}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
 
@@ -174,16 +175,44 @@ class Bus(models.Model):
         return self.registration_no
     
 
-class BusCapacity(models.Model):
-    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='capacities')
-    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_capacities')
-    available_seats = models.PositiveIntegerField()  # Seats left for the specific registration
+class BusRecord(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='records')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
+    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    label = models.CharField(max_length=20)
+    pickup_booking_count = models.PositiveIntegerField(default=0)
+    drop_booking_count = models.PositiveIntegerField(default=0)
+    total_available_seats = models.PositiveIntegerField()
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     class Meta:
         unique_together = ('bus', 'registration')
+        
+    def clean(self):
+        max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
+        total_available_seats = self.bus.capacity - max_booking_count
+        if total_available_seats < 0:
+            raise ValidationError(
+                f"Cannot book more seats than the bus capacity. Available seats cannot be negative."
+            )
+        if total_available_seats > self.bus.capacity:
+            raise ValidationError(
+                f"Select a bus with minimum seating capacity of {max_booking_count}"
+            )
+        
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"bus-record-{self.registration.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
+        self.total_available_seats = self.bus.capacity - max_booking_count
+        if self.total_available_seats < 0:
+            self.total_available_seats = 0
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.bus.label} - {self.registration.name} ({self.available_seats} seats available)"
+        return f"{self.label}"
 
 
 class Ticket(models.Model):
@@ -346,13 +375,13 @@ class ExportedFile(models.Model):
         return f"Exported File for {self.user.username} - {self.created_at}"
   
 
-@receiver(post_delete, sender=Ticket)
-def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):
-    try:
-        # Find the associated BusCapacity instance
-        bus_capacity = BusCapacity.objects.get(bus=instance.bus, registration=instance.registration)
-        # Increment the available seats
-        bus_capacity.available_seats += 1
-        bus_capacity.save()
-    except BusCapacity.DoesNotExist:
-        pass
+# @receiver(post_delete, sender=Ticket)
+# def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):
+#     try:
+#         # Find the associated BusCapacity instance
+#         bus_capacity = BusCapacity.objects.get(bus=instance.bus, registration=instance.registration)
+#         # Increment the available seats
+#         bus_capacity.available_seats += 1
+#         bus_capacity.save()
+#     except BusCapacity.DoesNotExist:
+#         pass

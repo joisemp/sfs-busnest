@@ -49,6 +49,8 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
      path('registrations/<slug:registration_slug>/schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
+     path('registrations/<slug:registration_slug>/bus-records/', central_admin.BusRecordListView.as_view(), name='bus_record_list'),
+     
      path('registrations/<slug:registration_slug>/bus-requests/', central_admin.BusRequestListView.as_view(), name='bus_request_list'),
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),

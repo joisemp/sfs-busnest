@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -123,6 +123,21 @@ class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
     template_name = 'central_admin/bus_confirm_delete.html'
     success_url = reverse_lazy('central_admin:bus_list')
     
+
+class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = BusRecord
+    template_name = 'central_admin/bus_record_list.html'
+    context_object_name = 'bus_records'
+    
+    def get_queryset(self):
+        queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"])
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
