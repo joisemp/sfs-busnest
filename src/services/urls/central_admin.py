@@ -51,6 +51,7 @@ urlpatterns = [
      
      path('registrations/<slug:registration_slug>/bus-records/', central_admin.BusRecordListView.as_view(), name='bus_record_list'),
      path('registrations/<slug:registration_slug>/bus-records/create/', central_admin.BusRecordCreateView.as_view(), name='bus_record_create'),
+     path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/update/', central_admin.BusRecordUpdateView.as_view(), name='bus_record_update'),
      
      path('registrations/<slug:registration_slug>/bus-requests/', central_admin.BusRequestListView.as_view(), name='bus_request_list'),
      

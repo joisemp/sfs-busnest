@@ -4,7 +4,7 @@
 
 <ul>
     {% for record in bus_records %}
-    <li>{{record.label}} | Pickup : {{record.pickup_booking_count}} | Drop : {{record.drop_booking_count}} | Available : {{record.total_available_seats}}</li>
+    <li>{{record.label}} | Pickup : {{record.pickup_booking_count}} | Drop : {{record.drop_booking_count}} | Available : {{record.total_available_seats}} - <a href="{% url 'central_admin:bus_record_update' registration_slug=registration.slug bus_record_slug=record.slug %}">Update</a></li>
     {% endfor %}
 </ul>
 

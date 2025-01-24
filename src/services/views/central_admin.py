@@ -162,6 +162,27 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         bus_record.registration = registration
         bus_record.save()
         return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+    
+
+class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = BusRecord
+    template_name = 'central_admin/bus_record_update.html'
+    form_class = BusRecordForm
+    slug_field = 'slug'
+    slug_url_kwarg = 'bus_record_slug'
+    
+    def form_valid(self, form):
+        bus = form.cleaned_data.get('bus')
+        bus_record = form.save(commit=False)
+        
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+            old_bus_record = BusRecord.objects.get(bus=bus, registration=registration)
+            old_bus_record.bus=None
+            old_bus_record.save()
+        
+        bus_record.save()
+        return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
 
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):

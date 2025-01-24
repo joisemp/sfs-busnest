@@ -177,7 +177,7 @@ class Bus(models.Model):
 
 class BusRecord(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
-    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='records')
+    bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
     label = models.CharField(max_length=20)
@@ -190,26 +190,31 @@ class BusRecord(models.Model):
         unique_together = ('bus', 'registration')
         
     def clean(self):
-        max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-        total_available_seats = self.bus.capacity - max_booking_count
-        
-        if total_available_seats < 0:
-            raise ValidationError(
-                f"Cannot book more seats than the bus capacity. Available seats cannot be negative."
-            )
-        if total_available_seats > self.bus.capacity:
-            raise ValidationError(
-                f"Select a bus with minimum seating capacity of {max_booking_count}"
-            )
-        
+        if not self.bus is None:
+            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
+            total_available_seats = self.bus.capacity - max_booking_count
+            
+            if total_available_seats < 0:
+                raise ValidationError(
+                    f"Cannot book more seats than the bus capacity. Available seats cannot be negative."
+                )
+            if total_available_seats > self.bus.capacity:
+                raise ValidationError(
+                    f"Select a bus with minimum seating capacity of {max_booking_count}"
+                )
+            
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(f"bus-record-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
-        max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-        self.total_available_seats = self.bus.capacity - max_booking_count
-        if self.total_available_seats < 0:
+        if not self.bus is None:
+            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
+            self.total_available_seats = self.bus.capacity - max_booking_count
+            if self.total_available_seats < 0:
+                self.total_available_seats = 0
+        else:
             self.total_available_seats = 0
+            
         super().save(*args, **kwargs)
 
     def __str__(self):
