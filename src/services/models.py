@@ -192,6 +192,7 @@ class BusRecord(models.Model):
     def clean(self):
         max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
         total_available_seats = self.bus.capacity - max_booking_count
+        
         if total_available_seats < 0:
             raise ValidationError(
                 f"Cannot book more seats than the bus capacity. Available seats cannot be negative."

@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -117,3 +117,21 @@ class ScheduleForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+
+
+class BusRecordForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = BusRecord
+        fields = ['label', 'bus', 'route']
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        bus = cleaned_data.get('bus')
+        registration = cleaned_data.get('registration')  # Ensure this field exists in your model
+
+        if bus and registration:
+            # Check if a BusRecord with the same 'bus' and 'registration' already exists
+            if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+                raise ValidationError("A record with this bus and registration already exists.")
+        
+        return cleaned_data

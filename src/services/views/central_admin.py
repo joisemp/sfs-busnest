@@ -15,7 +15,7 @@ from django.utils.encoding import force_bytes
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel
 
@@ -137,6 +137,31 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
+    
+
+class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = BusRecord
+    template_name = 'central_admin/bus_record_create.html'
+    form_class = BusRecordForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['bus'].queryset = Bus.objects.filter(org=self.request.user.profile.org)
+        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
+        return form
+    
+    def form_valid(self, form):
+        bus = form.cleaned_data.get('bus')
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+            form.add_error(None, "A record with this bus and registration already exists.")
+            return self.form_invalid(form)
+        
+        bus_record = form.save(commit=False)
+        bus_record.org = self.request.user.profile.org
+        bus_record.registration = registration
+        bus_record.save()
+        return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
 
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
