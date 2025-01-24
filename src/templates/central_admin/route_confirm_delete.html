@@ -16,6 +16,6 @@
 <form method="post">
     {% csrf_token %}
     <button class="btn btn-danger me-2" type="submit">Yes delete</button>
-    <a class="btn text-primary" href="{% url 'central_admin:route_list' %}">Cancel</a>
+    <a class="btn text-primary" href="{% url 'central_admin:route_list' registration_slug=registration.slug %}">Cancel</a>
 </form>
 {% endblock %}

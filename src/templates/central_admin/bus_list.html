@@ -30,18 +30,26 @@
     <table class="table">
       <thead>
         <tr>
-          <td class="text-muted">Bus Label</td>
-          <th class="text-muted">Bus number</th>
+          <td class="text-muted">Registration no</td>
           <th class="text-muted">Driver name</th>
+          <th class="text-muted">Capacity</th>
+          <th class="text-muted">Status</th>
           <th class="text-muted">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for bus in buses %}
         <tr>
-          <td>{{bus.label}}</td>
-          <td>{{bus.bus_no}}</td>
+          <td>{{bus.registration_no}}</td>
           <td>{{bus.driver}}</td>
+          <td>{{bus.capacity}}</td>
+          <td>
+            {% if bus.is_available %}
+            <span class="badge text-bg-success">Available</span>
+            {% else %}
+            <span class="badge text-bg-danger">Mantainance</span>
+            {% endif %}
+          </td>
           <td class="table-link">
             <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-sm btn-dark">Edit</a>
             <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-sm btn-danger">Delete</a>

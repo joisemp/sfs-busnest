@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord
 from core.models import UserProfile
 from django.db import transaction
 from django.contrib.auth.base_user import BaseUserManager
@@ -15,7 +15,7 @@ from django.utils.encoding import force_bytes
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel
 
@@ -100,12 +100,6 @@ class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView)
     model = Bus
     form_class = BusForm
     
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        form.fields['schedule'].queryset = Schedule.objects.filter(org=self.request.user.profile.org)
-        return form
-    
     def form_valid(self, form):
         bus = form.save(commit=False)
         user = self.request.user
@@ -119,12 +113,6 @@ class BusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView)
     form_class = BusForm
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
-    
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        form.fields['schedule'].queryset = Schedule.objects.filter(org=self.request.user.profile.org)
-        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -135,6 +123,67 @@ class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
     template_name = 'central_admin/bus_confirm_delete.html'
     success_url = reverse_lazy('central_admin:bus_list')
     
+
+class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = BusRecord
+    template_name = 'central_admin/bus_record_list.html'
+    context_object_name = 'bus_records'
+    
+    def get_queryset(self):
+        queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"])
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+
+class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = BusRecord
+    template_name = 'central_admin/bus_record_create.html'
+    form_class = BusRecordForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['bus'].queryset = Bus.objects.filter(org=self.request.user.profile.org)
+        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
+        return form
+    
+    def form_valid(self, form):
+        bus = form.cleaned_data.get('bus')
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+            form.add_error(None, "A record with this bus and registration already exists.")
+            return self.form_invalid(form)
+        
+        bus_record = form.save(commit=False)
+        bus_record.org = self.request.user.profile.org
+        bus_record.registration = registration
+        bus_record.save()
+        return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+    
+
+class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = BusRecord
+    template_name = 'central_admin/bus_record_update.html'
+    form_class = BusRecordForm
+    slug_field = 'slug'
+    slug_url_kwarg = 'bus_record_slug'
+    
+    def form_valid(self, form):
+        bus = form.cleaned_data.get('bus')
+        bus_record = form.save(commit=False)
+        
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+            old_bus_record = BusRecord.objects.get(bus=bus, registration=registration)
+            old_bus_record.bus=None
+            old_bus_record.save()
+        
+        bus_record.save()
+        return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
@@ -226,6 +275,7 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["stops"] = Stop.objects.filter(org=self.request.user.profile.org).order_by('-id')[:15]
+        context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
         return context
     
 
@@ -239,8 +289,9 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         user = self.request.user
         route_file.org = user.profile.org
         route_file.save()
-        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id)
-        return redirect('central_admin:route_list')
+        registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 
 class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -259,14 +310,15 @@ class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVie
         route.org = user.profile.org
         route.save()
         form.save_m2m()
-        return redirect('central_admin:route_list')
+        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
     
     
 class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = Route
     form_class = RouteForm
     template_name = 'central_admin/route_update.html'
-    success_url = reverse_lazy('central_admin:route_list')
+    slug_field = 'slug'
+    slug_url_kwarg = 'route_slug'
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -276,11 +328,23 @@ class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVie
     def form_valid(self, form):
         return super().form_valid(form)
     
+    def get_success_url(self):
+        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+    
     
 class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Route
     template_name = 'central_admin/route_confirm_delete.html'
-    success_url = reverse_lazy('central_admin:route_list')
+    slug_field = 'slug'
+    slug_url_kwarg = 'route_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+    def get_success_url(self):
+        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
     
 
 class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -299,7 +363,16 @@ class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
 class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Stop
     template_name = 'central_admin/stop_confirm_delete.html'
-    success_url = reverse_lazy('central_admin:route_list')
+    slug_field = 'slug'
+    slug_url_kwarg = 'stop_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+    def get_success_url(self):
+        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
 
 
 class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
@@ -317,11 +390,6 @@ class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cr
     model = Registration
     form_class = RegistrationForm
     
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
-    
     def form_valid(self, form):
         registration = form.save(commit=False)
         user = self.request.user
@@ -336,7 +404,7 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     model = Registration
     context_object_name = 'registration'
     slug_field = 'slug'
-    slug_url_kwarg = 'slug'
+    slug_url_kwarg = 'registration_slug'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -349,11 +417,8 @@ class RegistrationUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Up
     model = Registration
     form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
-    
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
+    slug_field = 'slug'
+    slug_url_kwarg = 'registration_slug'
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -366,12 +431,14 @@ class RegistrationUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Up
         return context
     
     def get_success_url(self):
-        return reverse('central_admin:registration_detail', kwargs={'slug': self.kwargs['slug']})
+        return reverse('central_admin:registration_detail', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
 
 class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Registration
     template_name = 'central_admin/registration_confirm_delete.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'registration_slug'
     success_url = reverse_lazy('central_admin:registration_list')
     
     
@@ -479,8 +546,14 @@ class ScheduleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
     context_object_name = 'schedules'
     
     def get_queryset(self):
-        queryset = Schedule.objects.filter(org=self.request.user.profile.org)
+        self.registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = Schedule.objects.filter(org=self.request.user.profile.org, registration=self.registration)
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = self.registration
+        return context
 
 
 class ScheduleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -491,11 +564,13 @@ class ScheduleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Create
     def form_valid(self, form):
         schedule = form.save(commit=False)
         schedule.org = self.request.user.profile.org
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        schedule.registration = registration
         schedule.save()
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse('central_admin:schedule_list')
+        return reverse('central_admin:schedule_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
 
 class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
@@ -505,7 +580,7 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
     slug_url_kwarg = 'schedule_slug'
     
     def get_success_url(self):
-        return reverse('central_admin:schedule_list')
+        return reverse('central_admin:schedule_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
     
 class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):

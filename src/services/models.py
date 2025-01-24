@@ -1,6 +1,7 @@
 import os
 from uuid import uuid4
 from django.db import models
+from django.forms import ValidationError
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
 from config.validators import validate_excel_file
@@ -60,8 +61,8 @@ class Institution(models.Model):
 
 class Stop(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
     name = models.CharField(max_length=200)
-    map_link = models.CharField(max_length=255, null=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -76,6 +77,7 @@ class Stop(models.Model):
 
 class Route(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
     stops = models.ManyToManyField(Stop, related_name='stops')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -121,7 +123,6 @@ class Registration(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='registrations')
     name = models.CharField(max_length=200)
     instructions = models.TextField()
-    stops = models.ManyToManyField(Stop, related_name='registration_stops')
     status = models.BooleanField(default=False)
     code = models.CharField(max_length=100, unique=True, null=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -140,6 +141,7 @@ class Registration(models.Model):
 
 class Schedule(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='schedules')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='schedules')
     name = models.CharField(max_length=50)  # Example: "Morning", "Afternoon", "Evening"
     start_time = models.TimeField()  # Example: 08:00 AM
     end_time = models.TimeField()    # Example: 11:00 AM
@@ -157,34 +159,66 @@ class Schedule(models.Model):
 
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
-    label = models.CharField(max_length=255)
-    bus_no = models.CharField(max_length=15)
-    schedule = models.ForeignKey(Schedule, null=True, on_delete=models.SET_NULL, related_name='buses')
-    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    registration_no = models.CharField(max_length=15, unique=True)
     driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
+    is_available = models.BooleanField(default=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.bus_no)
+            base_slug = slugify(f"bus-{self.registration_no}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.label} - {self.bus_no}"
+        return self.registration_no
     
 
-class BusCapacity(models.Model):
-    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='capacities')
-    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_capacities')
-    available_seats = models.PositiveIntegerField()  # Seats left for the specific registration
+class BusRecord(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
+    bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
+    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    label = models.CharField(max_length=20)
+    pickup_booking_count = models.PositiveIntegerField(default=0)
+    drop_booking_count = models.PositiveIntegerField(default=0)
+    total_available_seats = models.PositiveIntegerField()
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     class Meta:
         unique_together = ('bus', 'registration')
+        
+    def clean(self):
+        if not self.bus is None:
+            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
+            total_available_seats = self.bus.capacity - max_booking_count
+            
+            if total_available_seats < 0:
+                raise ValidationError(
+                    f"Cannot book more seats than the bus capacity. Available seats cannot be negative."
+                )
+            if total_available_seats > self.bus.capacity:
+                raise ValidationError(
+                    f"Select a bus with minimum seating capacity of {max_booking_count}"
+                )
+            
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"bus-record-{self.registration.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        if not self.bus is None:
+            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
+            self.total_available_seats = self.bus.capacity - max_booking_count
+            if self.total_available_seats < 0:
+                self.total_available_seats = 0
+        else:
+            self.total_available_seats = 0
+            
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.bus.label} - {self.registration.name} ({self.available_seats} seats available)"
+        return f"{self.label}"
 
 
 class Ticket(models.Model):
@@ -347,13 +381,13 @@ class ExportedFile(models.Model):
         return f"Exported File for {self.user.username} - {self.created_at}"
   
 
-@receiver(post_delete, sender=Ticket)
-def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):
-    try:
-        # Find the associated BusCapacity instance
-        bus_capacity = BusCapacity.objects.get(bus=instance.bus, registration=instance.registration)
-        # Increment the available seats
-        bus_capacity.available_seats += 1
-        bus_capacity.save()
-    except BusCapacity.DoesNotExist:
-        pass
+# @receiver(post_delete, sender=Ticket)
+# def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):
+#     try:
+#         # Find the associated BusCapacity instance
+#         bus_capacity = BusCapacity.objects.get(bus=instance.bus, registration=instance.registration)
+#         # Increment the available seats
+#         bus_capacity.available_seats += 1
+#         bus_capacity.save()
+#     except BusCapacity.DoesNotExist:
+#         pass

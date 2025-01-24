@@ -53,7 +53,7 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 
 
 @shared_task(name='process_uploaded_route_excel')
-def process_uploaded_route_excel(file_path, org_id):
+def process_uploaded_route_excel(file_path, org_id, registration_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
         full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -64,6 +64,13 @@ def process_uploaded_route_excel(file_path, org_id):
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
             except Organisation.DoesNotExist:
                 logger.error(f"Organisation with ID {org_id} does not exist.")
+                return
+            
+            try:
+                registration_obj = Registration.objects.get(id=registration_id)
+                logger.info(f"Registration fetched successfully: {registration_obj.name} (ID: {registration_id})")
+            except Registration.DoesNotExist:
+                logger.error(f"Registration with ID {registration_id} does not exist.")
                 return
 
             # Open the Excel file
@@ -86,7 +93,7 @@ def process_uploaded_route_excel(file_path, org_id):
                     continue
 
                 try:
-                    route = Route.objects.create(org=org, name=route_name.strip())
+                    route = Route.objects.create(org=org, registration=registration_obj, name=route_name.strip())
                     logger.info(f"Created Route: {route.name} (ID: {route.id})")
 
                     # Iterate over the rows below the header in the same column
@@ -97,13 +104,12 @@ def process_uploaded_route_excel(file_path, org_id):
                             continue
 
                         stop_name = stop_name.strip().upper()
-                        map_link = None  # Modify if a map link is expected elsewhere in the Excel structure
 
                         try:
                             stop, created = Stop.objects.get_or_create(
                                 org=org,
                                 name=stop_name,
-                                defaults={'map_link': map_link},
+                                registration = registration_obj
                             )
 
                             if created:

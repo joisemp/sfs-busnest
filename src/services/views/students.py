@@ -5,8 +5,8 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm, BusRequestForm
-from services.models import Registration, Bus, Ticket, Schedule, Receipt, BusCapacity, BusRequest
-from django.db.models import F, Q, Count, Subquery, OuterRef
+from services.models import Registration, Bus, Ticket, Schedule, Receipt, BusRequest
+from django.db.models import F, Q, Count, Subquery
 from config.utils import generate_unique_code
 
 class ValidateStudentFormView(FormView):
@@ -110,15 +110,15 @@ class BusSearchResultsView(ListView):
         ).distinct()
 
         # Subquery to fetch available seats from BusCapacity
-        bus_capacity_subquery = BusCapacity.objects.filter(
-            bus=OuterRef('pk'),
-            registration=registration
-        ).values('available_seats')
+        # bus_capacity_subquery = BusCapacity.objects.filter(
+        #     bus=OuterRef('pk'),
+        #     registration=registration
+        # ).values('available_seats')
 
         # Annotate buses with available seats or fallback to total capacity
-        buses = buses.annotate(
-            available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
-        )
+        # buses = buses.annotate(
+        #     available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
+        # )
 
         return buses
     
@@ -223,15 +223,15 @@ class BusBookingSuccessView(TemplateView):
         bus = ticket.bus
         registration = ticket.registration
 
-        bus_capacity, created = BusCapacity.objects.get_or_create(
-            bus=bus,
-            registration=registration,
-            defaults={'available_seats': bus.capacity - 1}
-        )
+        # bus_capacity, created = BusCapacity.objects.get_or_create(
+        #     bus=bus,
+        #     registration=registration,
+        #     defaults={'available_seats': bus.capacity - 1}
+        # )
         
-        if not created:
-            bus_capacity.available_seats = max(0, bus_capacity.available_seats - 1)
-            bus_capacity.save()
+        # if not created:
+        #     bus_capacity.available_seats = max(0, bus_capacity.available_seats - 1)
+        #     bus_capacity.save()
 
         return context
 

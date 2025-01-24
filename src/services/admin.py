@@ -13,7 +13,7 @@ class InstitutionAdmin(admin.ModelAdmin):
 
 @admin.register(Bus)
 class BusAdmin(admin.ModelAdmin):
-    list_display = ('label', 'bus_no')
+    list_display = ('registration_no', 'capacity')
     
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):

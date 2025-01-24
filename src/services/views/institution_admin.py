@@ -2,7 +2,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
-from services.models import Bus, BusCapacity, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
+from services.models import Bus, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -280,15 +280,15 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         ).distinct()
 
         # Subquery to fetch available seats from BusCapacity
-        bus_capacity_subquery = BusCapacity.objects.filter(
-            bus=OuterRef('pk'),
-            registration=registration
-        ).values('available_seats')
+        # bus_capacity_subquery = BusCapacity.objects.filter(
+        #     bus=OuterRef('pk'),
+        #     registration=registration
+        # ).values('available_seats')
 
         # Annotate buses with available seats or fallback to total capacity
-        buses = buses.annotate(
-            available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
-        )
+        # buses = buses.annotate(
+        #     available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
+        # )
 
         return buses
 
@@ -318,13 +318,13 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
         drop_point = get_object_or_404(Stop, id=drop_point_id)
         schedule = get_object_or_404(Schedule, id=schedule_id)
         
-        bus_capacity = BusCapacity.objects.get(
-            bus=ticket.bus, 
-            registration=registration
-            )
+        # bus_capacity = BusCapacity.objects.get(
+        #     bus=ticket.bus, 
+        #     registration=registration
+        #     )
 
-        bus_capacity.available_seats += 1
-        bus_capacity.save()
+        # bus_capacity.available_seats += 1
+        # bus_capacity.save()
         
         # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
         
@@ -334,16 +334,16 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
         ticket.schedule = schedule
         ticket.save()
         
-        bus_capacity, created = BusCapacity.objects.get_or_create(
-            bus=ticket.bus, 
-            registration=registration, 
-            defaults={'available_seats': bus.capacity - 1}
-            )
+        # bus_capacity, created = BusCapacity.objects.get_or_create(
+        #     bus=ticket.bus, 
+        #     registration=registration, 
+        #     defaults={'available_seats': bus.capacity - 1}
+        #     )
         
-        if not created:
-            bus_capacity.available_seats -= 1
+        # if not created:
+        #     bus_capacity.available_seats -= 1
 
-        bus_capacity.save()
+        # bus_capacity.save()
         
         # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
         
