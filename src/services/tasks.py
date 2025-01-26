@@ -276,8 +276,10 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
         if filters.get('schedule'):
             queryset = queryset.filter(schedule_id=filters['schedule'])
-        if filters.get('buses'):
-            queryset = queryset.filter(bus_id__in=filters['buses'])
+        if filters.get('pickup_buses'):
+            queryset = queryset.filter(pickup_bus_record_id__in=filters['pickup_buses'])
+        if filters.get('drop_buses'):
+            queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
 
     # Creating Excel file
     wb = openpyxl.Workbook()
@@ -285,7 +287,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     ws.title = "Tickets"
 
     # Set headers
-    headers = ['Ticket ID', 'Student Name', 'Student Email', 'Contact No', 'Alternative No', 'Bus', 'Pickup Point', 'Drop Point', 'Schedule', 'Status', 'Created At']
+    headers = ['Ticket ID', 'Student Name', 'Student Email', 'Contact No', 'Alternative No', 'Pickup Point', 'Drop Point', 'Pickup Bus', 'Drop Bus', 'Schedule', 'Status', 'Created At']
     ws.append(headers)
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -298,9 +300,10 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             ticket.student_email,
             ticket.contact_no,
             ticket.alternative_contact_no,
-            ticket.bus.label,
             ticket.pickup_point.name if ticket.pickup_point else '',
             ticket.drop_point.name if ticket.drop_point else '',
+            ticket.pickup_bus_record.label if ticket.pickup_bus_record else '',
+            ticket.drop_bus_record.label if ticket.drop_bus_record else '',
             ticket.schedule.name if ticket.schedule else '',
             'Confirmed' if ticket.status else 'Pending',
             ticket.created_at.strftime('%Y-%m-%d %H:%M:%S')

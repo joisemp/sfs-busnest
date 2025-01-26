@@ -512,7 +512,8 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         pickup_points = self.request.GET.getlist('pickup_point')
         drop_points = self.request.GET.getlist('drop_point')
         schedule = self.request.GET.get('schedule')
-        buses = self.request.GET.getlist('buses')
+        pickup_buses = self.request.GET.getlist('pickup_bus')
+        drop_buses = self.request.GET.getlist('drop_bus')
         filters = False  # Default no filters applied
         
         self.search_term = self.request.GET.get('search', '')
@@ -539,8 +540,11 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         if schedule:
             queryset = queryset.filter(schedule_id=schedule)
             filters = True
-        if buses and not buses == ['']:
-            queryset = queryset.filter(bus_id__in=buses)
+        if pickup_buses and not pickup_buses == ['']:
+            queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
+            filters = True
+        if drop_buses and not drop_buses == ['']:
+            queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
             filters = True
         
         # Pass the filters flag to context (done in get_context_data)
@@ -557,11 +561,11 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         
         # Add the filter options to the context
         context['registration'] = self.registration
-        context['pickup_points'] = Stop.objects.filter(org=self.registration.org)
-        context['drop_points'] = Stop.objects.filter(org=self.registration.org)
-        context['schedules'] = Schedule.objects.filter(org=self.registration.org)
+        context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration)
+        context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration)
+        context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
-        context['buses'] = Bus.objects.filter(org=self.registration.org)
+        context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")
         context['search_term'] = self.search_term
 
         return context
@@ -650,7 +654,8 @@ class TicketExportView(View):
         pickup_points = request.GET.getlist('pickup_point')
         drop_points = request.GET.getlist('drop_point')
         schedule = request.GET.get('schedule')
-        buses = self.request.GET.getlist('buses')
+        pickup_buses = self.request.GET.getlist('pickup_bus')
+        drop_buses = self.request.GET.getlist('drop_bus')
         
         # Base queryset filtered by registration and institution
         queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
@@ -674,8 +679,10 @@ class TicketExportView(View):
             queryset = queryset.filter(drop_point_id__in=drop_points)
         if schedule:
             queryset = queryset.filter(schedule_id=schedule)
-        if buses and not buses == ['']:
-            queryset = queryset.filter(bus_id__in=buses)
+        if pickup_buses and not pickup_buses == ['']:
+            queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
+        if drop_buses and not drop_buses == ['']:
+            queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
         
         # Send the filtered queryset to the Celery task for export
         export_tickets_to_excel.apply_async(
@@ -684,7 +691,8 @@ class TicketExportView(View):
                 'pickup_points': pickup_points,
                 'drop_points': drop_points,
                 'schedule': schedule,
-                'buses': buses,
+                'pickup_buses': pickup_buses,
+                'drop_buses': drop_buses,
             }]
         )
         
