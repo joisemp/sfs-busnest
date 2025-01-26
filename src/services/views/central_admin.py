@@ -17,7 +17,7 @@ from django.contrib import messages
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel
 
@@ -132,7 +132,7 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
     context_object_name = 'bus_records'
     
     def get_queryset(self):
-        queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"])
+        queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"]).order_by('label')
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -144,7 +144,7 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
 class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     model = BusRecord
     template_name = 'central_admin/bus_record_create.html'
-    form_class = BusRecordForm
+    form_class = BusRecordCreateForm
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -167,8 +167,8 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
             registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
             
             # Check if a BusRecord already exists
-            if BusRecord.objects.filter(bus=form.cleaned_data['bus'], registration=registration).exists():
-                form.add_error(None, "A record with this bus and registration already exists.")
+            if BusRecord.objects.filter(bus=form.cleaned_data['bus'], registration=registration, schedule=form.cleaned_data['schedule']).exists():
+                form.add_error(None, "A record with this bus, schedule and registration already exists.")
                 return self.form_invalid(form)
 
             # Save the BusRecord
@@ -196,7 +196,7 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
 class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
     model = BusRecord
     template_name = 'central_admin/bus_record_update.html'
-    form_class = BusRecordForm
+    form_class = BusRecordUpdateForm
     slug_field = 'slug'
     slug_url_kwarg = 'bus_record_slug'
 
@@ -209,10 +209,11 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
             # Get the new bus from the form
             new_bus = form.cleaned_data.get('bus')
             
+            new_schedule = form.cleaned_data.get('schedule')
+            
             # Check for existing BusRecord with the same bus and registration
-            existing_record = BusRecord.objects.filter(bus=new_bus, registration=registration).exclude(pk=self.object.pk).first()
+            existing_record = BusRecord.objects.filter(bus=new_bus, schedule=new_schedule, registration=registration).exclude(pk=self.object.pk).first()
             if existing_record:
-                # Handle the existing record (e.g., remove bus assignment)
                 existing_record.bus = None
                 existing_record.save()
 

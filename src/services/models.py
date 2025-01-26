@@ -180,6 +180,7 @@ class BusRecord(models.Model):
     bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True)
     label = models.CharField(max_length=20)
     pickup_booking_count = models.PositiveIntegerField(default=0)
     drop_booking_count = models.PositiveIntegerField(default=0)
@@ -187,7 +188,7 @@ class BusRecord(models.Model):
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     class Meta:
-        unique_together = ('bus', 'registration')
+        unique_together = ('bus', 'registration', 'schedule')
         
     def clean(self):
         if self.bus:
