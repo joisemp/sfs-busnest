@@ -178,8 +178,8 @@ class BusBookingView(CreateView):
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        self.bus = get_object_or_404(Bus, slug=self.kwargs.get('bus_slug'))
-        form.fields['stop'].queryset = self.bus.route.stops.all()
+        self.bus_record = get_object_or_404(BusRecord, slug=self.kwargs.get('bus_slug'))
+        form.fields['stop'].queryset = self.bus_record.route.stops.all()
         return form
     
     @transaction.atomic
@@ -201,8 +201,14 @@ class BusBookingView(CreateView):
         ticket.schedule = get_object_or_404(Schedule, id=schedule_id)
         ticket.registration = registration
         ticket.org = registration.org
-        ticket.bus = self.bus
+        ticket.pickup_bus_record = self.bus_record
+        ticket.drop_bus_record = self.bus_record
         ticket.status = True
+        
+        self.bus_record.pickup_booking_count += 1
+        self.bus_record.drop_booking_count += 1
+        
+        self.bus_record.save()
         ticket.save()
         
         self.request.session['ticket_id'] = ticket.id
@@ -217,20 +223,6 @@ class BusBookingSuccessView(TemplateView):
         context = super().get_context_data(**kwargs)
         ticket = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
         context['ticket'] = ticket
-
-        bus = ticket.bus
-        registration = ticket.registration
-
-        # bus_capacity, created = BusCapacity.objects.get_or_create(
-        #     bus=bus,
-        #     registration=registration,
-        #     defaults={'available_seats': bus.capacity - 1}
-        # )
-        
-        # if not created:
-        #     bus_capacity.available_seats = max(0, bus_capacity.available_seats - 1)
-        #     bus_capacity.save()
-
         return context
 
         
