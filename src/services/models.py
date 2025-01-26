@@ -172,7 +172,7 @@ class Bus(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.registration_no
+        return f"{self.registration_no} (Capacity : {self.capacity})"
     
 
 class BusRecord(models.Model):
@@ -190,32 +190,32 @@ class BusRecord(models.Model):
         unique_together = ('bus', 'registration')
         
     def clean(self):
-        if not self.bus is None:
+        if self.bus:
             max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            total_available_seats = self.bus.capacity - max_booking_count
-            
-            if total_available_seats < 0:
+            if max_booking_count > self.bus.capacity:
                 raise ValidationError(
-                    f"Cannot book more seats than the bus capacity. Available seats cannot be negative."
+                    f"The bus cpacity ({self.bus.capacity}) is less than the booking count ({max_booking_count})."
                 )
-            if total_available_seats > self.bus.capacity:
-                raise ValidationError(
-                    f"Select a bus with minimum seating capacity of {max_booking_count}"
-                )
-            
+
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(f"bus-record-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
-        if not self.bus is None:
+
+        if self.bus:
             max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            self.total_available_seats = self.bus.capacity - max_booking_count
-            if self.total_available_seats < 0:
-                self.total_available_seats = 0
+            self.total_available_seats = max(0, self.bus.capacity - max_booking_count)
         else:
             self.total_available_seats = 0
-            
+
         super().save(*args, **kwargs)
+        
+    @property
+    def total_filled_seats_percentage(self):
+        if not self.bus or self.bus.capacity == 0:
+            return 0
+        filled_seats = self.bus.capacity - self.total_available_seats
+        return (filled_seats * 100) // self.bus.capacity
 
     def __str__(self):
         return f"{self.label}"

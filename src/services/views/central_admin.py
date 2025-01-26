@@ -3,14 +3,16 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
 from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord
 from core.models import UserProfile
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib import messages
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -143,25 +145,52 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
     model = BusRecord
     template_name = 'central_admin/bus_record_create.html'
     form_class = BusRecordForm
-    
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['bus'].queryset = Bus.objects.filter(org=self.request.user.profile.org)
-        form.fields['route'].queryset = Route.objects.filter(org=self.request.user.profile.org)
-        return form
-    
-    def form_valid(self, form):
-        bus = form.cleaned_data.get('bus')
-        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
-            form.add_error(None, "A record with this bus and registration already exists.")
-            return self.form_invalid(form)
+        user_org = self.request.user.profile.org if hasattr(self.request.user, 'profile') else None
         
-        bus_record = form.save(commit=False)
-        bus_record.org = self.request.user.profile.org
-        bus_record.registration = registration
-        bus_record.save()
-        return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        if user_org:
+            form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
+            form.fields['route'].queryset = Route.objects.filter(org=user_org)
+        else:
+            # Optionally raise an exception or show a custom error if the profile/org is missing
+            form.fields['bus'].queryset = Bus.objects.none()
+            form.fields['route'].queryset = Route.objects.none()
+        
+        return form
+
+    @transaction.atomic
+    def form_valid(self, form):
+        try:
+            # Get the registration based on slug
+            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+            
+            # Check if a BusRecord already exists
+            if BusRecord.objects.filter(bus=form.cleaned_data['bus'], registration=registration).exists():
+                form.add_error(None, "A record with this bus and registration already exists.")
+                return self.form_invalid(form)
+
+            # Save the BusRecord
+            bus_record = form.save(commit=False)
+            bus_record.org = self.request.user.profile.org
+            bus_record.registration = registration
+            bus_record.save()
+
+        except ObjectDoesNotExist:
+            form.add_error(None, "The specified registration does not exist.")
+            return self.form_invalid(form)
+
+        except IntegrityError:
+            form.add_error(None, "A unique constraint was violated while saving the record.")
+            return self.form_invalid(form)
+
+        # Redirect to the success URL
+        messages.success(self.request, "Bus Record created successfully!")
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
 
 class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
@@ -170,19 +199,42 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
     form_class = BusRecordForm
     slug_field = 'slug'
     slug_url_kwarg = 'bus_record_slug'
-    
+
+    @transaction.atomic
     def form_valid(self, form):
-        bus = form.cleaned_data.get('bus')
-        bus_record = form.save(commit=False)
-        
-        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
-            old_bus_record = BusRecord.objects.get(bus=bus, registration=registration)
-            old_bus_record.bus=None
-            old_bus_record.save()
-        
-        bus_record.save()
-        return redirect(reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        try:
+            # Fetch registration
+            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+            
+            # Get the new bus from the form
+            new_bus = form.cleaned_data.get('bus')
+            
+            # Check for existing BusRecord with the same bus and registration
+            existing_record = BusRecord.objects.filter(bus=new_bus, registration=registration).exclude(pk=self.object.pk).first()
+            if existing_record:
+                # Handle the existing record (e.g., remove bus assignment)
+                existing_record.bus = None
+                existing_record.save()
+
+            # Save the updated record
+            bus_record = form.save(commit=False)
+            bus_record.registration = registration
+            bus_record.save()
+
+            # Success message
+            messages.success(self.request, "Bus Record updated successfully!")
+            return redirect(self.get_success_url())
+
+        except ObjectDoesNotExist:
+            form.add_error(None, "The specified registration does not exist.")
+            return self.form_invalid(form)
+
+        except IntegrityError:
+            form.add_error(None, "A unique constraint was violated while updating the record.")
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
