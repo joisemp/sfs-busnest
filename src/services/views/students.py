@@ -5,7 +5,7 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm, BusRequestForm
-from services.models import Registration, Bus, Ticket, Schedule, Receipt, BusRequest
+from services.models import Registration, Bus, Ticket, Schedule, Receipt, BusRequest, BusRecord
 from django.db.models import F, Q, Count, Subquery
 from config.utils import generate_unique_code
 
@@ -88,37 +88,35 @@ class BusSearchResultsView(ListView):
     context_object_name = 'buses'
 
     def get_queryset(self):
+        # Retrieve the registration based on the registration code
         registration_code = self.kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
 
+        # Get pickup point, drop point, and schedule from session
         pickup_point_id = self.request.session.get('pickup_point')
         drop_point_id = self.request.session.get('drop_point')
         schedule_id = self.request.session.get('schedule')
 
+        # Return empty queryset if required data is not in session
         if not (pickup_point_id and drop_point_id and schedule_id):
-            return Bus.objects.none()
-        
-        buses = Bus.objects.filter(
+            return BusRecord.objects.none()
+
+        # Filter BusRecords based on the session data and registration
+        buses = BusRecord.objects.filter(
             org=registration.org,
+            registration=registration,
             schedule_id=schedule_id,
+            bus__is_available=True,
         ).filter(
             Q(route__stops__id=pickup_point_id) if pickup_point_id == drop_point_id else Q(route__stops__id__in=[pickup_point_id, drop_point_id])
         ).annotate(
             matching_stops=Count('route__stops', filter=Q(route__stops__id__in=[pickup_point_id, drop_point_id]))
         ).filter(
             matching_stops=1 if pickup_point_id == drop_point_id else 2
+        ).annotate(
+            # Calculate the filled percentage and add it as an annotation
+            filled_seats_percentage=F('bus__capacity') - F('total_available_seats')
         ).distinct()
-
-        # Subquery to fetch available seats from BusCapacity
-        # bus_capacity_subquery = BusCapacity.objects.filter(
-        #     bus=OuterRef('pk'),
-        #     registration=registration
-        # ).values('available_seats')
-
-        # Annotate buses with available seats or fallback to total capacity
-        # buses = buses.annotate(
-        #     available_seats=Coalesce(Subquery(bus_capacity_subquery), F('capacity'))
-        # )
 
         return buses
     
@@ -180,8 +178,8 @@ class BusBookingView(CreateView):
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        self.bus = get_object_or_404(Bus, slug=self.kwargs.get('bus_slug'))
-        form.fields['stop'].queryset = self.bus.route.stops.all()
+        self.bus_record = get_object_or_404(BusRecord, slug=self.kwargs.get('bus_slug'))
+        form.fields['stop'].queryset = self.bus_record.route.stops.all()
         return form
     
     @transaction.atomic
@@ -203,8 +201,14 @@ class BusBookingView(CreateView):
         ticket.schedule = get_object_or_404(Schedule, id=schedule_id)
         ticket.registration = registration
         ticket.org = registration.org
-        ticket.bus = self.bus
+        ticket.pickup_bus_record = self.bus_record
+        ticket.drop_bus_record = self.bus_record
         ticket.status = True
+        
+        self.bus_record.pickup_booking_count += 1
+        self.bus_record.drop_booking_count += 1
+        
+        self.bus_record.save()
         ticket.save()
         
         self.request.session['ticket_id'] = ticket.id
@@ -219,20 +223,6 @@ class BusBookingSuccessView(TemplateView):
         context = super().get_context_data(**kwargs)
         ticket = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
         context['ticket'] = ticket
-
-        bus = ticket.bus
-        registration = ticket.registration
-
-        # bus_capacity, created = BusCapacity.objects.get_or_create(
-        #     bus=bus,
-        #     registration=registration,
-        #     defaults={'available_seats': bus.capacity - 1}
-        # )
-        
-        # if not created:
-        #     bus_capacity.available_seats = max(0, bus_capacity.available_seats - 1)
-        #     bus_capacity.save()
-
         return context
 
         

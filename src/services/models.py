@@ -20,6 +20,8 @@ class Organisation(models.Model):
         null=True
     )
     email = models.EmailField(unique=True, db_index=True, null=True)
+    area = models.CharField(max_length=200)
+    city = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -172,7 +174,7 @@ class Bus(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.registration_no
+        return f"{self.registration_no} (Capacity : {self.capacity})"
     
 
 class BusRecord(models.Model):
@@ -180,6 +182,7 @@ class BusRecord(models.Model):
     bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
+    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True)
     label = models.CharField(max_length=20)
     pickup_booking_count = models.PositiveIntegerField(default=0)
     drop_booking_count = models.PositiveIntegerField(default=0)
@@ -187,35 +190,35 @@ class BusRecord(models.Model):
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     class Meta:
-        unique_together = ('bus', 'registration')
+        unique_together = ('bus', 'registration', 'schedule')
         
     def clean(self):
-        if not self.bus is None:
+        if self.bus:
             max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            total_available_seats = self.bus.capacity - max_booking_count
-            
-            if total_available_seats < 0:
+            if max_booking_count > self.bus.capacity:
                 raise ValidationError(
-                    f"Cannot book more seats than the bus capacity. Available seats cannot be negative."
+                    f"The bus cpacity ({self.bus.capacity}) is less than the booking count ({max_booking_count})."
                 )
-            if total_available_seats > self.bus.capacity:
-                raise ValidationError(
-                    f"Select a bus with minimum seating capacity of {max_booking_count}"
-                )
-            
+
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(f"bus-record-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
-        if not self.bus is None:
+
+        if self.bus:
             max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            self.total_available_seats = self.bus.capacity - max_booking_count
-            if self.total_available_seats < 0:
-                self.total_available_seats = 0
+            self.total_available_seats = max(0, self.bus.capacity - max_booking_count)
         else:
             self.total_available_seats = 0
-            
+
         super().save(*args, **kwargs)
+        
+    @property
+    def total_filled_seats_percentage(self):
+        if not self.bus or self.bus.capacity == 0:
+            return 0
+        filled_seats = self.bus.capacity - self.total_available_seats
+        return (filled_seats * 100) // self.bus.capacity
 
     def __str__(self):
         return f"{self.label}"
@@ -226,7 +229,6 @@ class Ticket(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='tickets')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='tickets')
     student_group = models.ForeignKey('services.StudentGroup', on_delete=models.CASCADE, related_name='tickets')
-    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='tickets')
     recipt = models.OneToOneField('services.Receipt', on_delete=models.CASCADE, related_name='ticket')
     ticket_id = models.CharField(max_length=300, unique=True)
     student_id = models.CharField(max_length=100)
@@ -240,6 +242,8 @@ class Ticket(models.Model):
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
+    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='pickup_tickets')
+    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='drop_tickets')
     pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_pickups')
     drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_drops')
     schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='tickets')
@@ -250,14 +254,14 @@ class Ticket(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"{self.org}-{self.student_name}-{self.bus.label}")
+            base_slug = slugify(f"{self.registration.name}-{self.ticket_id}")
             self.slug = generate_unique_slug(self, base_slug)
         if not self.ticket_id:
             self.ticket_id = generate_unique_code(self, no_of_char=12, unique_field='ticket_id')
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Ticket for {self.student_name} on {self.bus.label} ({self.schedule.name})"
+        return f"Ticket for {self.student_name} on {self.pickup_bus_record.label} ({self.schedule.name})"
 
 
 class StudentGroup(models.Model):

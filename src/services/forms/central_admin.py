@@ -119,19 +119,38 @@ class ScheduleForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         }
 
 
-class BusRecordForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+class BusRecordCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = BusRecord
-        fields = ['label', 'bus', 'route']
+        fields = ['label', 'bus', 'route', 'schedule']
         
     def clean(self):
         cleaned_data = super().clean()
         bus = cleaned_data.get('bus')
+        schedule = cleaned_data.get('schedule')
         registration = cleaned_data.get('registration')  # Ensure this field exists in your model
 
-        if bus and registration:
+        if bus and registration and schedule:
             # Check if a BusRecord with the same 'bus' and 'registration' already exists
-            if BusRecord.objects.filter(bus=bus, registration=registration).exists():
-                raise ValidationError("A record with this bus and registration already exists.")
+            if BusRecord.objects.filter(bus=bus, schedule=schedule, registration=registration).exists():
+                raise ValidationError("A record already exists.")
+        
+        return cleaned_data
+    
+
+class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = BusRecord
+        fields = ['label', 'bus']
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        bus = cleaned_data.get('bus')
+        schedule = cleaned_data.get('schedule')
+        registration = cleaned_data.get('registration')
+
+        if bus and registration and schedule:
+            if BusRecord.objects.filter(bus=bus, schedule=schedule, registration=registration).exists():
+                raise ValidationError("A record already exists.")
         
         return cleaned_data

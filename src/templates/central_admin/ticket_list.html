@@ -69,16 +69,31 @@
                 {% endfor %}
               </div>
             </div>
-            <!-- Buses -->
+            <!-- Pickup Buses -->
             <div class="mb-3">
-              <label class="form-label fw-bold">Buses</label>
-              <div id="buses" class="form-check">
+              <label class="form-label fw-bold">Pickup Buses</label>
+              <div id="pickup_bus" class="form-check">
                 <label class="form-check-label">
-                  <input type="checkbox" name="buses" value="" class="form-check-input"> All
+                  <input type="checkbox" name="pickup_bus" value="" class="form-check-input"> All
                 </label><br>
-                {% for bus in buses %}
+                {% for bus in bus_records %}
                 <label class="form-check-label">
-                  <input type="checkbox" name="buses" value="{{ bus.id }}" class="form-check-input">
+                  <input type="checkbox" name="pickup_bus" value="{{ bus.id }}" class="form-check-input">
+                  {{ bus.label }}
+                </label><br>
+                {% endfor %}
+              </div>
+            </div>
+            <!-- Drop Buses -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Drop Buses</label>
+              <div id="drop_bus" class="form-check">
+                <label class="form-check-label">
+                  <input type="checkbox" name="drop_bus" value="" class="form-check-input"> All
+                </label><br>
+                {% for bus in bus_records %}
+                <label class="form-check-label">
+                  <input type="checkbox" name="drop_bus" value="{{ bus.id }}" class="form-check-input">
                   {{ bus.label }}
                 </label><br>
                 {% endfor %}
@@ -150,10 +165,11 @@
           <th scope="col" class="font">Student ID</th>
           <th scope="col" class="font">Name</th>
           <th scope="col" class="font">School</th>
-          <th scope="col" class="font">Bus label</th>
-          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Pickup bus</th>
+          <th scope="col" class="font">Drop bus</th>
           <th scope="col" class="font">Pickup</th>
           <th scope="col" class="font">Drop</th>
+          <th scope="col" class="font">Timming</th>
           <th scope="col" class="font">Ticket ID</th>
         </tr>
       </thead>
@@ -163,10 +179,11 @@
           <td>{{ticket.student_id}}</td>
           <td>{{ticket.student_name}}</td>
           <td>{{ticket.institution.name}}</td>
-          <td>{{ticket.bus.label}}</td>
-          <td>{{ticket.schedule.name}}</td>
+          <td>{{ticket.pickup_bus_record.label}}</td>
+          <td>{{ticket.drop_bus_record.label}}</td>
           <td>{{ticket.pickup_point}}</td>
           <td>{{ticket.drop_point}}</td>
+          <td>{{ticket.schedule.name}}</td>
           <td>{{ticket.ticket_id}}</td>
         </tr>
         {% endfor %}
