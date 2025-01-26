@@ -20,6 +20,8 @@ class Organisation(models.Model):
         null=True
     )
     email = models.EmailField(unique=True, db_index=True, null=True)
+    area = models.CharField(max_length=200)
+    city = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

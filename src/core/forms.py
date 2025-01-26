@@ -22,12 +22,14 @@ class CustomAuthenticationForm(form_mixin.BootstrapFormMixin, AuthenticationForm
         
 
 class UserRegisterForm(form_mixin.BootstrapFormMixin, UserCreationForm):
-    org_name = forms.CharField(max_length=200, required=True, label='Organisation')
+    org_name = forms.CharField(max_length=200, required=True, label='Organisation name')
+    area = forms.CharField(max_length=200, required=True, label='Area / Sector / Locality')
+    city = forms.CharField(max_length=200, required=True)
     first_name = forms.CharField(max_length=200, required=True)
     last_name = forms.CharField(max_length=200, required=True)
 
     class Meta:
         model = User
-        fields = ['org_name', 'first_name', 'last_name', 'email',]  
+        fields = ['org_name', 'area', 'city', 'first_name', 'last_name', 'email',]  
         
         

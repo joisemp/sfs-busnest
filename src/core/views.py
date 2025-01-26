@@ -36,8 +36,12 @@ class UserRegisterView(CreateView):
         user = form.save()
         
         org_name = form.cleaned_data.get('org_name')
+        area = form.cleaned_data.get('area')
+        city = form.cleaned_data.get('city')
         org = Organisation.objects.create(
-            name = org_name
+            name = org_name,
+            area = area,
+            city = city,
         )
         
         # Create user profile
