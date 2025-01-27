@@ -6,8 +6,8 @@ from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse
-from django.db.models import Q
+from django.http import HttpResponseRedirect, JsonResponse
+from django.db.models import Q, Count, F
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -727,7 +727,9 @@ class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormVie
 
     def form_valid(self, form):
         stop = form.cleaned_data['stop']
+        schedule = form.cleaned_data['schedule']
         self.request.session['stop_id'] = stop.id
+        self.request.session['schedule_id'] = schedule.id
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
@@ -745,9 +747,61 @@ class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormVie
 
     def get_success_url(self):
         registration_code = self.get_registration().code
-        change_type = self.kwargs.get('changeType')
+        change_type = self.request.GET.get('changeType') 
         ticket_id = self.kwargs.get('ticket_id')
         query_params = {'changeType': change_type}
         search_result_base_url = reverse('central_admin:bus_search_results', kwargs={'ticket_id': ticket_id, 'registration_code': registration_code})
         return f"{search_result_base_url}?{urlencode(query_params)}"
+
+
+class BusSearchResultsView(ListView):
+    template_name = 'central_admin/bus_search_results.html'
+    context_object_name = 'bus_records'
+
+    def get_queryset(self):
+        # Retrieve the registration based on the registration code
+        registration_code = self.kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+
+        # Get stop and schedule from session
+        self.stop_id = self.request.session.get('stop_id')
+        self.schedule_id = self.request.session.get('schedule_id')
+        self.change_type = self.request.GET.get('changeType')
+
+        # Return empty queryset if required data is missing
+        if not (self.stop_id and self.schedule_id):
+            return BusRecord.objects.none()
+
+        # Initialize buses with an empty queryset
+        buses = BusRecord.objects.none()
+
+        # Filter logic based on changeType
+        if self.change_type == 'pickup':
+            buses = BusRecord.objects.filter(
+                org=registration.org,
+                registration=registration,
+                schedule_id=self.schedule_id,
+                pickup_booking_count__lt=F('bus__capacity'),  # Pickup count must be less than capacity
+                route__stops__id=self.stop_id,  # Stop must be in the route
+            ).annotate(available_seats=F('bus__capacity') - F('pickup_booking_count'))
+        elif self.change_type == 'drop':
+            buses = BusRecord.objects.filter(
+                org=registration.org,
+                registration=registration,
+                schedule_id=self.schedule_id,
+                drop_booking_count__lt=F('bus__capacity'),  # Drop count must be less than capacity
+                route__stops__id=self.stop_id,  # Stop must be in the route
+            ).annotate(available_seats=F('bus__capacity') - F('drop_booking_count'))
+
+        return buses.distinct()
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        context['stop'] = get_object_or_404(Stop, id=self.stop_id)
+        context['schedule'] = get_object_or_404(Schedule, id=self.schedule_id)
+        context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
+        context['change_type'] = self.change_type
+        return context
     
