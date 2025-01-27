@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
 from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
@@ -13,11 +13,12 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
+from urllib.parse import urlencode
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel
 
@@ -707,5 +708,46 @@ class BusRequestListView(ListView):
     def get_queryset(self):
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
         return queryset
+
+
+class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
+    template_name = 'central_admin/bus_search_form.html'
+    form_class = BusSearchForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
     
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all()
+        return form
+
+    def form_valid(self, form):
+        stop = form.cleaned_data['stop']
+        self.request.session['stop_id'] = stop.id
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        
+        change_type = self.request.GET.get('changeType')  
+        
+        if change_type == 'pickup':
+            context['change_type'] = 'pickup'
+        elif change_type == 'drop':
+            context['change_type'] = 'drop'
+        
+        return context
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        change_type = self.kwargs.get('changeType')
+        ticket_id = self.kwargs.get('ticket_id')
+        query_params = {'changeType': change_type}
+        search_result_base_url = reverse('central_admin:bus_search_results', kwargs={'ticket_id': ticket_id, 'registration_code': registration_code})
+        return f"{search_result_base_url}?{urlencode(query_params)}"
     

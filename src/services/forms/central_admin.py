@@ -154,3 +154,20 @@ class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
                 raise ValidationError("A record already exists.")
         
         return cleaned_data
+    
+
+class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
+    stop = forms.ModelChoiceField(
+        queryset=Stop.objects.all(),
+        label="",
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Select stop'
+    )
+    schedule = forms.ModelChoiceField(
+        queryset=Schedule.objects.all(),
+        label="",
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Select timing'
+    ) 
