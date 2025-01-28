@@ -805,3 +805,48 @@ class BusSearchResultsView(ListView):
         context['change_type'] = self.change_type
         return context
     
+
+class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    @transaction.atomic
+    def get(self, request, registration_code, ticket_id, bus_record_slug):
+        registration = get_object_or_404(Registration, code=registration_code)
+        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+        
+        change_type = self.request.GET.get('changeType')
+        
+        stop_id = self.request.session.get('stop_id')
+        
+        stop = get_object_or_404(Stop, id=stop_id)
+        
+        if change_type == 'pickup':
+            new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
+            current_pickup_bus_record = ticket.pickup_bus_record
+            
+            current_pickup_bus_record.pickup_booking_count -= 1
+            new_bus_record.pickup_booking_count += 1
+            new_bus_record.save()
+            current_pickup_bus_record.save()
+            
+            ticket.pickup_bus_record = new_bus_record
+            ticket.pickup_point = stop
+            ticket.save()
+            
+        if change_type == 'drop':
+            new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
+            current_drop_bus_record = ticket.drop_bus_record
+            
+            current_drop_bus_record.drop_booking_count -= 1
+            new_bus_record.drop_booking_count += 1
+            new_bus_record.save()
+            current_drop_bus_record.save()
+            
+            ticket.drop_bus_record = new_bus_record
+            ticket.drop_point = stop
+            ticket.save()
+        
+        return redirect(
+            reverse('central_admin:ticket_list', 
+                    kwargs={'registration_slug': registration.slug}
+                )
+            )
+    
