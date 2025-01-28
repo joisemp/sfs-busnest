@@ -6,13 +6,13 @@
 {% endblock style %}
 
 {% block sidebar %}
-{% include 'central_admin/more_menu_sidebar.html' %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
 {% endblock sidebar %}
 
 {% block content %}
 
 <div class="mb-3">
-    <a class="btn btn-secondary me-2" href="{% url 'central_admin:more_menu' %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+    <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_list' %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
 </div>
 
 <div class="accordion" id="accordionExample">
