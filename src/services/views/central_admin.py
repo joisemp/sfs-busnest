@@ -1,23 +1,24 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
 from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse
-from django.db.models import Q
+from django.http import HttpResponseRedirect, JsonResponse
+from django.db.models import Q, Count, F
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
+from urllib.parse import urlencode
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel
 
@@ -707,5 +708,145 @@ class BusRequestListView(ListView):
     def get_queryset(self):
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
         return queryset
+
+
+class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
+    template_name = 'central_admin/bus_search_form.html'
+    form_class = BusSearchForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
     
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all()
+        return form
+
+    def form_valid(self, form):
+        stop = form.cleaned_data['stop']
+        schedule = form.cleaned_data['schedule']
+        self.request.session['stop_id'] = stop.id
+        self.request.session['schedule_id'] = schedule.id
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        
+        change_type = self.request.GET.get('changeType')  
+        
+        if change_type == 'pickup':
+            context['change_type'] = 'pickup'
+        elif change_type == 'drop':
+            context['change_type'] = 'drop'
+        
+        return context
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        change_type = self.request.GET.get('changeType') 
+        ticket_id = self.kwargs.get('ticket_id')
+        query_params = {'changeType': change_type}
+        search_result_base_url = reverse('central_admin:bus_search_results', kwargs={'ticket_id': ticket_id, 'registration_code': registration_code})
+        return f"{search_result_base_url}?{urlencode(query_params)}"
+
+
+class BusSearchResultsView(ListView):
+    template_name = 'central_admin/bus_search_results.html'
+    context_object_name = 'bus_records'
+
+    def get_queryset(self):
+        # Retrieve the registration based on the registration code
+        registration_code = self.kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+
+        # Get stop and schedule from session
+        self.stop_id = self.request.session.get('stop_id')
+        self.schedule_id = self.request.session.get('schedule_id')
+        self.change_type = self.request.GET.get('changeType')
+
+        # Return empty queryset if required data is missing
+        if not (self.stop_id and self.schedule_id):
+            return BusRecord.objects.none()
+
+        # Initialize buses with an empty queryset
+        buses = BusRecord.objects.none()
+
+        # Filter logic based on changeType
+        if self.change_type == 'pickup':
+            buses = BusRecord.objects.filter(
+                org=registration.org,
+                registration=registration,
+                schedule_id=self.schedule_id,
+                pickup_booking_count__lt=F('bus__capacity'),  # Pickup count must be less than capacity
+                route__stops__id=self.stop_id,  # Stop must be in the route
+            ).annotate(available_seats=F('bus__capacity') - F('pickup_booking_count'))
+        elif self.change_type == 'drop':
+            buses = BusRecord.objects.filter(
+                org=registration.org,
+                registration=registration,
+                schedule_id=self.schedule_id,
+                drop_booking_count__lt=F('bus__capacity'),  # Drop count must be less than capacity
+                route__stops__id=self.stop_id,  # Stop must be in the route
+            ).annotate(available_seats=F('bus__capacity') - F('drop_booking_count'))
+
+        return buses.distinct()
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        context['stop'] = get_object_or_404(Stop, id=self.stop_id)
+        context['schedule'] = get_object_or_404(Schedule, id=self.schedule_id)
+        context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
+        context['change_type'] = self.change_type
+        return context
+    
+
+class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    @transaction.atomic
+    def get(self, request, registration_code, ticket_id, bus_record_slug):
+        registration = get_object_or_404(Registration, code=registration_code)
+        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+        
+        change_type = self.request.GET.get('changeType')
+        
+        stop_id = self.request.session.get('stop_id')
+        
+        stop = get_object_or_404(Stop, id=stop_id)
+        
+        if change_type == 'pickup':
+            new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
+            current_pickup_bus_record = ticket.pickup_bus_record
+            
+            current_pickup_bus_record.pickup_booking_count -= 1
+            new_bus_record.pickup_booking_count += 1
+            new_bus_record.save()
+            current_pickup_bus_record.save()
+            
+            ticket.pickup_bus_record = new_bus_record
+            ticket.pickup_point = stop
+            ticket.save()
+            
+        if change_type == 'drop':
+            new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
+            current_drop_bus_record = ticket.drop_bus_record
+            
+            current_drop_bus_record.drop_booking_count -= 1
+            new_bus_record.drop_booking_count += 1
+            new_bus_record.save()
+            current_drop_bus_record.save()
+            
+            ticket.drop_bus_record = new_bus_record
+            ticket.drop_point = stop
+            ticket.save()
+        
+        return redirect(
+            reverse('central_admin:ticket_list', 
+                    kwargs={'registration_slug': registration.slug}
+                )
+            )
     

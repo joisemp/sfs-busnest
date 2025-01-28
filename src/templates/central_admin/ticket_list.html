@@ -171,6 +171,7 @@
           <th scope="col" class="font">Drop</th>
           <th scope="col" class="font">Timming</th>
           <th scope="col" class="font">Ticket ID</th>
+          <th scope="col" class="font">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -185,6 +186,52 @@
           <td>{{ticket.drop_point}}</td>
           <td>{{ticket.schedule.name}}</td>
           <td>{{ticket.ticket_id}}</td>
+          <td>
+
+            <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal"
+              data-bs-target="#manageModal{{ticket.id}}">
+              Manage
+            </button>
+
+            <!-- Modal -->
+            <div class="modal fade" id="manageModal{{ticket.id}}" tabindex="-1"
+              aria-labelledby="manageModal{{ticket.id}}Label" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="manageModal{{ticket.id}}Label">Ticket for {{ticket.student_name}}
+                    </h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="bg-light border rounded p-2">
+                      <p><span class="text-muted">Ticket id :</span> {{ticket.ticket_id}}</p>
+                      <p><span class="text-muted">Student id :</span> {{ticket.student_id}}</p>
+                      <p><span class="text-muted">Group :</span> {{ticket.student_group.name}}</p>
+                      <p><span class="text-muted">Receipt id :</span> {{ticket.recipt.receipt_id}}</p>
+                      <p><span class="text-muted">Schedule :</span> {{ticket.schedule}}</p>
+                      <p><span class="text-muted">Pickup point :</span> {{ticket.pickup_point}}</p>
+                      <p class="mb-0"><span class="text-muted">Drop point :</span> {{ticket.drop_point}}</p>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <div class="btn-group dropup">
+                      <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <span class="me-2">Action</span>
+                      </button>
+                      <ul class="dropdown-menu shadow-lg">
+                        <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-user me-2"></i>Update student info</a></li>
+                        <li class="p-3"><a class="dropdown-item" href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=pickup"><i class="fa-solid fa-location-dot me-2"></i>Change pickup bus/stop</a></li>
+                        <li class="p-3"><a class="dropdown-item" href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=drop"><i class="fa-solid fa-flag me-2"></i>Change drop bus/stop</a></li>
+                        <li class="p-3"><a class="dropdown-item text-danger" href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
