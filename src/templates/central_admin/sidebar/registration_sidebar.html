@@ -1,0 +1,9 @@
+<section class="sidebar">
+    <div class="nav">
+        <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'registration_detail' %}active{% endif %}"><i class="fas fa-th-large me-2"></i><span>Dashboard</span></a>
+        <a href="{% url 'central_admin:ticket_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'ticket_list' %}active{% endif %}"><i class="fas fa-ticket-alt me-2"></i><span>Tickets</span></a>
+        <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'bus_record_list' %}active{% endif %}"><i class="fa-solid fa-bus me-2"></i><span>Records</span></a>
+        <a href="{% url 'central_admin:bus_request_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'bus_request_list' %}active{% endif %}"><i class="fa-solid fa-hand-point-up me-2"></i><span>Requests</span></a>
+        <a href="{% url 'central_admin:schedule_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'schedule_list' %}active{% endif %}"><i class="fa-solid fa-clock me-2"></i><span>Schedule</span></a>
+    </div>
+</section>

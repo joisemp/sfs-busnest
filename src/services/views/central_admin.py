@@ -708,6 +708,11 @@ class BusRequestListView(ListView):
     def get_queryset(self):
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
 
 class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):

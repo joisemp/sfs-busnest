@@ -1,3 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/bus_record_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
 <h3>Bus records for {{registration}}</h3>
 
 <a href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}">Create bus record</a>
@@ -8,3 +21,4 @@
     {% endfor %}
 </ul>
 
+{% endblock content %}
