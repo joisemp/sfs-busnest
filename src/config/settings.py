@@ -98,7 +98,7 @@ else:
     DATABASES = {
         'default': dj_database_url.parse(env('DATABASE_URL', default='postgresql://'))
     }
-    CELERY_BROKER_URL = env('REDIS_URL', default='rediss://')
+    CELERY_BROKER_URL = env('REDIS_URL', default='redis://')
 
 
 CELERY_RESULT_BACKEND = 'django-db'
