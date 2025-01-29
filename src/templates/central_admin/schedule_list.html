@@ -13,7 +13,7 @@
 
 <section id="schedule">
     <div class="button-group">
-        <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_list' %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+        <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
         <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule</a>
     </div>
     <div class="main-wrap">

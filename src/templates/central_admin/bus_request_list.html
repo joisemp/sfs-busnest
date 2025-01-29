@@ -13,7 +13,7 @@
 <section id="bus-requests">
   <div class="container">
       <div class="back mt-3">
-          <button class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-arrow-left me-2"></i>Go back</button>
+          <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Go back</a>
       </div>
       <div class="content mt-3" style="cursor: pointer;">
           <div class="card" data-bs-toggle="modal" data-bs-target="#exampleModal">
