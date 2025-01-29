@@ -1,27 +1,9 @@
 @import '../../sidebar_navbar_base';
 
-#ticket-list{
-    #offcanvasRightLabel{
-        color:$indigo-600;
-        font-weight: 503;
-        font-size: 31px;
-    }
+#bus_record{
     .back{
         display:flex;
         justify-content: space-between;
-    }
-    
-    .Registrations{
-        .table-responsive{
-            .table{
-                thead{
-                    .font{
-                    color:$slate-400;
-                    font-weight:502;
-                    }
-                }
-            }
-        }
     }
 }
 
