@@ -43,7 +43,16 @@ class ValidateStudentFormView(FormView):
     
     def get_success_url(self):
         registration_code = self.kwargs.get('registration_code')
-        return reverse('students:bus_search', kwargs={'registration_code': registration_code})
+        return reverse('students:rules_and_regulations', kwargs={'registration_code': registration_code})
+    
+
+class RulesAndRegulationsView(TemplateView):
+    template_name = 'students/rules_and_regulations.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
 
 
 class BusSearchFormView(FormView):

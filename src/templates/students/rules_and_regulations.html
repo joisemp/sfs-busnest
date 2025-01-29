@@ -1,0 +1,18 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/bus_request/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+
+{{registration.instructions|safe}}
+
+<a href="{% url 'students:bus_search' registration_code=registration.code %}" class="btn btn-primary">Accept rules and regulations</a>
+
+{% endblock content %}
