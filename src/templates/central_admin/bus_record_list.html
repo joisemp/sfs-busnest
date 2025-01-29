@@ -35,7 +35,7 @@
           <th class="text-body-secondary">Route</th>
           <th class="text-body-secondary">Schedule</th>
           <th class="text-body-secondary">Capacity</th>
-          <th class="text-body-secondary">Pick up</th>
+          <th class="text-body-secondary">Pick up count</th>
           <th class="text-body-secondary">Drop count</th>
           <th class="text-body-secondary">Seats progress</th>
         </tr>
@@ -50,8 +50,8 @@
           <td>{{record.route}}</td>
           <td>{{record.schedule.name}}</td>
           <td>{{record.bus.capacity}}</td>
-          <td>{{record.pickup_booking_count}}</td>
-          <td>{{record.drop_booking_count}}</td>
+          <td>{{record.pickup_booking_count}}/{{record.bus.capacity}}</td>
+          <td>{{record.drop_booking_count}}/{{record.bus.capacity}}</td>
           <td>
             <div class="progress" role="progressbar" aria-label="Example with label"
               aria-valuenow="{{ record.total_filled_seats_percentage }}" aria-valuemin="0" aria-valuemax="100">

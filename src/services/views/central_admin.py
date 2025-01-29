@@ -358,6 +358,11 @@ class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVie
         form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
         return form
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
     def form_valid(self, form):
         route = form.save(commit=False)
         user = self.request.user
@@ -382,6 +387,11 @@ class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVie
     def form_valid(self, form):
         return super().form_valid(form)
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
     def get_success_url(self):
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
     
@@ -405,6 +415,11 @@ class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
     template_name = 'central_admin/stop_create.html'
     model = Stop
     form_class = StopForm
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
     
     def form_valid(self, form):
         stop = form.save(commit=False)
@@ -627,6 +642,11 @@ class ScheduleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Create
         schedule.save()
         return super().form_valid(form)
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
     def get_success_url(self):
         return reverse('central_admin:schedule_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
@@ -637,6 +657,11 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
     form_class = ScheduleForm
     slug_url_kwarg = 'schedule_slug'
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+            
     def get_success_url(self):
         return reverse('central_admin:schedule_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
