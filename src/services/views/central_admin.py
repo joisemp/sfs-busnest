@@ -393,7 +393,7 @@ class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVie
         return context
     
     def get_success_url(self):
-        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        return reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
     
 class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):

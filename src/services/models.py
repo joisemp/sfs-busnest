@@ -364,6 +364,7 @@ class BusRequest(models.Model):
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
     contact_email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
     
     def save(self, *args, **kwargs):
