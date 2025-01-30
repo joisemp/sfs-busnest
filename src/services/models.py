@@ -209,6 +209,15 @@ class BusRecord(models.Model):
         if not self.slug:
             base_slug = slugify(f"bus-record-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
+        
+        existing_record = None  # Ensure variable is initialized
+
+        # Ensure that no other record exists with the same bus and schedule
+        if self.bus and self.schedule:
+            existing_record = BusRecord.objects.filter(bus=self.bus, schedule=self.schedule).exclude(id=self.id).first()
+            if existing_record:
+                existing_record.bus = None
+                existing_record.save(update_fields=['bus'])  # Update only the bus field
 
         if self.bus:
             max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)

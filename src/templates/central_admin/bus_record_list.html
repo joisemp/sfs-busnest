@@ -15,7 +15,8 @@
   <div class="container">
     <!-- button -->
     <div class="back mt-3">
-      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-secondary"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
+        class="btn btn-secondary"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
       <a class="btn  btn-primary btn-sm"
         href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}"><i
           class="fa-solid fa-plus me-2"></i>Add bus record</a>
@@ -23,7 +24,8 @@
     <!-- alert message -->
     <a href="#" class="alert alert-warning d-flex align-items-center mt-3" role="alert" style="font-weight:600;">
       <div>
-        <i class="fa-solid fa-triangle-exclamation me-2"></i>There are few buses records without bus assigned. Click here to view
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>There are few buses records without bus assigned. Click
+        here to view
       </div>
     </a>
     <!-- table -->
@@ -44,14 +46,39 @@
         {% for record in bus_records %}
         <tr>
           <td>
-            <a style="font-weight: 600;" href="{% url 'central_admin:bus_record_update' registration_slug=registration.slug bus_record_slug=record.slug %}">{{record.label}}</a>
+            <a style="font-weight: 600;"
+              href="{% url 'central_admin:bus_record_update' registration_slug=registration.slug bus_record_slug=record.slug %}">{{record.label}}</a>
           </td>
-          <td>{{record.bus.registration_no}}</td>
+          <td>
+            {% if record.bus %}
+            {{record.bus.registration_no}}
+            {% else %}
+            <b>----</b>
+            {% endif %}
+          </td>
           <td>{{record.route}}</td>
           <td>{{record.schedule.name}}</td>
-          <td>{{record.bus.capacity}}</td>
-          <td>{{record.pickup_booking_count}}/{{record.bus.capacity}}</td>
-          <td>{{record.drop_booking_count}}/{{record.bus.capacity}}</td>
+          <td>
+            {% if record.bus %}
+            {{record.bus.capacity}}
+            {% else %}
+            <b>----</b>
+            {% endif %}
+          </td>
+          <td>
+            {% if record.bus %}
+            {{record.pickup_booking_count}}/{{record.bus.capacity}}
+            {% else %}
+            <b>----</b>
+            {% endif %}
+          </td>
+          <td>
+            {% if record.bus %}
+            {{record.drop_booking_count}}/{{record.bus.capacity}}
+            {% else %}
+            <b>----</b>
+            {% endif %}
+          </td>
           <td>
             <div class="progress" role="progressbar" aria-label="Example with label"
               aria-valuenow="{{ record.total_filled_seats_percentage }}" aria-valuemin="0" aria-valuemax="100">
@@ -68,12 +95,3 @@
 </section>
 
 {% endblock content %}
-<ul>
-  {% for record in bus_records %}
-  <li>{{record.label}} | Pickup : {{record.pickup_booking_count}} | Drop : {{record.drop_booking_count}} | Available :
-    {{record.total_available_seats}} | Route : {{record.route}} | Filled : {{record.total_filled_seats_percentage}}% |
-    {{record.schedule}} | {{record.bus}} - <a
-      href="{% url 'central_admin:bus_record_update' registration_slug=registration.slug bus_record_slug=record.slug %}">Update</a>
-  </li>
-  {% endfor %}
-</ul>
