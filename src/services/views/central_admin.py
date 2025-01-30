@@ -26,6 +26,10 @@ from services.tasks import process_uploaded_route_excel, send_email_task, export
 User = get_user_model()
 
 
+class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    template_name = 'central_admin/dashboard.html'
+
+
 class InstitutionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     template_name = 'central_admin/institution_list.html'
     model = Institution

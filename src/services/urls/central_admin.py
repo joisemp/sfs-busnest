@@ -11,6 +11,8 @@ def exported_file_download(request, file_id):
     return FileResponse(exported_file.file, as_attachment=True, filename='ticket_export.xlsx')
 
 urlpatterns = [
+    path('dashboard/', central_admin.DashboardView.as_view(), name='dashboard'),
+    
      path('institutions/', central_admin.InstitutionListView.as_view(), name='institution_list'),
      path('institutions/create/', central_admin.InstitutionCreateView.as_view(), name='institution_create'),
      path('institutions/<slug:slug>/update/', central_admin.InstitutionUpdateView.as_view(), name='institution_update'),
