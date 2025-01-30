@@ -1,5 +1,6 @@
 <section class="sidebar">
     <div class="nav">
+        <a href="{% url 'central_admin:dashboard' %}" class="navlink {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"> <i class="fa-solid fa-columns me-2"></i><span>Dashboard</span></a>
         <a href="{% url 'central_admin:institution_list' %}" class="navlink {% if request.resolver_match.url_name == 'institution_list' %}active{% endif %}"> <i class="fa-solid fa-graduation-cap me-2"></i><span>Institutions</span></a>
         <a href="{% url 'central_admin:people_list' %}" class="navlink {% if request.resolver_match.url_name == 'people_list' %}active{% endif %}"><i class="fa-solid fa-user-group me-2"></i><span>People</span></a>
         <a href="{% url 'central_admin:bus_list' %}" class="navlink {% if request.resolver_match.url_name == 'bus_list' %}active{% endif %}"><i class="fa-solid fa-bus me-2"></i><span>Buses</span></a>

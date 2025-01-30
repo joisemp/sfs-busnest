@@ -1,0 +1,65 @@
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Upload</button>
+</form>
+
+<table id="excelTable" border="1" style="margin-top: 20px; width: 100%; border-collapse: collapse;"></table>
+<div id="loading" style="display: none; text-align: center; font-size: 18px; margin: 20px;">
+    <span>Loading...</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+    document.getElementById('id_file').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const loadingElement = document.getElementById('loading');
+        const table = document.getElementById('excelTable');
+
+        // Show loading animation
+        loadingElement.style.display = 'block';
+        table.innerHTML = ''; // Clear the table during loading
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          
+                // Hide the loading animation after 3 seconds
+                loadingElement.style.display = 'none';
+
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Get the first sheet name
+                const firstSheetName = workbook.SheetNames[0];
+                // Get the worksheet
+                const worksheet = workbook.Sheets[firstSheetName];
+                // Convert the worksheet to JSON
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Display the JSON data in a table
+                json.forEach((row, rowIndex) => {
+                    const tr = document.createElement('tr');
+
+                    row.forEach((cell) => {
+                        const td = document.createElement('td');
+                        td.textContent = cell || '';
+
+                        // Apply bold style to the first row (headers)
+                        if (rowIndex === 0) {
+                            td.style.fontWeight = 'bold';
+                            td.style.backgroundColor = '#f4f4f4'; // Optional: Add a background color for distinction
+                        }
+
+                        tr.appendChild(td);
+                    });
+
+                    table.appendChild(tr);
+                });
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+</script>

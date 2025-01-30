@@ -101,6 +101,11 @@ def rename_uploaded_file(instance, filename):
     ext = os.path.splitext(filename)[1]
     return f"{instance.org.slug}/route_files/{slugify(base_name)}-{uuid4()}{ext}"
 
+def rename_bus_uploaded_file(instance, filename):
+    base_name = os.path.splitext(filename)[0]
+    ext = os.path.splitext(filename)[1]
+    return f"{instance.org.slug}/bus_files/{slugify(base_name)}-{uuid4()}{ext}"
+
 
 class RouteFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='route_files')
@@ -364,6 +369,7 @@ class BusRequest(models.Model):
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
     contact_email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
     
     def save(self, *args, **kwargs):
@@ -383,7 +389,44 @@ class ExportedFile(models.Model):
     
     def __str__(self):
         return f"Exported File for {self.user.username} - {self.created_at}"
-  
+
+
+class BusFile(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE)
+    user=models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    file = models.FileField(upload_to=rename_bus_uploaded_file, validators=[validate_excel_file])
+    name = models.CharField(max_length=255)
+    added = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.name}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.created_at}"
+    
+
+class OrganisationActivity(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE)
+    user=models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.org}-{self.user}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"{self.created_at}"
+    
 
 # @receiver(post_delete, sender=Ticket)
 # def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):

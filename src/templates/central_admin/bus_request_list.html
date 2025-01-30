@@ -25,7 +25,7 @@
                         Bus request for {{bus_request.student_name}}
                     </div>
                     <div class="date">
-                        <span class="text-muted">{{bus_request.date}}</span>
+                        <span class="text-muted">{{bus_request.created_at.date}}</span>
                     </div>
                 </div>
                 <div class="modal fade" id="Modal{{bus_request.id}}" tabindex="-1"
@@ -58,11 +58,5 @@
         {% endif %}
     </div>
 </section>
-
-<ul>
-    {% for request in bus_requests %}
-    <li>{{request}}</li>
-    {% endfor %}
-</ul>
 
 {% endblock content %}
