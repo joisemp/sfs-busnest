@@ -1,0 +1,30 @@
+@import '../../sidebar_navbar_base';
+
+#institute{
+    padding:10px;
+    #info{
+        .card{
+            background-color: $indigo-600 !important;
+            color:aliceblue;
+            border:5px;
+            width:100%;
+            padding:20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .right{
+            color:rgb(225, 225, 225);
+            display: flex;
+            justify-content: end;
+        }
+    }
+    .wrap{
+        display: flex;
+        .card{
+            margin: 12px;
+            text-align: center;
+            padding:25px;
+            width:389px;
+        }
+    }
+}

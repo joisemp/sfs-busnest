@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/central_admin/institution_list/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/central_admin/dashboard/style.css' %}">
 {% endblock style %}
 
 {% block sidebar %}
@@ -10,7 +10,56 @@
 {% endblock sidebar %}
 
 {% block content %}
-<section>
-    <h3>Dashboard</h3>
+
+<section id="institute">
+    <div id="info">
+        <div class="card">
+            <div>
+                <h1>SFS Institution</h1>
+                <p>Habegoddi,Bengaluru</p>
+            </div>
+            <div class="right">
+                <p>Added on july 23 2025</p>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless">
+            <div class="wrap">
+                <div class="col">
+                    <div class="card">
+                        <h1>1</h1>
+                        <h5>Active registration</h5>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <h1>100</h1>
+                        <h5>Buses Available</h5>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <h1>5</h1>
+                        <h5>Institution Available</h5>
+                    </div>
+                </div>
+            </div>
+        </table>
+    </div>
+    <div class="activity mt-3">
+        <h5>Recent Activities</h5>
+        <table class="table table-hover">
+            <tr>
+                <td>Updated bus for Rahul kumar..</td>
+                <td>25 Jan 2025</td>
+            </tr>
+            <tr>
+                <td>Updated bus for Rahul kumar..</td>
+                <td>25 Jan 2025</td>
+            </tr>
+        </table>
+    </div>
 </section>
+
 {% endblock content %}
