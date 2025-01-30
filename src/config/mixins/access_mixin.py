@@ -39,7 +39,7 @@ class RedirectLoggedInUsersMixin(AccessMixin):
                 raise Http404("User profile not found.")
 
             if request.user.profile.is_central_admin:
-                return HttpResponsePermanentRedirect(reverse('central_admin:institution_list'))
+                return HttpResponsePermanentRedirect(reverse('central_admin:dashboard'))
             if request.user.profile.is_institution_admin:
                 return HttpResponsePermanentRedirect(reverse('institution_admin:registration_list'))
 

@@ -15,11 +15,11 @@
     <div id="info">
         <div class="card">
             <div>
-                <h1>SFS Institution</h1>
-                <p>Habegoddi,Bengaluru</p>
+                <h1>{{org.name}}</h1>
+                <p>{{org.area}}, {{org.city}}</p>
             </div>
             <div class="right">
-                <p>Added on july 23 2025</p>
+                <p>Added on {{org.created_at.date}}</p>
             </div>
         </div>
     </div>
@@ -28,27 +28,28 @@
             <div class="wrap">
                 <div class="col">
                     <div class="card">
-                        <h1>1</h1>
+                        <h1>{{active_registrations}}</h1>
                         <h5>Active registration</h5>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card">
-                        <h1>100</h1>
+                        <h1>{{buses_available}}</h1>
                         <h5>Buses Available</h5>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card">
-                        <h1>5</h1>
-                        <h5>Institution Available</h5>
+                        <h1>{{institution_count}}</h1>
+                        <h5>Institution added</h5>
                     </div>
                 </div>
             </div>
         </table>
     </div>
-    <div class="activity mt-3">
-        <h5>Recent Activities</h5>
+    <div class="activity mt-5">
+        <h4>Recent Activities</h4>
+        {% if recent_activities %}
         <table class="table table-hover">
             <tr>
                 <td>Updated bus for Rahul kumar..</td>
@@ -59,6 +60,9 @@
                 <td>25 Jan 2025</td>
             </tr>
         </table>
+        {% else %}
+        <p>No activites yet</p>
+        {% endif %}
     </div>
 </section>
 
