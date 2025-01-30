@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -20,7 +20,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm
 
-from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel
+from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
 
 User = get_user_model()
@@ -119,6 +119,21 @@ class BusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView)
 
     def form_valid(self, form):
         return super().form_valid(form)
+
+
+class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    template_name = 'central_admin/bus_file_upload.html'
+    model = BusFile
+    fields = ['name', 'file']
+    
+    def form_valid(self, form):
+        bus_file = form.save(commit=False)
+        user = self.request.user
+        bus_file.org = user.profile.org
+        bus_file.user = user
+        bus_file.save()
+        process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
+        return redirect(reverse('central_admin:bus_list'))
 
 
 class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):

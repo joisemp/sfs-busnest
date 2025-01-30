@@ -17,6 +17,7 @@ urlpatterns = [
      path('institutions/<slug:slug>/delete/', central_admin.InstitutionDeleteView.as_view(), name='institution_delete'),
      
      path('buses/', central_admin.BusListView.as_view(), name='bus_list'),
+     path('buses/upload/', central_admin.BusFileUploadView.as_view(), name='bus_upload'),
      path('buses/create/', central_admin.BusCreateView.as_view(), name='bus_create'),
      path('buses/<slug:slug>/update/', central_admin.BusUpdateView.as_view(), name='bus_update'),
      path('buses/<slug:slug>/delete/', central_admin.BusDeleteView.as_view(), name='bus_delete'),

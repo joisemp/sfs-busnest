@@ -6,7 +6,7 @@ from io import BytesIO
 from django.conf import settings
 import logging, time, os, csv
 from django.core.mail import send_mail
-from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile
+from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.files import File
@@ -321,3 +321,76 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     send_export_email(user, exported_file)
     
     return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} {user.email}"
+
+
+@shared_task(name='process_uploaded_bus_excel')
+def process_uploaded_bus_excel(file_path, org_id):
+    try:
+        logger.info(f"Task Started: Processing file: {file_path}")
+        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        with transaction.atomic():
+            try:
+                org = Organisation.objects.get(id=org_id)
+                logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
+            except Organisation.DoesNotExist:
+                logger.error(f"Organisation with ID {org_id} does not exist.")
+                return
+            
+            try:
+                bus_file = BusFile.objects.get(file=file_path)
+                logger.info(f"BusFile entry fetched: {bus_file.name}")
+            except BusFile.DoesNotExist:
+                logger.error(f"BusFile with path {file_path} does not exist.")
+                return
+
+            try:
+                workbook = openpyxl.load_workbook(full_path)
+                sheet = workbook.active
+                logger.info(f"Excel file opened successfully: {full_path}")
+            except Exception as e:
+                logger.error(f"Failed to open the Excel file: {e}")
+                raise
+
+            headers = [cell.value for cell in sheet[1]]  # First row as headers
+            if headers != ["Registration", "Driver", "Capacity"]:
+                logger.error("Invalid headers in the Excel file.")
+                return
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                registration, driver, capacity = row
+
+                if not registration or not driver or not capacity:
+                    logger.warning(f"Skipping incomplete row: {row}")
+                    continue
+
+                try:
+                    bus, created = Bus.objects.get_or_create(
+                        org=org,
+                        registration_no=registration.strip(),
+                        driver = driver.strip(),
+                        capacity = int(capacity)
+                    )
+
+                    if created:
+                        logger.info(f"Bus created: {registration}, Driver: {driver}, Capacity: {capacity}")
+                    else:
+                        bus.driver = driver.strip()
+                        bus.capacity = int(capacity)
+                        bus.save()
+                        logger.info(f"Bus updated: {registration}, Driver: {driver}, Capacity: {capacity}")
+
+                except Exception as e:
+                    logger.error(f"Error processing bus {registration}: {e}")
+                    raise
+
+            bus_file.added = True
+            bus_file.save()
+            logger.info("Excel processing completed successfully.")
+
+    except Exception as e:
+        logger.error(f"Error while processing Excel file: {e}")
+        raise
+    finally:
+        logger.info("Task Ended: process_uploaded_bus_excel")
+
