@@ -166,7 +166,7 @@ class Schedule(models.Model):
 
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
-    registration_no = models.CharField(max_length=15, unique=True)
+    registration_no = models.CharField(max_length=100, unique=True)
     driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
     is_available = models.BooleanField(default=True)
