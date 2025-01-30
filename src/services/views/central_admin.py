@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -28,6 +28,15 @@ User = get_user_model()
 
 class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     template_name = 'central_admin/dashboard.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['org'] = self.request.user.profile.org
+        context['active_registrations'] = Registration.objects.filter(org=self.request.user.profile.org).count()
+        context['buses_available'] = Bus.objects.filter(org=self.request.user.profile.org).count()
+        context['institution_count'] = Institution.objects.filter(org=self.request.user.profile.org).count()
+        context['recent_activities'] = OrganisationActivity.objects.filter(org=self.request.user.profile.org).count()
+        return context
 
 
 class InstitutionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):

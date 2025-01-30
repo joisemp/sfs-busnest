@@ -39,11 +39,15 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                This is some text within a card body.
+                                <div class="card bg-light p-3">
+                                    <p>Institution : {{bus_request.institution}}</p>
+                                    <p>Receipt : {{bus_request.receipt}}</p>
+                                    <p>Pickup address : {{bus_request.pickup_address}}</p>
+                                    <p>Drop address : {{bus_request.drop_address}}</p>
+                                </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary">Save changes</button>
                             </div>
                         </div>
                     </div>

@@ -5,5 +5,6 @@
         <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'bus_record_list' %}active{% endif %}"><i class="fa-solid fa-bus me-2"></i><span>Records</span></a>
         <a href="{% url 'central_admin:bus_request_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'bus_request_list' %}active{% endif %}"><i class="fa-solid fa-hand-point-up me-2"></i><span>Requests</span></a>
         <a href="{% url 'central_admin:schedule_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'schedule_list' %}active{% endif %}"><i class="fa-solid fa-clock me-2"></i><span>Schedule</span></a>
+        <a href="{% url 'central_admin:route_list' registration_slug=registration.slug %}" class="navlink {% if request.resolver_match.url_name == 'route_list' %}active{% endif %}"><i class="fa-solid fa-map me-2"></i><span>Routes</span></a>
     </div>
 </section>
