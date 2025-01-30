@@ -105,7 +105,7 @@ body .container .wrap .middle {
                     <img src="{% static 'images/logout.png' %}" style="width: 100%;">
                     <h3 class="mt-3">You have been logout successfully</h3>
                     <div class="middle">
-                        <button class="btn btn-light">Login<i class="fa-solid fa-arrow-right ms-2"></i></button>
+                        <a href="{% url 'core:login' %}" class="btn btn-light">Login<i class="fa-solid fa-arrow-right ms-2"></i></a>
                     </div>
                 </div>
             </div>
