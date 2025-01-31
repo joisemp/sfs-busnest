@@ -5,9 +5,9 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from services.forms.students import BusSearchForm, ValidateStudentForm, TicketForm, BusRequestForm
-from services.models import Registration, Bus, Ticket, Schedule, Receipt, BusRequest, BusRecord
-from django.db.models import F, Q, Count, Subquery
-from config.utils import generate_unique_code
+from services.models import Registration, Ticket, Schedule, Receipt, BusRequest, BusRecord
+from django.db.models import F, Q, Count
+from services.tasks import send_email_task
 
 class ValidateStudentFormView(FormView):
     template_name = 'students/validate_student_form.html'
@@ -219,6 +219,17 @@ class BusBookingView(CreateView):
         
         self.bus_record.save()
         ticket.save()
+        
+        subject = "Booking Confirmation"
+        message = (
+            f"Hello {ticket.student_name},\n\n"
+            f"Welcome aboard! This is an confirmation email for your booking for {ticket.pickup_bus_record.label} from {ticket.pickup_point.name}"
+            f"\nIncase of any issues please contact your respective insitution"
+            f"\n\nYour ticket id is : {ticket.ticket_id}"
+            f"\n\nBest regards,\nSFSBusNest Team"
+            )
+        recipient_list = [f"{ticket.student_email}"]
+        send_email_task.delay(subject, message, recipient_list)
         
         self.request.session['ticket_id'] = ticket.id
         
