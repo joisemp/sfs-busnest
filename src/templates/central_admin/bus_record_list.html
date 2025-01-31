@@ -14,7 +14,7 @@
 <section id="bus_record">
   <div class="container">
     <!-- button -->
-    <div class="back mt-3">
+    <div class="back mt-3 mb-3">
       <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
         class="btn btn-secondary"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
       <a class="btn  btn-primary btn-sm"
@@ -22,12 +22,22 @@
           class="fa-solid fa-plus me-2"></i>Add bus record</a>
     </div>
     <!-- alert message -->
-    <a href="#" class="alert alert-warning d-flex align-items-center mt-3" role="alert" style="font-weight:600;">
+    {% if blank_records and not reset_filter %}
+    <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}?noneRecords=True"
+      class="alert alert-warning d-flex align-items-center mt-3" role="alert" style="font-weight:600;">
       <div>
         <i class="fa-solid fa-triangle-exclamation me-2"></i>There are few buses records without bus assigned. Click
         here to view
       </div>
     </a>
+    {% elif reset_filter %}
+    <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}"
+      class="btn btn-dark mt-3 mb-3" role="alert" style="font-weight:600;">
+      <div>
+        <i class="fa-solid fa-x me-2"></i>Clear filters
+      </div>
+    </a>
+    {% endif %}
     <!-- table -->
     <table class="table">
       <thead>

@@ -4,13 +4,16 @@ import openpyxl
 from openpyxl.styles import Font
 from io import BytesIO
 from django.conf import settings
-import logging, time, os, csv
+import logging, time, os
 from django.core.mail import send_mail
 from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.files import File
 from django.urls import reverse
+from django.utils.timezone import now
+from datetime import timedelta
+
 
 User = get_user_model()
 
@@ -393,4 +396,17 @@ def process_uploaded_bus_excel(file_path, org_id):
         raise
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
+
+
+@shared_task(bind=True)
+def mark_expired_receipts(self):
+    expiry_days = 30  # Expiry duration (e.g., 30 days)
+    expiry_date = now() - timedelta(days=expiry_days)
+
+    updated_count = Receipt.objects.filter(created_at__lt=expiry_date, is_expired=False).update(is_expired=True)
+    
+    log_message = f"Task {self.request.id}: Marked {updated_count} receipts as expired."
+    logger.info(log_message)
+    
+    return log_message
 

@@ -303,6 +303,7 @@ class Receipt(models.Model):
     receipt_id = models.CharField(max_length=500, unique=True)
     student_id = models.CharField(max_length=20)
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
+    is_expired = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
