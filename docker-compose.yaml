@@ -61,6 +61,15 @@ services:
       - ./src/config/.env
     depends_on:
       - redis
+  beat:
+    image: sfs-busnest
+    container_name: sfs-busnest-beat-container
+    command: celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./src:/app
+    depends_on:
+      - app
+      - redis
 
 
 volumes:
