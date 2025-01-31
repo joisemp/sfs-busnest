@@ -403,15 +403,14 @@ def process_uploaded_bus_excel(file_path, org_id):
         logger.info("Task Ended: process_uploaded_bus_excel")
 
 
-@shared_task(bind=True)
-def mark_expired_receipts(self):
-    expiry_days = 30  # Expiry duration (e.g., 30 days)
+@shared_task
+def mark_expired_receipts():
+    expiry_days = 7 
     expiry_date = now() - timedelta(days=expiry_days)
 
     updated_count = Receipt.objects.filter(created_at__lt=expiry_date, is_expired=False).update(is_expired=True)
-    
-    log_message = f"Task {self.request.id}: Marked {updated_count} receipts as expired."
+
+    log_message = f"Marked {updated_count} receipts as expired."
     logger.info(log_message)
-    
     return log_message
 

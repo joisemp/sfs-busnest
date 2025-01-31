@@ -1,3 +1,4 @@
+import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
@@ -145,7 +146,9 @@ class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateV
         bus_file.org = user.profile.org
         bus_file.user = user
         bus_file.save()
-        process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
+        thread = threading.Thread(target=process_uploaded_bus_excel(bus_file.file.name, bus_file.org.id))
+        thread.start()
+        # process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
         return redirect(reverse('central_admin:bus_list'))
 
 
@@ -380,7 +383,9 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         route_file.org = user.profile.org
         route_file.save()
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        thread = threading.Thread(target=process_uploaded_route_excel(route_file.file.name, user.profile.org.id, registration.id))
+        thread.start()
+        # process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 
@@ -747,7 +752,18 @@ class TicketExportView(View):
             queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
         
         # Send the filtered queryset to the Celery task for export
-        export_tickets_to_excel.apply_async(
+        # export_tickets_to_excel.apply_async(
+        #     args=[request.user.id, registration_slug, search_term, {
+        #         'institution': institution,
+        #         'pickup_points': pickup_points,
+        #         'drop_points': drop_points,
+        #         'schedule': schedule,
+        #         'pickup_buses': pickup_buses,
+        #         'drop_buses': drop_buses,
+        #     }]
+        # )
+        
+        thread = threading.Thread(target=export_tickets_to_excel(
             args=[request.user.id, registration_slug, search_term, {
                 'institution': institution,
                 'pickup_points': pickup_points,
@@ -756,7 +772,8 @@ class TicketExportView(View):
                 'pickup_buses': pickup_buses,
                 'drop_buses': drop_buses,
             }]
-        )
+        ))
+        thread.start()
         
         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
     
