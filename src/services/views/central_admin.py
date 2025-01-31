@@ -161,12 +161,20 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
     context_object_name = 'bus_records'
     
     def get_queryset(self):
-        queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"]).order_by('label')
+        self.noneRecords = self.request.GET.get('noneRecords')
+        if self.noneRecords == 'True':
+            queryset = BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]).order_by('label')
+        else:
+            queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"]).order_by('label')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        if BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]):
+            context["blank_records"] = True
+        if self.noneRecords:
+            context['reset_filter'] = True
         return context
     
 
