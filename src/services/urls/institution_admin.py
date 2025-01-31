@@ -1,5 +1,8 @@
 from django.urls import path
 from services.views import institution_admin
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse
+from services.models import ExportedFile
 
 app_name = 'institution_admin'
 
@@ -24,4 +27,6 @@ urlpatterns = [
      path('student-groups/create/', institution_admin.StudentGroupCreateView.as_view(), name='student_group_create'),
      path('student-groups/<slug:student_group_slug>/update/', institution_admin.StudentGroupUpdateView.as_view(), name='student_group_update'),
      path('student-groups/<slug:student_group_slug>/delete/', institution_admin.StudentGroupDeleteView.as_view(), name='student_group_delete'),
+     
+     path('export/<slug:registration_slug>/', institution_admin.TicketExportView.as_view(), name='ticket_export'),
 ]

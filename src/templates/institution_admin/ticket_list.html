@@ -16,6 +16,8 @@
     <div>
       <a href="{% url 'institution_admin:registration_list' %}" class="btn btn-dark"><i
           class="fa-solid fa-arrow-left me-2"></i>Back</a>
+      <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i
+          class="fa-solid fa-file-excel ms-2"></i></button>
     </div>
     <div>
       {% if filters %}
@@ -137,10 +139,13 @@
           <th scope="col" class="font">Student ID</th>
           <th scope="col" class="font">Name</th>
           <th scope="col" class="font">Class</th>
-          <th scope="col" class="font">Timming</th>
-          <th scope="col" class="font">Bus</th>
+          <th scope="col" class="font">School</th>
+          <th scope="col" class="font">Pickup bus</th>
+          <th scope="col" class="font">Drop bus</th>
           <th scope="col" class="font">Pickup</th>
           <th scope="col" class="font">Drop</th>
+          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Ticket ID</th>
           <th scope="col" class="font">Action</th>
         </tr>
       </thead>
@@ -149,11 +154,14 @@
         <tr>
           <td>{{ticket.student_id}}</td>
           <td>{{ticket.student_name}}</td>
-          <td>{{ticket.recipt.student_group.name}}</td>
-          <td>{{ticket.schedule.name}}</td>
-          <td>{{ticket.bus.label}}</td>
+          <td>{{ticket.student_group}}</td>
+          <td>{{ticket.institution.name}}</td>
+          <td>{{ticket.pickup_bus_record.label}}</td>
+          <td>{{ticket.drop_bus_record.label}}</td>
           <td>{{ticket.pickup_point}}</td>
           <td>{{ticket.drop_point}}</td>
+          <td>{{ticket.schedule.name}}</td>
+          <td>{{ticket.ticket_id}}</td>
           <td>
 
             <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal"
@@ -190,9 +198,15 @@
                         <span class="me-2">Action</span>
                       </button>
                       <ul class="dropdown-menu shadow-lg">
-                        <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-user me-2"></i>Update student info</a></li>
-                        <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}"><i class="fa-solid fa-bus me-2"></i>Update bus/stop</a></li>
-                        <li class="p-3"><a class="dropdown-item text-danger" href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
+                        <li class="p-3"><a class="dropdown-item"
+                            href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
+                              class="fa-solid fa-user me-2"></i>Update student info</a></li>
+                        <li class="p-3"><a class="dropdown-item"
+                            href="{% url 'institution_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}"><i
+                              class="fa-solid fa-bus me-2"></i>Update bus/stop</a></li>
+                        <li class="p-3"><a class="dropdown-item text-danger"
+                            href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
+                              class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
                       </ul>
                     </div>
                   </div>
@@ -210,3 +224,39 @@
 </section>
 
 {% endblock content %}
+
+{% block scripts %}
+<script>
+  function exportData() {
+    // Get the current URL
+    let currentUrl = window.location.href;
+
+    // Get the URL's query parameters
+    let urlParams = new URLSearchParams(window.location.search);
+
+    // Extract the registration_slug from the Django template context (already passed in the URL tag)
+    let fetchUrl = "{% url 'institution_admin:ticket_export' registration_slug=registration.slug %}";
+
+    // Check if there are any query parameters and append them to the fetch URL
+    if (urlParams.toString()) {
+      fetchUrl += '?' + urlParams.toString();  // Append query parameters if present
+    }
+
+    // Perform the fetch request
+    fetch(fetchUrl, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+      })
+      .catch(error => {
+        console.error('Error exporting data:', error);
+      });
+  }
+
+</script>
+{% endblock scripts %}
