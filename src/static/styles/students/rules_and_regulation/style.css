@@ -115,6 +115,7 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   overflow-y: scroll !important;
   border: 1px solid rgb(220, 220, 220);
   padding: 20px;
+  height: 400px;
 }
 .card .footer {
   padding: 20px;
