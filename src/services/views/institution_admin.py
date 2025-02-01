@@ -413,16 +413,16 @@ class TicketExportView(View):
         #     }]
         # )
         
-        thread = threading.Thread(target=export_tickets_to_excel(
-            args=[request.user.id, registration_slug, search_term, {
+        thread = threading.Thread(target=export_tickets_to_excel, args=[
+            request.user.id, registration_slug, search_term, {
                 'institution': institution,
                 'pickup_points': pickup_points,
                 'drop_points': drop_points,
                 'schedule': schedule,
                 'pickup_buses': pickup_buses,
                 'drop_buses': drop_buses,
-            }]
-        ))
+            }
+        ])
         thread.start()
         
         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
