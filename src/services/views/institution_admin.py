@@ -357,72 +357,97 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
             )
 
 
-class TicketExportView(View):
-    def post(self, request, *args, **kwargs):
-        registration_slug = self.kwargs.get('registration_slug')
-        registration = get_object_or_404(Registration, slug=registration_slug)
+# class TicketExportView(View):
+#     def post(self, request, *args, **kwargs):
+#         registration_slug = self.kwargs.get('registration_slug')
+#         registration = get_object_or_404(Registration, slug=registration_slug)
         
+#         search_term = request.GET.get('search', '')
+#         institution = request.GET.get('institution')
+#         pickup_points = request.GET.getlist('pickup_point')
+#         drop_points = request.GET.getlist('drop_point')
+#         schedule = request.GET.get('schedule')
+#         pickup_buses = self.request.GET.getlist('pickup_bus')
+#         drop_buses = self.request.GET.getlist('drop_bus')
+#         student_group = self.request.GET.getlist('student_group')
+        
+#         # Base queryset filtered by registration and institution
+#         queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
+        
+#         # Apply search term filters
+#         if search_term:
+#             queryset = queryset.filter(
+#                 Q(student_name__icontains=search_term) |
+#                 Q(student_email__icontains=search_term) |
+#                 Q(student_id__icontains=search_term) |
+#                 Q(contact_no__icontains=search_term) |
+#                 Q(alternative_contact_no__icontains=search_term)
+#             )
+        
+#         # Apply other filters
+#         if institution:
+#             queryset = queryset.filter(institution_id=institution)
+#         if pickup_points and pickup_points != ['']:
+#             queryset = queryset.filter(pickup_point_id__in=pickup_points)
+#         if drop_points and drop_points != ['']:
+#             queryset = queryset.filter(drop_point_id__in=drop_points)
+#         if schedule:
+#             queryset = queryset.filter(schedule_id=schedule)
+#         if pickup_buses and not pickup_buses == ['']:
+#             queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
+#         if drop_buses and not drop_buses == ['']:
+#             queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
+#         if student_group and not student_group == ['']:
+#             queryset = queryset.filter(student_group_id__in=student_group)
+        
+#         # Send the filtered queryset to the Celery task for export
+#         # export_tickets_to_excel.apply_async(
+#         #     args=[request.user.id, registration_slug, search_term, {
+#         #         'institution': institution,
+#         #         'pickup_points': pickup_points,
+#         #         'drop_points': drop_points,
+#         #         'schedule': schedule,
+#         #         'pickup_buses': pickup_buses,
+#         #         'drop_buses': drop_buses,
+#         #         'student_group': student_group,
+#         #     }]
+#         # )
+        
+#         thread = threading.Thread(target=export_tickets_to_excel, args=[
+#             request.user.id, registration_slug, search_term, {
+#                 'institution': institution,
+#                 'pickup_points': pickup_points,
+#                 'drop_points': drop_points,
+#                 'schedule': schedule,
+#                 'pickup_buses': pickup_buses,
+#                 'drop_buses': drop_buses,
+#             }
+#         ])
+#         thread.start()
+        
+#         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
+    
+
+class TicketExportView(View):
+    def get(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
         institution = request.GET.get('institution')
         pickup_points = request.GET.getlist('pickup_point')
         drop_points = request.GET.getlist('drop_point')
         schedule = request.GET.get('schedule')
-        pickup_buses = self.request.GET.getlist('pickup_bus')
-        drop_buses = self.request.GET.getlist('drop_bus')
-        student_group = self.request.GET.getlist('student_group')
-        
-        # Base queryset filtered by registration and institution
-        queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
-        
-        # Apply search term filters
-        if search_term:
-            queryset = queryset.filter(
-                Q(student_name__icontains=search_term) |
-                Q(student_email__icontains=search_term) |
-                Q(student_id__icontains=search_term) |
-                Q(contact_no__icontains=search_term) |
-                Q(alternative_contact_no__icontains=search_term)
-            )
-        
-        # Apply other filters
-        if institution:
-            queryset = queryset.filter(institution_id=institution)
-        if pickup_points and pickup_points != ['']:
-            queryset = queryset.filter(pickup_point_id__in=pickup_points)
-        if drop_points and drop_points != ['']:
-            queryset = queryset.filter(drop_point_id__in=drop_points)
-        if schedule:
-            queryset = queryset.filter(schedule_id=schedule)
-        if pickup_buses and not pickup_buses == ['']:
-            queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
-        if drop_buses and not drop_buses == ['']:
-            queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
-        if student_group and not student_group == ['']:
-            queryset = queryset.filter(student_group_id__in=student_group)
-        
-        # Send the filtered queryset to the Celery task for export
-        # export_tickets_to_excel.apply_async(
-        #     args=[request.user.id, registration_slug, search_term, {
-        #         'institution': institution,
-        #         'pickup_points': pickup_points,
-        #         'drop_points': drop_points,
-        #         'schedule': schedule,
-        #         'pickup_buses': pickup_buses,
-        #         'drop_buses': drop_buses,
-        #         'student_group': student_group,
-        #     }]
-        # )
-        
-        thread = threading.Thread(target=export_tickets_to_excel, args=[
-            request.user.id, registration_slug, search_term, {
-                'institution': institution,
-                'pickup_points': pickup_points,
-                'drop_points': drop_points,
-                'schedule': schedule,
-                'pickup_buses': pickup_buses,
-                'drop_buses': drop_buses,
-            }
-        ])
-        thread.start()
-        
-        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
+        pickup_buses = request.GET.getlist('pickup_bus')
+        drop_buses = request.GET.getlist('drop_bus')
+        student_group = request.GET.getlist('student_group')
+
+        filters = {
+            'institution': institution,
+            'pickup_points': pickup_points,
+            'drop_points': drop_points,
+            'schedule': schedule,
+            'pickup_buses': pickup_buses,
+            'drop_buses': drop_buses,
+            'student_group': student_group,
+        }
+
+        return export_tickets_to_excel(request.user.id, registration_slug, search_term, filters)
