@@ -1,5 +1,5 @@
 from django.contrib import admin
-from services.models import Institution, Bus, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile
+from services.models import Institution, Bus, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile
 
 
 @admin.register(Organisation)
@@ -37,3 +37,5 @@ admin.site.register(Ticket)
 admin.site.register(RouteFile)
 
 admin.site.register(ReceiptFile)
+
+admin.site.register(ExportedFile)
