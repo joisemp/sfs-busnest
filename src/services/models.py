@@ -300,7 +300,7 @@ class Receipt(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipts')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='recipts')
-    receipt_id = models.CharField(max_length=500, unique=True)
+    receipt_id = models.CharField(max_length=500)
     student_id = models.CharField(max_length=20)
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
     is_expired = models.BooleanField(default=False)
