@@ -23,6 +23,7 @@ User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
+
 @shared_task(name='count_to_10')
 def count_task():
     logger.info("Task started: Count to 10")
@@ -142,17 +143,20 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
     finally:
         logger.info("Task Ended: process_uploaded_route_excel")
 
-        
-        
 
 @shared_task(name='process_uploaded_receipt_data_excel')
 def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        try:
+            file = default_storage.open(file_path, 'rb')  # Open in binary read mode
+        except FileNotFoundError:
+            logger.error(f"File {file_path} not found in storage.")
+            return
 
         with transaction.atomic():
-            # Fetch Organisation and Institution
+            # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
@@ -160,6 +164,7 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
                 logger.error(f"Organisation with ID {org_id} does not exist.")
                 return
 
+            # Fetch Institution
             try:
                 institution = Institution.objects.get(id=institution_id)
                 logger.info(f"Institution fetched successfully: {institution.name} (ID: {institution_id})")
@@ -167,7 +172,7 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
                 logger.error(f"Institution with ID {institution_id} does not exist.")
                 return
 
-            # Ensure Registration exists (optional, based on your use case)
+            # Ensure Registration exists (if required)
             try:
                 registration = Registration.objects.get(id=reg_id)
             except Registration.DoesNotExist:
@@ -175,11 +180,10 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
 
             # Process Excel File
             try:
-                import openpyxl
-                workbook = openpyxl.load_workbook(full_path)
+                workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
 
-                logger.info(f"Opened file: {full_path}")
+                logger.info(f"Opened file from storage: {file_path}")
 
                 # Validate headings
                 headings = [cell.value.strip().lower() for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
@@ -249,7 +253,6 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
         raise
     finally:
         logger.info("Task Ended: process_uploaded_receipt_data_excel")
-
 
 
 def send_export_email(user, exported_file):
@@ -481,7 +484,6 @@ def process_uploaded_bus_excel(file_path, org_id):
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
         
-
 
 @shared_task
 def mark_expired_receipts():
