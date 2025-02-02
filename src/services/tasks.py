@@ -17,7 +17,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.http import Http404
 from django.core.files.storage import default_storage
-
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -397,7 +397,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             ticket.drop_bus_record.label if ticket.drop_bus_record else '',
             ticket.schedule.name if ticket.schedule else '',
             'Confirmed' if ticket.status else 'Pending',
-            ticket.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            timezone.localtime(ticket.created_at).strftime('%Y-%m-%d %H:%M:%S')
         ])
     
     # Save the file to a BytesIO stream
