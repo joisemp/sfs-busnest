@@ -145,10 +145,8 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         receipt_data_file.org = user.profile.org
         receipt_data_file.institution = user.profile.institution
         receipt_data_file.save()
-        thread = threading.Thread(target=process_uploaded_receipt_data_excel(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id))
-        thread.start()
-        # process_uploaded_receipt_data_excel.delay(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
-        return redirect('institution_admin:receipt_list')
+        process_uploaded_receipt_data_excel.delay(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
+        return redirect(reverse('institution_admin:receipt_list'))
     
     
 class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):

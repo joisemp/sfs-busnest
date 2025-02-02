@@ -381,9 +381,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         route_file.org = user.profile.org
         route_file.save()
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        thread = threading.Thread(target=process_uploaded_route_excel(route_file.file.name, user.profile.org.id, registration.id))
-        thread.start()
-        # process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 
@@ -926,25 +924,40 @@ class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
         if change_type == 'pickup':
             new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
             current_pickup_bus_record = ticket.pickup_bus_record
-            
-            current_pickup_bus_record.pickup_booking_count -= 1
-            new_bus_record.pickup_booking_count += 1
-            new_bus_record.save()
-            current_pickup_bus_record.save()
-            
+
+            # If the new bus record is different from the current one, update counts
+            if new_bus_record != current_pickup_bus_record:
+                if current_pickup_bus_record.pickup_booking_count > 0:
+                    current_pickup_bus_record.pickup_booking_count -= 1
+                    current_pickup_bus_record.save()
+                else:
+                    # Optionally, log this or raise an error to avoid accidental negative counts
+                    print("Warning: Pickup booking count cannot go negative!")
+                    
+                new_bus_record.pickup_booking_count += 1
+                new_bus_record.save()
+
             ticket.pickup_bus_record = new_bus_record
             ticket.pickup_point = stop
             ticket.save()
+
             
         if change_type == 'drop':
             new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
             current_drop_bus_record = ticket.drop_bus_record
-            
-            current_drop_bus_record.drop_booking_count -= 1
-            new_bus_record.drop_booking_count += 1
-            new_bus_record.save()
-            current_drop_bus_record.save()
-            
+
+            if new_bus_record != current_drop_bus_record:
+                if current_drop_bus_record:
+                    print("Current bus count (before decrement):", current_drop_bus_record.drop_booking_count)
+                    current_drop_bus_record.drop_booking_count -= 1
+                    current_drop_bus_record.save()
+                    print("Current bus count (after decrement):", current_drop_bus_record.drop_booking_count)
+
+                print("New bus count (before increment):", new_bus_record.drop_booking_count)
+                new_bus_record.drop_booking_count += 1
+                new_bus_record.save()
+                print("New bus count (after increment):", new_bus_record.drop_booking_count)
+
             ticket.drop_bus_record = new_bus_record
             ticket.drop_point = stop
             ticket.save()

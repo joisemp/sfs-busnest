@@ -17,11 +17,12 @@ from datetime import timedelta
 from django.conf import settings
 from django.http import Http404
 from django.core.files.storage import default_storage
-
+from django.utils import timezone
 
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
+
 
 @shared_task(name='count_to_10')
 def count_task():
@@ -63,9 +64,16 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 def process_uploaded_route_excel(file_path, org_id, registration_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        # Retrieve file from DigitalOcean Spaces (S3)
+        try:
+            file = default_storage.open(file_path, 'rb')
+        except FileNotFoundError:
+            logger.error(f"File {file_path} not found in storage.")
+            return
 
         with transaction.atomic():
+            # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
@@ -73,6 +81,7 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                 logger.error(f"Organisation with ID {org_id} does not exist.")
                 return
             
+            # Fetch Registration
             try:
                 registration_obj = Registration.objects.get(id=registration_id)
                 logger.info(f"Registration fetched successfully: {registration_obj.name} (ID: {registration_id})")
@@ -80,17 +89,16 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                 logger.error(f"Registration with ID {registration_id} does not exist.")
                 return
 
-            # Open the Excel file
+            # Open and process the Excel file
             try:
-                from openpyxl import load_workbook
-                workbook = load_workbook(full_path)
+                workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
-                logger.info(f"Excel file opened successfully: {full_path}")
+                logger.info(f"Opened file from storage: {file_path}")
             except Exception as e:
                 logger.error(f"Failed to open the Excel file: {e}")
                 raise
 
-            # Process the sheet headers and data
+            # Extract and process headers (route names)
             headers = [cell.value for cell in sheet[1]]  # First row as headers
             logger.info(f"Extracted headers (route names): {headers}")
 
@@ -116,7 +124,7 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                             stop, created = Stop.objects.get_or_create(
                                 org=org,
                                 name=stop_name,
-                                registration = registration_obj
+                                registration=registration_obj
                             )
 
                             if created:
@@ -142,17 +150,20 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
     finally:
         logger.info("Task Ended: process_uploaded_route_excel")
 
-        
-        
 
 @shared_task(name='process_uploaded_receipt_data_excel')
 def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        try:
+            file = default_storage.open(file_path, 'rb')  # Open in binary read mode
+        except FileNotFoundError:
+            logger.error(f"File {file_path} not found in storage.")
+            return
 
         with transaction.atomic():
-            # Fetch Organisation and Institution
+            # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
@@ -160,6 +171,7 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
                 logger.error(f"Organisation with ID {org_id} does not exist.")
                 return
 
+            # Fetch Institution
             try:
                 institution = Institution.objects.get(id=institution_id)
                 logger.info(f"Institution fetched successfully: {institution.name} (ID: {institution_id})")
@@ -167,7 +179,7 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
                 logger.error(f"Institution with ID {institution_id} does not exist.")
                 return
 
-            # Ensure Registration exists (optional, based on your use case)
+            # Ensure Registration exists (if required)
             try:
                 registration = Registration.objects.get(id=reg_id)
             except Registration.DoesNotExist:
@@ -175,11 +187,10 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
 
             # Process Excel File
             try:
-                import openpyxl
-                workbook = openpyxl.load_workbook(full_path)
+                workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
 
-                logger.info(f"Opened file: {full_path}")
+                logger.info(f"Opened file from storage: {file_path}")
 
                 # Validate headings
                 headings = [cell.value.strip().lower() for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
@@ -249,7 +260,6 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
         raise
     finally:
         logger.info("Task Ended: process_uploaded_receipt_data_excel")
-
 
 
 def send_export_email(user, exported_file):
@@ -387,7 +397,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             ticket.drop_bus_record.label if ticket.drop_bus_record else '',
             ticket.schedule.name if ticket.schedule else '',
             'Confirmed' if ticket.status else 'Pending',
-            ticket.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            timezone.localtime(ticket.created_at).strftime('%Y-%m-%d %H:%M:%S')
         ])
     
     # Save the file to a BytesIO stream
@@ -481,7 +491,6 @@ def process_uploaded_bus_excel(file_path, org_id):
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
         
-
 
 @shared_task
 def mark_expired_receipts():
