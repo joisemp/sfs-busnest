@@ -381,9 +381,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         route_file.org = user.profile.org
         route_file.save()
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        thread = threading.Thread(target=process_uploaded_route_excel(route_file.file.name, user.profile.org.id, registration.id))
-        thread.start()
-        # process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 

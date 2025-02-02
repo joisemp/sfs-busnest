@@ -64,9 +64,16 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 def process_uploaded_route_excel(file_path, org_id, registration_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        # Retrieve file from DigitalOcean Spaces (S3)
+        try:
+            file = default_storage.open(file_path, 'rb')
+        except FileNotFoundError:
+            logger.error(f"File {file_path} not found in storage.")
+            return
 
         with transaction.atomic():
+            # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
@@ -74,6 +81,7 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                 logger.error(f"Organisation with ID {org_id} does not exist.")
                 return
             
+            # Fetch Registration
             try:
                 registration_obj = Registration.objects.get(id=registration_id)
                 logger.info(f"Registration fetched successfully: {registration_obj.name} (ID: {registration_id})")
@@ -81,17 +89,16 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                 logger.error(f"Registration with ID {registration_id} does not exist.")
                 return
 
-            # Open the Excel file
+            # Open and process the Excel file
             try:
-                from openpyxl import load_workbook
-                workbook = load_workbook(full_path)
+                workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
-                logger.info(f"Excel file opened successfully: {full_path}")
+                logger.info(f"Opened file from storage: {file_path}")
             except Exception as e:
                 logger.error(f"Failed to open the Excel file: {e}")
                 raise
 
-            # Process the sheet headers and data
+            # Extract and process headers (route names)
             headers = [cell.value for cell in sheet[1]]  # First row as headers
             logger.info(f"Extracted headers (route names): {headers}")
 
@@ -117,7 +124,7 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                             stop, created = Stop.objects.get_or_create(
                                 org=org,
                                 name=stop_name,
-                                registration = registration_obj
+                                registration=registration_obj
                             )
 
                             if created:
