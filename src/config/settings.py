@@ -152,7 +152,9 @@ USE_TZ = True
 AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default="aws_access_key")
 AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default="aws_secret_access_key")
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default="aws_storage_bucket_name")
-AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN', default="aws_s3_custom_domain")
+AWS_S3_ENDPOINT_URL = env('AWS_S3_ENDPOINT_URL', default="aws_s3_endpoint_url")
+AWS_S3_CUSTOM_DOMAIN = f"{env('AWS_S3_CUSTOM_DOMAIN', default="aws_s3_custom_domain")}/{AWS_STORAGE_BUCKET_NAME}"
+
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
 }
@@ -166,7 +168,6 @@ STATICFILES_DIRS = [
 
 # Media Files
 MEDIA_URL = f"{AWS_S3_CUSTOM_DOMAIN}/{AWS_STORAGE_BUCKET_NAME}/media/"
-
 STATICFILES_STORAGE = "config.storages.StaticStorage"
 DEFAULT_FILE_STORAGE = "config.storages.MediaStorage"
 
