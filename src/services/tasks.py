@@ -14,6 +14,9 @@ from django.core.files import File
 from django.urls import reverse
 from django.utils.timezone import now
 from datetime import timedelta
+from django.conf import settings
+from django.http import Http404
+from django.core.files.storage import default_storage
 
 
 User = get_user_model()
@@ -403,9 +406,16 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 def process_uploaded_bus_excel(file_path, org_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        # Get the full path of the file from DigitalOcean Spaces
+        try:
+            # Download the file from the storage (DigitalOcean Spaces)
+            file = default_storage.open(file_path, 'rb')  # Open in binary read mode
+        except FileNotFoundError:
+            logger.error(f"File {file_path} not found in storage.")
+            raise Http404("File not found in storage.")
 
         with transaction.atomic():
+            # Process the file as done previously
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
@@ -421,9 +431,10 @@ def process_uploaded_bus_excel(file_path, org_id):
                 return
 
             try:
-                workbook = openpyxl.load_workbook(full_path)
+                # Open the Excel file using the downloaded file object
+                workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
-                logger.info(f"Excel file opened successfully: {full_path}")
+                logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
                 logger.error(f"Failed to open the Excel file: {e}")
                 raise
@@ -444,8 +455,8 @@ def process_uploaded_bus_excel(file_path, org_id):
                     bus, created = Bus.objects.get_or_create(
                         org=org,
                         registration_no=registration.strip(),
-                        driver = driver.strip(),
-                        capacity = int(capacity)
+                        driver=driver.strip(),
+                        capacity=int(capacity)
                     )
 
                     if created:
@@ -469,6 +480,7 @@ def process_uploaded_bus_excel(file_path, org_id):
         raise
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
+        
 
 
 @shared_task
