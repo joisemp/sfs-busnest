@@ -10,5 +10,10 @@
 {% endblock sidebar %}
 
 {% block content %}
-<h1>Stops</h1>
+<h3>Stops</h3>
+<ul>
+    {% for stop in stops %}
+    <li>{{stop}} - <a href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}" class="text-danger btn btn-sm">Delete</a></li>
+    {% endfor %}
+</ul>
 {% endblock content %}

@@ -449,6 +449,7 @@ class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["route"] = Route.objects.get(slug=self.kwargs['route_slug'])
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
         return context
     
@@ -465,10 +466,14 @@ class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
     
     def form_valid(self, form):
         stop = form.save(commit=False)
+        route = Route.objects.get(slug=self.kwargs['route_slug'])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         user = self.request.user
         stop.org = user.profile.org
+        stop.registration = registration
+        stop.route = route
         stop.save()
-        return redirect('central_admin:route_list')
+        return HttpResponseRedirect(reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']}))
     
 
 class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
@@ -483,7 +488,7 @@ class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
         return context
     
     def get_success_url(self):
-        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        return reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']})
 
 
 class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
