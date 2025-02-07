@@ -186,56 +186,45 @@ class BusRecord(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
     bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
-    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
-    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True)
     label = models.CharField(max_length=20)
-    pickup_booking_count = models.PositiveIntegerField(default=0)
-    drop_booking_count = models.PositiveIntegerField(default=0)
-    total_available_seats = models.PositiveIntegerField()
+    min_required_capacity = models.PositiveIntegerField(default=0)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     class Meta:
-        unique_together = ('bus', 'registration', 'schedule')
+        unique_together = ('bus', 'registration')
         
     def clean(self):
         if self.bus:
-            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            if max_booking_count > self.bus.capacity:
+            if self.min_required_capacity > self.bus.capacity:
                 raise ValidationError(
-                    f"The bus cpacity ({self.bus.capacity}) is less than the booking count ({max_booking_count})."
+                    f"The bus cpacity ({self.bus.capacity}) is less than the minimum capacity of ({self.min_required_capacity})."
                 )
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"bus-record-{self.registration.name}")
+            base_slug = slugify(f"record-{self.bus.registration_no}-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
-        
-        existing_record = None  # Ensure variable is initialized
-
-        # Ensure that no other record exists with the same bus and schedule
-        if self.bus and self.schedule:
-            existing_record = BusRecord.objects.filter(bus=self.bus, schedule=self.schedule).exclude(id=self.id).first()
-            if existing_record:
-                existing_record.bus = None
-                existing_record.save(update_fields=['bus'])  # Update only the bus field
-
-        if self.bus:
-            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            self.total_available_seats = max(0, self.bus.capacity - max_booking_count)
-        else:
-            self.total_available_seats = 0
-
         super().save(*args, **kwargs)
-        
-    @property
-    def total_filled_seats_percentage(self):
-        if not self.bus or self.bus.capacity == 0:
-            return 0
-        filled_seats = self.bus.capacity - self.total_available_seats
-        return (filled_seats * 100) // self.bus.capacity
 
     def __str__(self):
         return f"{self.label}"
+    
+
+class Trip(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='trips')
+    record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='trips')
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='trips')
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='trips')
+    booking_count = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('registration', 'record', 'schedule')
+    
+    @property
+    def total_filled_seats_percentage(self):
+        if not self.record.bus or self.bus.capacity == 0:
+            return 0
+        return (self.booking_count * 100) // self.bus.capacity
 
 
 class Ticket(models.Model):
