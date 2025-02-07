@@ -70,7 +70,7 @@
             {% endif %}
           </td>
           <td>
-            <a class="text-primary fw-semibold" href="#">View details</a>
+            <a class="text-primary fw-semibold" href="{% url 'central_admin:trip_list' registration_slug=registration.slug bus_record_slug=record.slug %}">View details</a>
           </td>
         </tr>
         {% endfor %}

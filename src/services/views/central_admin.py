@@ -19,7 +19,7 @@ from urllib.parse import urlencode
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
@@ -266,6 +266,26 @@ class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
+    
+
+class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = Trip
+    template_name = 'central_admin/trip_create.html'
+    form_class = TripCreateForm
+    
+    @transaction.atomic
+    def form_valid(self, form):
+        try:
+            trip = form.save(commit=False)
+            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+            bus_record = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+            trip.registration = registration
+            trip.record = bus_record
+            trip.save()
+            return HttpResponseRedirect(reverse('central_admin:trip_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'bus_record_slug':self.kwargs['bus_record_slug']}))
+        except IntegrityError:
+            form.add_error(None, "A trip with the same schedule already exists.")
+            return self.form_invalid(form)
 
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):

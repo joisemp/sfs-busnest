@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -115,6 +115,11 @@ class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         model = BusRecord
         fields = ['label', 'bus']
         
+    
+class TripCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Trip
+        fields = ['schedule', 'route']
     
 
 class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
