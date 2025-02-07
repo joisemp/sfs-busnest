@@ -360,7 +360,8 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     context_object_name = 'routes'
     
     def get_queryset(self):
-        queryset = Route.objects.filter(org=self.request.user.profile.org)
+        registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration)
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -433,6 +434,23 @@ class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVie
     
     def get_success_url(self):
         return reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+    
+
+class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = Stop
+    template_name = 'central_admin/stop_list.html'
+    context_object_name = 'stops'
+    
+    def get_queryset(self):
+        route = Route.objects.get(slug=self.kwargs['route_slug'])
+        registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        queryset = Stop.objects.filter(registration=registration, route=route)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        return context
     
 
 class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):

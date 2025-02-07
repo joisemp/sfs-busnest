@@ -40,8 +40,10 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/routes/create/', central_admin.RouteCreateView.as_view(), name='route_create'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/update/', central_admin.RouteUpdateView.as_view(), name='route_update'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/delete/', central_admin.RouteDeleteView.as_view(), name='route_delete'),
-     path('registrations/<slug:registration_slug>/routes/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
-     path('registrations/<slug:registration_slug>/routes/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
+     
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/', central_admin.StopListView.as_view(), name='stop_list'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),
