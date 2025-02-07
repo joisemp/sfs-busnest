@@ -44,12 +44,8 @@
         <tr>
           <th class="text-body-secondary">Label</th>
           <th class="text-body-secondary">Registration no</th>
-          <th class="text-body-secondary">Route</th>
-          <th class="text-body-secondary">Schedule</th>
           <th class="text-body-secondary">Capacity</th>
-          <th class="text-body-secondary">Pick up count</th>
-          <th class="text-body-secondary">Drop count</th>
-          <th class="text-body-secondary">Seats progress</th>
+          <th class="text-body-secondary">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -66,8 +62,6 @@
             <b>----</b>
             {% endif %}
           </td>
-          <td>{{record.route}}</td>
-          <td>{{record.schedule.name}}</td>
           <td>
             {% if record.bus %}
             {{record.bus.capacity}}
@@ -76,26 +70,7 @@
             {% endif %}
           </td>
           <td>
-            {% if record.bus %}
-            {{record.pickup_booking_count}}/{{record.bus.capacity}}
-            {% else %}
-            <b>----</b>
-            {% endif %}
-          </td>
-          <td>
-            {% if record.bus %}
-            {{record.drop_booking_count}}/{{record.bus.capacity}}
-            {% else %}
-            <b>----</b>
-            {% endif %}
-          </td>
-          <td>
-            <div class="progress" role="progressbar" aria-label="Example with label"
-              aria-valuenow="{{ record.total_filled_seats_percentage }}" aria-valuemin="0" aria-valuemax="100">
-              <div class="progress-bar bg-dark text-dark" style="width: {{ record.total_filled_seats_percentage }}%">
-              </div>
-            </div>
-            <p class="mt-1 fw-bold text-center">{{ record.total_filled_seats_percentage }}%</p>
+            <a class="text-primary fw-semibold" href="#">View details</a>
           </td>
         </tr>
         {% endfor %}

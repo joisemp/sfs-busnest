@@ -224,37 +224,29 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
 
     @transaction.atomic
     def form_valid(self, form):
-        try:
-            # Fetch registration
-            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-            
-            # Get the new bus from the form
-            new_bus = form.cleaned_data.get('bus')
-            
-            new_schedule = form.cleaned_data.get('schedule')
-            
-            # Check for existing BusRecord with the same bus and registration
-            existing_record = BusRecord.objects.filter(bus=new_bus, schedule=new_schedule, registration=registration).exclude(pk=self.object.pk).first()
-            if existing_record:
-                existing_record.bus = None
-                existing_record.save()
+        
+        # Fetch registration
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        
+        # Get the new bus from the form
+        new_bus = form.cleaned_data.get('bus')
+        
+        
+        # Check for existing BusRecord with the same bus and registration
+        existing_record = BusRecord.objects.filter(bus=new_bus, registration=registration).exclude(pk=self.object.pk).first()
+        if existing_record:
+            existing_record.bus = None
+            existing_record.save()
 
-            # Save the updated record
-            bus_record = form.save(commit=False)
-            bus_record.registration = registration
-            bus_record.save()
+        # Save the updated record
+        bus_record = form.save(commit=False)
+        bus_record.bus = new_bus
+        bus_record.save()
 
-            # Success message
-            messages.success(self.request, "Bus Record updated successfully!")
-            return redirect(self.get_success_url())
+        # Success message
+        messages.success(self.request, "Bus Record updated successfully!")
+        return redirect(self.get_success_url())
 
-        except ObjectDoesNotExist:
-            form.add_error(None, "The specified registration does not exist.")
-            return self.form_invalid(form)
-
-        except IntegrityError:
-            form.add_error(None, "A unique constraint was violated while updating the record.")
-            return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})

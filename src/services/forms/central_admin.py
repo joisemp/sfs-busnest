@@ -113,7 +113,7 @@ class BusRecordCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = BusRecord
-        fields = ['label']
+        fields = ['label', 'bus']
         
     
 
