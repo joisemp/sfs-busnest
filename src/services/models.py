@@ -225,6 +225,9 @@ class Trip(models.Model):
         if not self.record.bus or self.bus.capacity == 0:
             return 0
         return (self.booking_count * 100) // self.bus.capacity
+    
+    def __str__(self):
+        return f"{self.schedule} | {self.route}"
 
 
 class Ticket(models.Model):

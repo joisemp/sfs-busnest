@@ -2,7 +2,7 @@ import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -250,6 +250,22 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
 
     def get_success_url(self):
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+    
+
+class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = Trip
+    template_name = 'central_admin/trip_list.html'
+    context_object_name = 'trips'
+    
+    def get_queryset(self):
+        bus_record = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        queryset = Trip.objects.filter(record=bus_record)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):

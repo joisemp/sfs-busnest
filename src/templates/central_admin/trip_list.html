@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/stop_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<h3>Trip list</h3>
+
+<ul>
+    {% for trip in trips %}
+    <li>{{trip}}</li>
+    {% endfor %}
+</ul>
+
+{% endblock content %}
