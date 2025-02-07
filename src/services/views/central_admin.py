@@ -186,44 +186,28 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        user_org = self.request.user.profile.org if hasattr(self.request.user, 'profile') else None
-        
-        if user_org:
-            form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
-            form.fields['route'].queryset = Route.objects.filter(org=user_org)
-        else:
-            # Optionally raise an exception or show a custom error if the profile/org is missing
-            form.fields['bus'].queryset = Bus.objects.none()
-            form.fields['route'].queryset = Route.objects.none()
-        
+        user_org = self.request.user.profile.org
+        form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
         return form
 
     @transaction.atomic
     def form_valid(self, form):
-        try:
-            # Get the registration based on slug
-            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-            
-            # Check if a BusRecord already exists
-            if BusRecord.objects.filter(bus=form.cleaned_data['bus'], registration=registration, schedule=form.cleaned_data['schedule']).exists():
-                form.add_error(None, "A record with this bus, schedule and registration already exists.")
-                return self.form_invalid(form)
-
-            # Save the BusRecord
-            bus_record = form.save(commit=False)
-            bus_record.org = self.request.user.profile.org
-            bus_record.registration = registration
-            bus_record.save()
-
-        except ObjectDoesNotExist:
-            form.add_error(None, "The specified registration does not exist.")
+        # Get the registration based on slug
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        bus = form.cleaned_data['bus']
+        
+        # Check if a BusRecord already exists
+        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+            form.add_error(None, "A record with this bus, schedule and registration already exists.")
             return self.form_invalid(form)
 
-        except IntegrityError:
-            form.add_error(None, "A unique constraint was violated while saving the record.")
-            return self.form_invalid(form)
+        # Save the BusRecord
+        bus_record = form.save(commit=False)
+        bus_record.org = self.request.user.profile.org
+        bus_record.registration = registration
+        bus_record.min_required_capacity = bus.capacity
+        bus_record.save()
 
-        # Redirect to the success URL
         messages.success(self.request, "Bus Record created successfully!")
         return redirect(self.get_success_url())
 

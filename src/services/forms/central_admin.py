@@ -106,7 +106,7 @@ class ScheduleForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class BusRecordCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = BusRecord
-        fields = ['label']
+        fields = ['label', 'bus']
         
     
 
