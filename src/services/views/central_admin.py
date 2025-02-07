@@ -476,6 +476,22 @@ class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
         return HttpResponseRedirect(reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']}))
     
 
+class StopUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = Stop
+    form_class = StopForm
+    template_name = 'central_admin/stop_update.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'stop_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']})
+    
+
 class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = Stop
     template_name = 'central_admin/stop_confirm_delete.html'

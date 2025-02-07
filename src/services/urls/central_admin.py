@@ -43,6 +43,7 @@ urlpatterns = [
      
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/', central_admin.StopListView.as_view(), name='stop_list'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/update/', central_admin.StopUpdateView.as_view(), name='stop_update'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
