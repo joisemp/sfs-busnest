@@ -48,7 +48,7 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Route
-        fields = ['name', 'stops']
+        fields = ['name']
 
     # Customizing the 'name' field
     name = forms.CharField(
@@ -61,23 +61,7 @@ class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         required=True
     )
 
-    # Customizing the 'stops' field
-    stops = forms.ModelMultipleChoiceField(
-        queryset=Stop.objects.all(),
-        widget=forms.SelectMultiple(attrs={
-            'size': '10',
-        }),
-        label="Select Stops",
-        required=True,
-        help_text="Hold Ctrl (Cmd) to select multiple stops"
-    )
 
-    # You could add custom validation or logic here if needed
-    def clean_stops(self):
-        stops = self.cleaned_data.get('stops')
-        if not stops:
-            raise forms.ValidationError("You must select at least one stop.")
-        return stops
 
 
 class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

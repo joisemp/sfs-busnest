@@ -59,12 +59,14 @@ class Institution(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.label}"
-    
 
-class Stop(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
-    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
+
+class Route(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -75,17 +77,15 @@ class Stop(models.Model):
         
     def __str__(self):
         return f"{self.name}"
+    
 
-
-class Route(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
-    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
+class Stop(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='stops')
     name = models.CharField(max_length=200)
-    stops = models.ManyToManyField(Stop, related_name='stops')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
-
+    
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.name}")

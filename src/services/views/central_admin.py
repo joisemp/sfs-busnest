@@ -365,7 +365,6 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["stops"] = Stop.objects.filter(org=self.request.user.profile.org).order_by('-id')[:15]
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
         return context
     
@@ -390,22 +389,18 @@ class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVie
     model = Route
     form_class = RouteForm
     
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context['registration']=registration
         return context
     
     def form_valid(self, form):
         route = form.save(commit=False)
         user = self.request.user
         route.org = user.profile.org
+        route.registration=Registration.objects.get(slug=self.kwargs["registration_slug"])
         route.save()
-        form.save_m2m()
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
     
     
@@ -415,14 +410,6 @@ class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVie
     template_name = 'central_admin/route_update.html'
     slug_field = 'slug'
     slug_url_kwarg = 'route_slug'
-    
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
-
-    def form_valid(self, form):
-        return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -445,7 +432,7 @@ class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVie
         return context
     
     def get_success_url(self):
-        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        return reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
 
 class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
