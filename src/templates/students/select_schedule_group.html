@@ -1,0 +1,33 @@
+<form method="POST">
+    {% csrf_token %}
+
+    {% if error_message %}
+    <p>{{error_message}}</p>
+    {% endif %}
+
+    <fieldset>
+        <legend>Select a Schedule Group:</legend>
+
+        {% for group in schedule_groups %}
+        <p>
+            <label>
+                <input type="radio" name="schedule_group" value="{{ group.id }}">
+                {{ group.pick_up_schedule.name }} - {{ group.drop_schedule.name }}
+            </label><br>
+            <span>{{group.description}}</span>
+            <br>
+            {% if group.allow_one_way %}
+            <label>
+                <input type="checkbox" name="pickup_{{group.id}}" checked value="{{group.pick_up_schedule.id}}"> Pickup
+            </label>
+            <label>
+                <input type="checkbox" name="drop_{{group.id}}" checked value="{{group.drop_schedule.id}}"> Drop
+            </label>
+            <br>
+            {% endif %}
+        </p>
+        {% endfor %}
+
+    </fieldset>
+    <button type="submit">Submit</button>
+</form>

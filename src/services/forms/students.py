@@ -2,20 +2,13 @@ from django import forms
 from services.models import Stop, Schedule, Ticket, BusRequest
 from config.mixins import form_mixin
 
-class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
+class StopSelectForm(form_mixin.BootstrapFormMixin, forms.Form):
     stop = forms.ModelChoiceField(
         queryset=Stop.objects.all(),
         label="",
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label='Select stop'
-    )
-    schedule = forms.ModelChoiceField(
-        queryset=Schedule.objects.all(),
-        label="",
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        empty_label='Select timing'
     )
     
 
