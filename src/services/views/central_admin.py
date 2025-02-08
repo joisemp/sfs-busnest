@@ -2,24 +2,23 @@ import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip, ScheduleGroup
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect
 from django.db.models import Q, Count, F
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from urllib.parse import urlencode
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm, ScheduleGroupForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
@@ -739,6 +738,43 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
             
     def get_success_url(self):
         return reverse('central_admin:schedule_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+
+
+class ScheduleGroupListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = ScheduleGroup
+    template_name = 'central_admin/schedule_group_list.html'
+    context_object_name = 'schedule_groups'
+    
+    def get_queryset(self):
+        self.registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = ScheduleGroup.objects.filter(registration=self.registration)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = self.registration
+        return context
+    
+
+class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = ScheduleGroup
+    template_name = 'central_admin/schedule_group_create.html'
+    form_class = ScheduleGroupForm
+    
+    def form_valid(self, form):
+        schedule_group = form.save(commit=False)
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        schedule_group.registration = registration
+        schedule_group.save()
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:schedule_group_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
     
 class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):

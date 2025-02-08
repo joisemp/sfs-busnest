@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/route_update/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<form action="" method="post">
+    {% csrf_token %}
+    {{form.as_p|safe}}
+    <button type="submit" class="btn-primary">Create</button>
+</form>
+
+{% endblock content %}

@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -101,6 +101,17 @@ class ScheduleForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+        
+
+class ScheduleGroupForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = ScheduleGroup
+        fields = ['pick_up_schedule', 'drop_schedule', 'description', 'allow_one_way']
+    
+    def __init__(self,*args,**kwargs):
+        super(ScheduleGroupForm,self).__init__(*args,**kwargs)
+        self.fields['allow_one_way'].label="Allow one way booking"
+        self.fields['allow_one_way'].is_switch = True
 
 
 class BusRecordCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

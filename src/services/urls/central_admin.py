@@ -55,6 +55,9 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
      path('registrations/<slug:registration_slug>/schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
+     path('registrations/<slug:registration_slug>/schedule-groups/', central_admin.ScheduleGroupListView.as_view(), name='schedule_group_list'),
+     path('registrations/<slug:registration_slug>/schedule-groups/create/', central_admin.ScheduleGroupCreateView.as_view(), name='schedule_group_create'),
+     
      path('registrations/<slug:registration_slug>/bus-records/', central_admin.BusRecordListView.as_view(), name='bus_record_list'),
      path('registrations/<slug:registration_slug>/bus-records/create/', central_admin.BusRecordCreateView.as_view(), name='bus_record_create'),
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/update/', central_admin.BusRecordUpdateView.as_view(), name='bus_record_update'),

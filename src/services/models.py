@@ -101,6 +101,7 @@ def rename_uploaded_file(instance, filename):
     ext = os.path.splitext(filename)[1]
     return f"{instance.org.slug}/route_files/{slugify(base_name)}-{uuid4()}{ext}"
 
+
 def rename_bus_uploaded_file(instance, filename):
     base_name = os.path.splitext(filename)[0]
     ext = os.path.splitext(filename)[1]
