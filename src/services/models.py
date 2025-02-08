@@ -164,6 +164,17 @@ class Schedule(models.Model):
         return f"{self.name} ({self.start_time} - {self.end_time})"
     
 
+class ScheduleGroup(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='schedule_groups')
+    pick_up_schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='pickup_groups')
+    drop_schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='drop_groups')
+    allow_one_way = models.BooleanField(default=False)
+    description = models.CharField(max_length=500)
+    
+    def __str__(self):
+        return f"{self.pick_up_schedule.name}-{self.drop_schedule.name}"
+    
+
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
     registration_no = models.CharField(max_length=100)
@@ -252,7 +263,7 @@ class Ticket(models.Model):
     drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='drop_tickets')
     pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_pickups')
     drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_drops')
-    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='tickets')
+    schedule_group = models.ForeignKey(ScheduleGroup, on_delete=models.SET_NULL, null=True, related_name='tickets')
     status = models.BooleanField(default=False)  # Indicates if the ticket is confirmed or pending
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
