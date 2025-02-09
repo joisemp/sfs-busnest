@@ -354,10 +354,9 @@ def send_export_email(user, exported_file):
 
 
 def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=None):
-    user = User.objects.get(id=user_id)
+    user = get_object_or_404(User, id=user_id)
     registration = get_object_or_404(Registration, slug=registration_slug)
     
-    # Base queryset filtered by registration and institution
     queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
     
     if filters:
@@ -368,56 +367,60 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
         if filters.get('drop_points'):
             queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
         if filters.get('schedule'):
-            queryset = queryset.filter(schedule_id=filters['schedule'])
+            queryset = queryset.filter(pickup_schedule_id=filters['schedule']) | queryset.filter(drop_schedule_id=filters['schedule'])
         if filters.get('pickup_buses'):
             queryset = queryset.filter(pickup_bus_record_id__in=filters['pickup_buses'])
         if filters.get('drop_buses'):
             queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
         if filters.get('student_group'):
             queryset = queryset.filter(student_group_id__in=filters['student_group'])
-
-    # Creating Excel file
+    
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Tickets"
-
-    # Set headers
-    headers = ['Ticket ID', 'Student Name', 'Class', 'Section', 'Student Email', 'Contact No', 'Alternative No', 'Pickup Point', 'Drop Point', 'Pickup Bus', 'Drop Bus', 'Schedule', 'Status', 'Created At']
+    
+    headers = ['Ticket ID', 'Student ID', 'Student Name', 'Class', 'Section', 'Contact Email', 'Contact No', 'Alternative No', 
+               'Pickup Point', 'Drop Point', 'Pickup Bus', 'Drop Bus', 'Pickup Schedule', 'Drop Schedule', 'Ticket Type', 'Status', 'Created At']
     ws.append(headers)
     
     for cell in ws[1]:
         cell.font = Font(bold=True)
     
-    # Add ticket data
     for ticket in queryset:
-        std_class, section = str(ticket.student_group.name).split('-')
+        try:
+            std_class, section = ticket.student_group.name.split('-')
+        except ValueError:
+            std_class, section = ticket.student_group.name, ''
+        
         ws.append([
             ticket.ticket_id,
+            ticket.student_id,
             ticket.student_name,
             std_class.strip(),
             section.strip(),
             ticket.student_email,
             ticket.contact_no,
             ticket.alternative_contact_no,
-            ticket.pickup_point.name if ticket.pickup_point else '',
-            ticket.drop_point.name if ticket.drop_point else '',
-            ticket.pickup_bus_record.label if ticket.pickup_bus_record else '',
-            ticket.drop_bus_record.label if ticket.drop_bus_record else '',
-            ticket.schedule.name if ticket.schedule else '',
+            ticket.pickup_point.name if ticket.pickup_point else '----',
+            ticket.drop_point.name if ticket.drop_point else '----',
+            ticket.pickup_bus_record.label if ticket.pickup_bus_record else '----',
+            ticket.drop_bus_record.label if ticket.drop_bus_record else '----',
+            ticket.pickup_schedule.name if ticket.pickup_schedule else '----',
+            ticket.drop_schedule.name if ticket.drop_schedule else '----',
+            ticket.ticket_type,
             'Confirmed' if ticket.status else 'Pending',
             timezone.localtime(ticket.created_at).strftime('%Y-%m-%d %H:%M:%S')
         ])
     
-    # Save the file to a BytesIO stream
     file_stream = BytesIO()
     wb.save(file_stream)
     file_stream.seek(0)
-
-    # Create an HTTP response with the file for download
+    
     response = HttpResponse(file_stream.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename="{registration_slug}_export.xlsx"'
-
+    
     return response
+
 
 
 @shared_task(name='process_uploaded_bus_excel')

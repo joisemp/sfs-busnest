@@ -15,7 +15,7 @@
 
 <ul>
     {% for trip in trips %}
-    <li>{{trip}} - {{trip.booking_count}}</li>
+    <li>{{trip}} | {{trip.booking_count}} | {{ trip.total_filled_seats_percentage }}%</li>
     {% endfor %}
 </ul>
 

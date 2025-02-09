@@ -184,47 +184,24 @@
           <td>{{ticket.student_name}}</td>
           <td>{{ticket.institution.name}}</td>
           <td>
-            {% if ticket.pickup_bus_record %}
-            {{ticket.pickup_bus_record.label}}
-            {% else %}
-            -----
-            {% endif %}
+            {{ ticket.pickup_bus_record.label|default:"-----" }}
           </td>
           <td>
-            {% if ticket.drop_bus_record %}
-            {{ticket.drop_bus_record.label}}
-            {% else %}
-            -----
-            {% endif %}
+            {{ ticket.drop_bus_record.label|default:"-----" }}
           </td>
           <td>
-            {% if ticket.pickup_point %}
-            {{ticket.pickup_point}}
-            {% else %}
-            -----
-            {% endif %}
+            {{ ticket.pickup_point.name|default:"-----" }}
           </td>
           <td>
-            {% if ticket.drop_point %}
-            {{ticket.drop_point}}
-            {% else %}
-            -----
-            {% endif %}
+            {{ ticket.drop_point|default:"-----" }}
           </td>
           <td>
-            {% if ticket.pickup_schedule %}
-            {{ticket.pickup_schedule.name}}
-            {% else %}
-            -----
-            {% endif %}
+            {{ ticket.pickup_schedule.name|default:"-----" }}
           </td>
           <td>
-            {% if ticket.drop_schedule %}
-            {{ticket.drop_schedule.name}}
-            {% else %}
-            -----
-            {% endif %}
+            {{ ticket.drop_schedule.name|default:"-----" }}
           </td>
+          <td>{{ ticket.get_ticket_type_display }}</td>
           <td>{{ticket.ticket_id}}</td>
           <td>
 
