@@ -169,9 +169,10 @@
           <th scope="col" class="font">School</th>
           <th scope="col" class="font">Pickup bus</th>
           <th scope="col" class="font">Drop bus</th>
-          <th scope="col" class="font">Pickup</th>
-          <th scope="col" class="font">Drop</th>
-          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Pickup stop</th>
+          <th scope="col" class="font">Drop stop</th>
+          <th scope="col" class="font">Pickup time</th>
+          <th scope="col" class="font">Drop time</th>
           <th scope="col" class="font">Ticket ID</th>
           <th scope="col" class="font">Action</th>
         </tr>
@@ -182,11 +183,48 @@
           <td>{{ticket.student_id}}</td>
           <td>{{ticket.student_name}}</td>
           <td>{{ticket.institution.name}}</td>
-          <td>{{ticket.pickup_bus_record.label}}</td>
-          <td>{{ticket.drop_bus_record.label}}</td>
-          <td>{{ticket.pickup_point}}</td>
-          <td>{{ticket.drop_point}}</td>
-          <td>{{ticket.schedule.name}}</td>
+          <td>
+            {% if ticket.pickup_bus_record %}
+            {{ticket.pickup_bus_record.label}}
+            {% else %}
+            -----
+            {% endif %}
+          </td>
+          <td>
+            {% if ticket.drop_bus_record %}
+            {{ticket.drop_bus_record.label}}
+            {% else %}
+            -----
+            {% endif %}
+          </td>
+          <td>
+            {% if ticket.pickup_point %}
+            {{ticket.pickup_point}}
+            {% else %}
+            -----
+            {% endif %}
+          </td>
+          <td>
+            {% if ticket.drop_point %}
+            {{ticket.drop_point}}
+            {% else %}
+            -----
+            {% endif %}
+          </td>
+          <td>
+            {% if ticket.pickup_schedule %}
+            {{ticket.pickup_schedule.name}}
+            {% else %}
+            -----
+            {% endif %}
+          </td>
+          <td>
+            {% if ticket.drop_schedule %}
+            {{ticket.drop_schedule.name}}
+            {% else %}
+            -----
+            {% endif %}
+          </td>
           <td>{{ticket.ticket_id}}</td>
           <td>
 

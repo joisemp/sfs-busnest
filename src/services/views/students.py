@@ -309,7 +309,6 @@ class BusBookingView(CreateView):
             pickup_trip.save()
         if drop_trip:
             drop_trip.save()
-
         ticket.save()
 
         return redirect('students:book_success')
