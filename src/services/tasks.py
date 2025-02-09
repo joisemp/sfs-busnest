@@ -161,11 +161,13 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
 
-        try:
-            file = default_storage.open(file_path, 'rb')  # Open in binary read mode
-        except FileNotFoundError:
-            logger.error(f"File {file_path} not found in storage.")
-            return
+        # Determine file location (local vs cloud storage)
+        if settings.DEBUG:
+            full_path = os.path.join(settings.MEDIA_ROOT, file_path)  # Local file
+            file = open(full_path, 'rb')  # Open the local file
+        else:
+            full_path = file_path  # Cloud storage path
+            file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
         with transaction.atomic():
             # Fetch Organisation
@@ -264,7 +266,10 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
         logger.error(f"Error while processing Excel: {e}")
         raise
     finally:
+        file.close()
         logger.info("Task Ended: process_uploaded_receipt_data_excel")
+        
+        
 
 
 def send_export_email(user, exported_file):
