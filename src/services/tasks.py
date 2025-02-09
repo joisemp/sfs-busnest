@@ -416,16 +416,17 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 def process_uploaded_bus_excel(file_path, org_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        # Get the full path of the file from DigitalOcean Spaces
-        try:
-            # Download the file from the storage (DigitalOcean Spaces)
-            file = default_storage.open(file_path, 'rb')  # Open in binary read mode
-        except FileNotFoundError:
-            logger.error(f"File {file_path} not found in storage.")
-            raise Http404("File not found in storage.")
+        
+        # Determine file location (local vs cloud storage)
+        if settings.DEBUG:
+            full_path = os.path.join(settings.MEDIA_ROOT, file_path)  # Local file
+            file = open(full_path, 'rb')  # Open the local file
+        else:
+            full_path = file_path  # Cloud storage path
+            file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
         with transaction.atomic():
-            # Process the file as done previously
+            # Fetch organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
@@ -433,6 +434,7 @@ def process_uploaded_bus_excel(file_path, org_id):
                 logger.error(f"Organisation with ID {org_id} does not exist.")
                 return
             
+            # Fetch BusFile entry
             try:
                 bus_file = BusFile.objects.get(file=file_path)
                 logger.info(f"BusFile entry fetched: {bus_file.name}")
@@ -440,20 +442,24 @@ def process_uploaded_bus_excel(file_path, org_id):
                 logger.error(f"BusFile with path {file_path} does not exist.")
                 return
 
+            # Open Excel file correctly
             try:
-                # Open the Excel file using the downloaded file object
                 workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
                 logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
                 logger.error(f"Failed to open the Excel file: {e}")
                 raise
+            finally:
+                file.close()  # Close file after processing
 
-            headers = [cell.value for cell in sheet[1]]  # First row as headers
+            # Validate headers
+            headers = [cell.value for cell in sheet[1]]
             if headers != ["Registration", "Driver", "Capacity"]:
                 logger.error("Invalid headers in the Excel file.")
                 return
 
+            # Process rows
             for row in sheet.iter_rows(min_row=2, values_only=True):
                 registration, driver, capacity = row
 
