@@ -65,12 +65,13 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
 
-        # Retrieve file from DigitalOcean Spaces (S3)
-        try:
-            file = default_storage.open(file_path, 'rb')
-        except FileNotFoundError:
-            logger.error(f"File {file_path} not found in storage.")
-            return
+        # Determine file location (local vs cloud storage)
+        if settings.DEBUG:
+            full_path = os.path.join(settings.MEDIA_ROOT, file_path)  # Local file
+            file = open(full_path, 'rb')  # Open the local file
+        else:
+            full_path = file_path  # Cloud storage path
+            file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
         with transaction.atomic():
             # Fetch Organisation
@@ -97,8 +98,10 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
             except Exception as e:
                 logger.error(f"Failed to open the Excel file: {e}")
                 raise
+            finally:
+                file.close()  # Ensure the file is closed after processing
 
-            # Extract and process headers (route names)
+            # Extract headers (route names)
             headers = [cell.value for cell in sheet[1]]  # First row as headers
             logger.info(f"Extracted headers (route names): {headers}")
 
@@ -108,10 +111,18 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                     continue
 
                 try:
-                    route = Route.objects.create(org=org, registration=registration_obj, name=route_name.strip())
-                    logger.info(f"Created Route: {route.name} (ID: {route.id})")
+                    route, created = Route.objects.get_or_create(
+                        org=org,
+                        registration=registration_obj,
+                        name=route_name.strip()
+                    )
 
-                    # Iterate over the rows below the header in the same column
+                    if created:
+                        logger.info(f"Created Route: {route.name} (ID: {route.id})")
+                    else:
+                        logger.info(f"Route already exists: {route.name} (ID: {route.id})")
+
+                    # Iterate over stops in the column
                     for row_number, row in enumerate(sheet.iter_rows(min_row=2, min_col=col_index, max_col=col_index), start=2):
                         stop_name = row[0].value
                         if not stop_name:
@@ -120,26 +131,20 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
 
                         stop_name = stop_name.strip().upper()
 
-                        try:
-                            stop, created = Stop.objects.get_or_create(
-                                org=org,
-                                name=stop_name,
-                                registration=registration_obj
-                            )
+                        stop, created = Stop.objects.get_or_create(
+                            org=org,
+                            registration=registration_obj,
+                            route=route,
+                            name=stop_name
+                        )
 
-                            if created:
-                                logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
-                            else:
-                                logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
-
-                            route.stops.add(stop)
-                            logger.info(f"Row {row_number}: Stop {stop.name} added to Route {route.name} (ID: {route.id})")
-                        except Exception as e:
-                            logger.error(f"Error processing Row {row_number} in column {col_index}: {e}")
-                            raise
-
+                        if created:
+                            logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
+                        else:
+                            logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
+                
                 except Exception as e:
-                    logger.error(f"Error creating Route {route_name}: {e}")
+                    logger.error(f"Error processing Route {route_name}: {e}")
                     raise
 
             logger.info("Excel processing completed successfully.")
