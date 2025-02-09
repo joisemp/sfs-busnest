@@ -242,6 +242,12 @@ class Trip(models.Model):
         return f"{self.schedule} | {self.route}"
 
 
+TICKET_TYPES = ( 
+    ("one_way", "One way"), 
+    ("two_way", "Two way"),  
+)
+
+
 class Ticket(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='tickets')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='tickets')
@@ -260,12 +266,14 @@ class Ticket(models.Model):
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
-    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='pickup_tickets')
-    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='drop_tickets')
-    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_pickups')
-    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_drops')
-    schedule_group = models.ForeignKey(ScheduleGroup, on_delete=models.SET_NULL, null=True, related_name='tickets')
-    status = models.BooleanField(default=False)  # Indicates if the ticket is confirmed or pending
+    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, default=None, related_name='pickup_tickets')
+    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, default=None, related_name='drop_tickets')
+    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, related_name='ticket_pickups')
+    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, related_name='ticket_drops')
+    pickup_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='pickup_tickets')
+    drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='drop_tickets')
+    ticket_type = models.CharField(max_length=300, choices=TICKET_TYPES, default='twoway')
+    status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
