@@ -5,7 +5,7 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView, V
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from services.forms.students import StopSelectForm, ValidateStudentForm, TicketForm, BusRequestForm
-from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord
+from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
 from django.db.models import F, Q, Count
 from services.tasks import send_email_task
 from services.utils import get_filtered_bus_records
@@ -212,7 +212,21 @@ class BusBookingView(CreateView):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         self.bus_record = get_object_or_404(BusRecord, slug=self.kwargs.get('bus_slug'))
-        form.fields['stop'].queryset = self.bus_record.route.stops.all()
+        schedule_group_id = self.request.session.get('schedule_group_id')
+        pickup = self.request.session.get('pickup')
+        drop = self.request.session.get('drop')
+        
+        schedule_group = ScheduleGroup.objects.get(id=int(schedule_group_id))
+        pickup_trip = Trip.objects.get(record=self.bus_record, schedule=schedule_group.pick_up_schedule)
+        drop_trip = Trip.objects.get(record=self.bus_record, schedule=schedule_group.drop_schedule)
+        form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
+        form.fields['drop_point'].queryset = drop_trip.route.stops.all()
+        
+        if schedule_group.allow_one_way:
+            if pickup and not drop:
+                del form.fields['drop_point']
+            if drop and not pickup:
+                del form.fields['pickup_point']
         return form
     
     @transaction.atomic
