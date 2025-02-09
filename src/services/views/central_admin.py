@@ -264,6 +264,7 @@ class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["bus_record"] = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
         return context
     
 

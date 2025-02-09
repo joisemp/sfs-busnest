@@ -12,6 +12,7 @@
 {% block content %}
 
 <h3>Trip list</h3>
+<a href="{% url 'central_admin:trip_create' registration_slug=registration.slug bus_record_slug=bus_record.slug %}" class="fw-semibold">Add trip</a>
 
 <ul>
     {% for trip in trips %}

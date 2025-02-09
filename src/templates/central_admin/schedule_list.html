@@ -12,18 +12,24 @@
 {% block content %}
 
 <section id="schedule">
-    <div class="button-group">
-        <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
-        <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule</a>
+    <div class="d-flex justify-content-between mb-4">
+        <div class="button-group">
+            <a class="btn btn-secondary" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+        </div>
+        <div>
+            <a class="btn btn-outline-dark me-2" href="{% url 'central_admin:schedule_group_list' registration_slug=registration.slug %}">Groups</a>
+            <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule</a>
+        </div>
     </div>
     <div class="main-wrap">
         <div class="wrap">
             {% for schedule in schedules %}
-            <div class="card" style="max-width:115rem;">
+            <div class="card">
                 <div class="card-body">
                     <div class="content">
                         <h5 class="card-title mb-3">{{ schedule.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">{{ schedule.start_time }} - {{ schedule.end_time }}</h6>
+                        <span>{{ schedule.start_time }} - {{ schedule.end_time }}</span>
+
                     </div>
                     <div class="button">
                         <!-- <a href="#" class=" btn btn-sm text-danger card-link">Delete<i
