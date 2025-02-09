@@ -1,12 +1,10 @@
 from django.db import transaction
-from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect
 from django.views.generic import FormView, ListView, CreateView, TemplateView, View
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from services.forms.students import StopSelectForm, ValidateStudentForm, TicketForm, BusRequestForm
 from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
-from django.db.models import F, Q, Count
 from services.tasks import send_email_task
 from services.utils import get_filtered_bus_records
 
@@ -212,65 +210,108 @@ class BusBookingView(CreateView):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         self.bus_record = get_object_or_404(BusRecord, slug=self.kwargs.get('bus_slug'))
-        schedule_group_id = self.request.session.get('schedule_group_id')
-        pickup = self.request.session.get('pickup')
-        drop = self.request.session.get('drop')
+        self.schedule_group_id = self.request.session.get('schedule_group_id')
+        self.pickup_id = self.request.session.get('pickup')
+        self.drop_id = self.request.session.get('drop')
         
-        schedule_group = ScheduleGroup.objects.get(id=int(schedule_group_id))
-        pickup_trip = Trip.objects.get(record=self.bus_record, schedule=schedule_group.pick_up_schedule)
-        drop_trip = Trip.objects.get(record=self.bus_record, schedule=schedule_group.drop_schedule)
-        form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
-        form.fields['drop_point'].queryset = drop_trip.route.stops.all()
+        self.schedule_group = ScheduleGroup.objects.get(id=int(self.schedule_group_id))
         
-        if schedule_group.allow_one_way:
-            if pickup and not drop:
+        
+        if self.schedule_group.allow_one_way:
+            if self.pickup_id and not self.drop_id:
+                pickup_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.pick_up_schedule)
+                form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
                 del form.fields['drop_point']
-            if drop and not pickup:
+            elif self.drop_id and not self.pickup_id:
+                drop_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.drop_schedule)
+                form.fields['drop_point'].queryset = drop_trip.route.stops.all()
                 del form.fields['pickup_point']
+            else:
+                pickup_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.pick_up_schedule)
+                drop_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.drop_schedule)
+                form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
+                form.fields['drop_point'].queryset = drop_trip.route.stops.all()
+        else:
+            pickup_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.pick_up_schedule)
+            drop_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.drop_schedule)
+            form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
+            form.fields['drop_point'].queryset = drop_trip.route.stops.all()
         return form
     
     @transaction.atomic
     def form_valid(self, form):
         ticket = form.save(commit=False)
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
-        stop=form.cleaned_data.get('stop')
         receipt_id = self.request.session.get('receipt_id')
         std_id = self.request.session.get('student_id')
-        schedule_id = self.request.session.get('schedule')
         receipt = get_object_or_404(Receipt, id=receipt_id)
-        
-        ticket.pickup_point = stop
-        ticket.drop_point = stop
+
+        ticket.org = registration.org
+        ticket.registration = registration
+        ticket.institution = receipt.institution
+        ticket.student_group = receipt.student_group
         ticket.recipt = receipt
         ticket.student_id = std_id
-        ticket.student_group = receipt.student_group
-        ticket.institution = receipt.institution
-        ticket.schedule = get_object_or_404(Schedule, id=schedule_id)
-        ticket.registration = registration
-        ticket.org = registration.org
-        ticket.pickup_bus_record = self.bus_record
-        ticket.drop_bus_record = self.bus_record
+
+        try:
+            pickup_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.pick_up_schedule)
+            if 'pickup_point' in form.fields:
+                form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
+        except Trip.DoesNotExist:
+            pickup_trip = None
+
+        try:
+            drop_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.drop_schedule)
+            if 'drop_point' in form.fields:
+                form.fields['drop_point'].queryset = drop_trip.route.stops.all()
+        except Trip.DoesNotExist:
+            drop_trip = None
+
+        if self.schedule_group.allow_one_way:
+            if self.pickup_id and not self.drop_id:  # One-way pickup only
+                ticket.pickup_bus_record = self.bus_record
+                ticket.pickup_schedule = self.schedule_group.pick_up_schedule
+                if pickup_trip:
+                    pickup_trip.booking_count += 1
+                ticket.ticket_type = 'one_way'
+
+            elif self.drop_id and not self.pickup_id:  # One-way drop only
+                ticket.drop_bus_record = self.bus_record
+                ticket.drop_schedule = self.schedule_group.drop_schedule
+                if drop_trip:
+                    drop_trip.booking_count += 1
+                ticket.ticket_type = 'one_way'
+
+            else:  # Both pickup and drop (two-way)
+                ticket.pickup_bus_record = self.bus_record
+                ticket.drop_bus_record = self.bus_record
+                ticket.pickup_schedule = self.schedule_group.pick_up_schedule
+                ticket.drop_schedule = self.schedule_group.drop_schedule
+                if pickup_trip:
+                    pickup_trip.booking_count += 1
+                if drop_trip:
+                    drop_trip.booking_count += 1
+                ticket.ticket_type = 'two_way'
+        else:
+            ticket.pickup_bus_record = self.bus_record
+            ticket.drop_bus_record = self.bus_record
+            ticket.pickup_schedule = self.schedule_group.pick_up_schedule
+            ticket.drop_schedule = self.schedule_group.drop_schedule
+            if pickup_trip:
+                pickup_trip.booking_count += 1
+            if drop_trip:
+                drop_trip.booking_count += 1
+            ticket.ticket_type = 'two_way'
+
         ticket.status = True
-        
-        self.bus_record.pickup_booking_count += 1
-        self.bus_record.drop_booking_count += 1
-        
-        self.bus_record.save()
+
+        if pickup_trip:
+            pickup_trip.save()
+        if drop_trip:
+            drop_trip.save()
+
         ticket.save()
-        
-        subject = "Booking Confirmation"
-        message = (
-            f"Hello {ticket.student_name},\n\n"
-            f"Welcome aboard! This is an confirmation email for your booking for {ticket.pickup_bus_record.label} from {ticket.pickup_point.name}"
-            f"\nIncase of any issues please contact your respective insitution"
-            f"\n\nYour ticket id is : {ticket.ticket_id}"
-            f"\n\nBest regards,\nSFSBusNest Team"
-            )
-        recipient_list = [f"{ticket.student_email}"]
-        send_email_task.delay(subject, message, recipient_list)
-        
-        self.request.session['ticket_id'] = ticket.id
-        
+
         return redirect('students:book_success')
     
 

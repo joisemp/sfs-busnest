@@ -23,7 +23,14 @@ class TicketForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         model = Ticket
         fields = [
             'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'pickup_point', 'drop_point'
-        ]           
+        ]
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['pickup_point'].required = False
+        self.fields['drop_point'].required = False
+        self.initial['pickup_point'] = None
+        self.initial['drop_point'] = None           
 
 
 class BusRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

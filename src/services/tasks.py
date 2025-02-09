@@ -10,12 +10,10 @@ from django.core.mail import send_mail
 from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.core.files import File
 from django.urls import reverse
 from django.utils.timezone import now
 from datetime import timedelta
 from django.conf import settings
-from django.http import Http404
 from django.core.files.storage import default_storage
 from django.utils import timezone
 
