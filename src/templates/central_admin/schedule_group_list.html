@@ -18,7 +18,7 @@
         </div>
         <div>
             <a class="btn btn-dark me-2" href="{% url 'central_admin:schedule_list' registration_slug=registration.slug %}">Groups</a>
-            <a href="#" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule group</a>
+            <a href="{% url 'central_admin:schedule_group_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule group</a>
         </div>
     </div>
     <div class="main-wrap">

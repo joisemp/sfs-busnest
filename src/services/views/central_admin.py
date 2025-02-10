@@ -209,6 +209,11 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
 
         messages.success(self.request, "Bus Record created successfully!")
         return redirect(self.get_success_url())
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
     def get_success_url(self):
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
@@ -245,7 +250,11 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
         # Success message
         messages.success(self.request, "Bus Record updated successfully!")
         return redirect(self.get_success_url())
-
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
     def get_success_url(self):
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
@@ -286,7 +295,11 @@ class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
         except IntegrityError:
             form.add_error(None, "A trip with the same schedule already exists.")
             return self.form_invalid(form)
-
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
