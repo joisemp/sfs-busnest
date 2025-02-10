@@ -1,2 +1,18 @@
 @import '../../sidebar_navbar_base';
 
+.gear{
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+   
+    .button{
+        display: flex;
+        justify-content: center;
+        
+    }
+}
+tbody, td, tfoot, th, thead, tr {
+    background: #ffffff00 !important;
+    white-space: nowrap;
+    padding: 1rem !important;
+}

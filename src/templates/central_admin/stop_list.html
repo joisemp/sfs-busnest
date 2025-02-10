@@ -10,6 +10,38 @@
 {% endblock sidebar %}
 
 {% block content %}
+
+<section id="routes">
+    <div class="mb-3 d-flex justify-content-between">
+        <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+        <div class="group">
+            <a class="btn btn-primary" href="{% url 'central_admin:stop_create' registration_slug=registration.slug route_slug=route.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
+        </div>
+        
+    </div>
+
+    <div>
+        <div class="content mt-3" style="cursor: pointer;">
+            {% for stop in stops %}
+            <div class="card mb-2">
+                <div class="card-body d-flex align-item-center" style="justify-content: space-between;">
+                <div class="info">
+                    <p class="fw-semibold">{{stop}}</p>
+                </div>
+                <div class="buttons">
+                   <a class="btn btn-sm text-danger" href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Delete<i class="fa-solid fa-trash-can ms-2"></i></a>
+                   <a class="btn btn-sm  btn-secondary" href="{% url 'central_admin:stop_update' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
+                </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+       
+    </div>
+</section>
+
+{% endblock content %}
+
 <h3>Stops</h3> 
 <a href="{% url 'central_admin:stop_create' 
     registration_slug=registration.slug 
@@ -23,4 +55,3 @@
     </li>
     {% endfor %}
 </ul>
-{% endblock content %}
