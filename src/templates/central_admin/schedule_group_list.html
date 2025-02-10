@@ -17,24 +17,23 @@
             <a class="btn btn-secondary" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
         </div>
         <div>
-            <a class="btn btn-outline-dark me-2" href="{% url 'central_admin:schedule_group_list' registration_slug=registration.slug %}">Groups</a>
-            <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule</a>
+            <a class="btn btn-dark me-2" href="{% url 'central_admin:schedule_list' registration_slug=registration.slug %}">Groups</a>
+            <a href="{% url 'central_admin:schedule_group_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule group</a>
         </div>
     </div>
     <div class="main-wrap">
         <div class="wrap">
-            {% for schedule in schedules %}
+            {% for schedule_group in schedule_groups %}
             <div class="card">
                 <div class="card-body">
                     <div class="content">
-                        <h5 class="card-title mb-3">{{ schedule.name }}</h5>
-                        <span>{{ schedule.start_time }} - {{ schedule.end_time }}</span>
-
+                        <h5 class="card-title mb-3">{{ schedule_group.pick_up_schedule.name }}-{{ schedule_group.drop_schedule.name }}</h5>
+                        <span>{{ schedule_group.description }}</span>
                     </div>
                     <div class="button">
-                        <!-- <a href="#" class=" btn btn-sm text-danger card-link">Delete<i
-                                class="fa-solid fa-trash-can ms-2"></i></a> -->
-                        <a href="{% url 'central_admin:schedule_update' registration_slug=registration.slug schedule_slug=schedule.slug %}" class=" btn btn-sm btn-dark card-link">Edit<i
+                        <a href="#" class=" btn btn-sm text-danger card-link">Delete<i
+                                class="fa-solid fa-trash-can ms-2"></i></a>
+                        <a href="#" class=" btn btn-sm btn-dark card-link">Edit<i
                                 class="fa-regular fa-pen-to-square ms-2"></i></a>
                     </div>
                 </div>

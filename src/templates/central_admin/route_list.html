@@ -27,7 +27,7 @@
                 </button>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="{% url 'central_admin:route_create' registration_slug=registration.slug %}"><i class="fa-solid fa-map me-2"></i>Route</a></li>
-                    <li><a class="dropdown-item" href="{% url 'central_admin:stop_create' registration_slug=registration.slug %}"><i class="fa-solid fa-location-dot me-2"></i>Stop</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-location-dot me-2"></i>Stop</a></li>
                 </ul>
             </div>
         </div>
@@ -42,7 +42,9 @@
                 <div class="col">
                     <div class="card me-2">
                         <div class="card-body">
-                            <h5 class="card-title mb-3">{{route.name}}</h5>
+                            <h5 class="card-title mb-3">
+                                <a href="{% url 'central_admin:stop_list' registration_slug=registration.slug route_slug=route.slug %}">{{route.name}}</a>
+                            </h5>
                             <!-- <p class="card-subtitle mb-2 text-body-secondary mb-4">
                                 {% for stop in route.stops.all %}
                                 {{stop}}, 

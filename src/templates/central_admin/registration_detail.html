@@ -89,7 +89,7 @@
                                 <th scope="col">Student ID</th>
                                 <th scope="col">Name</th>
                                 <th scope="col">School</th>
-                                <th scope="col">Schedule</th>
+                                <th scope="col">Type</th>
                                 <th scope="col">Ticket ID</th>
                             </tr>
                         </thead>
@@ -99,7 +99,14 @@
                                 <td>{{ticket.student_id}}</td>
                                 <td>{{ticket.student_name}}</td>
                                 <td>{{ticket.institution.name}}</td>
-                                <td>{{ticket.schedule.name}}</td>
+                                <td>
+                                    <span class="badge rounded-pill 
+                                    {% if ticket.ticket_type == 'one_way' %}text-bg-primary
+                                    {% elif ticket.ticket_type == 'two_way' %}text-bg-dark
+                                    {% endif %} px-3" style="padding-bottom: 6px;">
+                                        {{ ticket.get_ticket_type_display }}
+                                    </span>
+                                </td>
                                 <td>{{ticket.ticket_id}}</td>
                             </tr>
                             {% endfor %}

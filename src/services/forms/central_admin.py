@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -48,7 +48,7 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Route
-        fields = ['name', 'stops']
+        fields = ['name']
 
     # Customizing the 'name' field
     name = forms.CharField(
@@ -61,23 +61,7 @@ class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         required=True
     )
 
-    # Customizing the 'stops' field
-    stops = forms.ModelMultipleChoiceField(
-        queryset=Stop.objects.all(),
-        widget=forms.SelectMultiple(attrs={
-            'size': '10',
-        }),
-        label="Select Stops",
-        required=True,
-        help_text="Hold Ctrl (Cmd) to select multiple stops"
-    )
 
-    # You could add custom validation or logic here if needed
-    def clean_stops(self):
-        stops = self.cleaned_data.get('stops')
-        if not stops:
-            raise forms.ValidationError("You must select at least one stop.")
-        return stops
 
 
 class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -117,25 +101,24 @@ class ScheduleForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+        
+
+class ScheduleGroupForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = ScheduleGroup
+        fields = ['pick_up_schedule', 'drop_schedule', 'description', 'allow_one_way']
+    
+    def __init__(self,*args,**kwargs):
+        super(ScheduleGroupForm,self).__init__(*args,**kwargs)
+        self.fields['allow_one_way'].label="Allow one way booking"
+        self.fields['allow_one_way'].is_switch = True
 
 
 class BusRecordCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = BusRecord
-        fields = ['label', 'bus', 'route', 'schedule']
+        fields = ['label', 'bus']
         
-    def clean(self):
-        cleaned_data = super().clean()
-        bus = cleaned_data.get('bus')
-        schedule = cleaned_data.get('schedule')
-        registration = cleaned_data.get('registration')  # Ensure this field exists in your model
-
-        if bus and registration and schedule:
-            # Check if a BusRecord with the same 'bus' and 'registration' already exists
-            if BusRecord.objects.filter(bus=bus, schedule=schedule, registration=registration).exists():
-                raise ValidationError("A record already exists.")
-        
-        return cleaned_data
     
 
 class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -143,17 +126,11 @@ class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         model = BusRecord
         fields = ['label', 'bus']
         
-    def clean(self):
-        cleaned_data = super().clean()
-        bus = cleaned_data.get('bus')
-        schedule = cleaned_data.get('schedule')
-        registration = cleaned_data.get('registration')
-
-        if bus and registration and schedule:
-            if BusRecord.objects.filter(bus=bus, schedule=schedule, registration=registration).exists():
-                raise ValidationError("A record already exists.")
-        
-        return cleaned_data
+    
+class TripCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Trip
+        fields = ['schedule', 'route']
     
 
 class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):

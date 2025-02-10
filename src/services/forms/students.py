@@ -1,21 +1,14 @@
 from django import forms
-from services.models import Stop, Schedule, Ticket, BusRequest
+from services.models import ScheduleGroup, Stop, Schedule, Ticket, BusRequest, Trip
 from config.mixins import form_mixin
 
-class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
+class StopSelectForm(form_mixin.BootstrapFormMixin, forms.Form):
     stop = forms.ModelChoiceField(
         queryset=Stop.objects.all(),
         label="",
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label='Select stop'
-    )
-    schedule = forms.ModelChoiceField(
-        queryset=Schedule.objects.all(),
-        label="",
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        empty_label='Select timing'
     )
     
 
@@ -25,18 +18,12 @@ class ValidateStudentForm(form_mixin.BootstrapFormMixin, forms.Form):
     
 
 class TicketForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
-    stop = forms.ModelChoiceField(
-        queryset=Stop.objects.all(),
-        label="Stop",
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
     
     class Meta:
         model = Ticket
         fields = [
-            'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'stop'
-        ]
+            'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'pickup_point', 'drop_point'
+        ]          
 
 
 class BusRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

@@ -2,24 +2,23 @@ import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip, ScheduleGroup
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect
 from django.db.models import Q, Count, F
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from urllib.parse import urlencode
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm, ScheduleGroupForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
@@ -146,9 +145,7 @@ class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateV
         bus_file.org = user.profile.org
         bus_file.user = user
         bus_file.save()
-        thread = threading.Thread(target=process_uploaded_bus_excel(bus_file.file.name, bus_file.org.id))
-        thread.start()
-        # process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
+        process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
         return redirect(reverse('central_admin:bus_list'))
 
 
@@ -188,46 +185,35 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        user_org = self.request.user.profile.org if hasattr(self.request.user, 'profile') else None
-        
-        if user_org:
-            form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
-            form.fields['route'].queryset = Route.objects.filter(org=user_org)
-        else:
-            # Optionally raise an exception or show a custom error if the profile/org is missing
-            form.fields['bus'].queryset = Bus.objects.none()
-            form.fields['route'].queryset = Route.objects.none()
-        
+        user_org = self.request.user.profile.org
+        form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
         return form
 
     @transaction.atomic
     def form_valid(self, form):
-        try:
-            # Get the registration based on slug
-            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-            
-            # Check if a BusRecord already exists
-            if BusRecord.objects.filter(bus=form.cleaned_data['bus'], registration=registration, schedule=form.cleaned_data['schedule']).exists():
-                form.add_error(None, "A record with this bus, schedule and registration already exists.")
-                return self.form_invalid(form)
-
-            # Save the BusRecord
-            bus_record = form.save(commit=False)
-            bus_record.org = self.request.user.profile.org
-            bus_record.registration = registration
-            bus_record.save()
-
-        except ObjectDoesNotExist:
-            form.add_error(None, "The specified registration does not exist.")
+        # Get the registration based on slug
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        bus = form.cleaned_data['bus']
+        
+        # Check if a BusRecord already exists
+        if BusRecord.objects.filter(bus=bus, registration=registration).exists():
+            form.add_error(None, "A record with this bus, schedule and registration already exists.")
             return self.form_invalid(form)
 
-        except IntegrityError:
-            form.add_error(None, "A unique constraint was violated while saving the record.")
-            return self.form_invalid(form)
+        # Save the BusRecord
+        bus_record = form.save(commit=False)
+        bus_record.org = self.request.user.profile.org
+        bus_record.registration = registration
+        bus_record.min_required_capacity = bus.capacity
+        bus_record.save()
 
-        # Redirect to the success URL
         messages.success(self.request, "Bus Record created successfully!")
         return redirect(self.get_success_url())
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
     def get_success_url(self):
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
@@ -242,41 +228,78 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
 
     @transaction.atomic
     def form_valid(self, form):
-        try:
-            # Fetch registration
-            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-            
-            # Get the new bus from the form
-            new_bus = form.cleaned_data.get('bus')
-            
-            new_schedule = form.cleaned_data.get('schedule')
-            
-            # Check for existing BusRecord with the same bus and registration
-            existing_record = BusRecord.objects.filter(bus=new_bus, schedule=new_schedule, registration=registration).exclude(pk=self.object.pk).first()
-            if existing_record:
-                existing_record.bus = None
-                existing_record.save()
+        
+        # Fetch registration
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        
+        # Get the new bus from the form
+        new_bus = form.cleaned_data.get('bus')
+        
+        
+        # Check for existing BusRecord with the same bus and registration
+        existing_record = BusRecord.objects.filter(bus=new_bus, registration=registration).exclude(pk=self.object.pk).first()
+        if existing_record:
+            existing_record.bus = None
+            existing_record.save()
 
-            # Save the updated record
-            bus_record = form.save(commit=False)
-            bus_record.registration = registration
-            bus_record.save()
+        # Save the updated record
+        bus_record = form.save(commit=False)
+        bus_record.bus = new_bus
+        bus_record.save()
 
-            # Success message
-            messages.success(self.request, "Bus Record updated successfully!")
-            return redirect(self.get_success_url())
-
-        except ObjectDoesNotExist:
-            form.add_error(None, "The specified registration does not exist.")
-            return self.form_invalid(form)
-
-        except IntegrityError:
-            form.add_error(None, "A unique constraint was violated while updating the record.")
-            return self.form_invalid(form)
+        # Success message
+        messages.success(self.request, "Bus Record updated successfully!")
+        return redirect(self.get_success_url())
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
     def get_success_url(self):
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+    
 
+class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = Trip
+    template_name = 'central_admin/trip_list.html'
+    context_object_name = 'trips'
+    
+    def get_queryset(self):
+        bus_record = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        queryset = Trip.objects.filter(record=bus_record)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["bus_record"] = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        return context
+    
+
+class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = Trip
+    template_name = 'central_admin/trip_create.html'
+    form_class = TripCreateForm
+    
+    @transaction.atomic
+    def form_valid(self, form):
+        try:
+            trip = form.save(commit=False)
+            registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+            bus_record = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+            trip.registration = registration
+            trip.record = bus_record
+            trip.save()
+            return HttpResponseRedirect(reverse('central_admin:trip_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'bus_record_slug':self.kwargs['bus_record_slug']}))
+        except IntegrityError:
+            form.add_error(None, "A trip with the same schedule already exists.")
+            return self.form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
@@ -362,12 +385,12 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     context_object_name = 'routes'
     
     def get_queryset(self):
-        queryset = Route.objects.filter(org=self.request.user.profile.org)
+        registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration)
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["stops"] = Stop.objects.filter(org=self.request.user.profile.org).order_by('-id')[:15]
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
         return context
     
@@ -383,9 +406,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         route_file.org = user.profile.org
         route_file.save()
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        thread = threading.Thread(target=process_uploaded_route_excel(route_file.file.name, user.profile.org.id, registration.id))
-        thread.start()
-        # process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 
@@ -394,22 +415,18 @@ class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVie
     model = Route
     form_class = RouteForm
     
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context['registration']=registration
         return context
     
     def form_valid(self, form):
         route = form.save(commit=False)
         user = self.request.user
         route.org = user.profile.org
+        route.registration=Registration.objects.get(slug=self.kwargs["registration_slug"])
         route.save()
-        form.save_m2m()
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
     
     
@@ -419,14 +436,6 @@ class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVie
     template_name = 'central_admin/route_update.html'
     slug_field = 'slug'
     slug_url_kwarg = 'route_slug'
-    
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['stops'].queryset = Stop.objects.filter(org=self.request.user.profile.org)
-        return form
-
-    def form_valid(self, form):
-        return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -449,7 +458,25 @@ class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVie
         return context
     
     def get_success_url(self):
-        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        return reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+    
+
+class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = Stop
+    template_name = 'central_admin/stop_list.html'
+    context_object_name = 'stops'
+    
+    def get_queryset(self):
+        route = Route.objects.get(slug=self.kwargs['route_slug'])
+        registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        queryset = Stop.objects.filter(registration=registration, route=route)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["route"] = Route.objects.get(slug=self.kwargs['route_slug'])
+        context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        return context
     
 
 class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -464,10 +491,30 @@ class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
     
     def form_valid(self, form):
         stop = form.save(commit=False)
+        route = Route.objects.get(slug=self.kwargs['route_slug'])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         user = self.request.user
         stop.org = user.profile.org
+        stop.registration = registration
+        stop.route = route
         stop.save()
-        return redirect('central_admin:route_list')
+        return HttpResponseRedirect(reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']}))
+    
+
+class StopUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = Stop
+    form_class = StopForm
+    template_name = 'central_admin/stop_update.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'stop_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']})
     
 
 class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
@@ -482,7 +529,7 @@ class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
         return context
     
     def get_success_url(self):
-        return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
+        return reverse('central_admin:stop_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'route_slug': self.kwargs['route_slug']})
 
 
 class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
@@ -706,77 +753,137 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
     def get_success_url(self):
         return reverse('central_admin:schedule_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
+
+class ScheduleGroupListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = ScheduleGroup
+    template_name = 'central_admin/schedule_group_list.html'
+    context_object_name = 'schedule_groups'
+    
+    def get_queryset(self):
+        self.registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = ScheduleGroup.objects.filter(registration=self.registration)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = self.registration
+        return context
+    
+
+class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = ScheduleGroup
+    template_name = 'central_admin/schedule_group_create.html'
+    form_class = ScheduleGroupForm
+    
+    def form_valid(self, form):
+        schedule_group = form.save(commit=False)
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        schedule_group.registration = registration
+        schedule_group.save()
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:schedule_group_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+
     
 class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     template_name = 'central_admin/more_menu.html'
 
 
-class TicketExportView(View):
-    def post(self, request, *args, **kwargs):
-        registration_slug = self.kwargs.get('registration_slug')
-        registration = get_object_or_404(Registration, slug=registration_slug)
+# class TicketExportView(View):
+#     def post(self, request, *args, **kwargs):
+#         registration_slug = self.kwargs.get('registration_slug')
+#         registration = get_object_or_404(Registration, slug=registration_slug)
         
+#         search_term = request.GET.get('search', '')
+#         institution = request.GET.get('institution')
+#         pickup_points = request.GET.getlist('pickup_point')
+#         drop_points = request.GET.getlist('drop_point')
+#         schedule = request.GET.get('schedule')
+#         pickup_buses = self.request.GET.getlist('pickup_bus')
+#         drop_buses = self.request.GET.getlist('drop_bus')
+        
+#         # Base queryset filtered by registration and institution
+#         queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
+        
+#         # Apply search term filters
+#         if search_term:
+#             queryset = queryset.filter(
+#                 Q(student_name__icontains=search_term) |
+#                 Q(student_email__icontains=search_term) |
+#                 Q(student_id__icontains=search_term) |
+#                 Q(contact_no__icontains=search_term) |
+#                 Q(alternative_contact_no__icontains=search_term)
+#             )
+        
+#         # Apply other filters
+#         if institution:
+#             queryset = queryset.filter(institution_id=institution)
+#         if pickup_points and pickup_points != ['']:
+#             queryset = queryset.filter(pickup_point_id__in=pickup_points)
+#         if drop_points and drop_points != ['']:
+#             queryset = queryset.filter(drop_point_id__in=drop_points)
+#         if schedule:
+#             queryset = queryset.filter(schedule_id=schedule)
+#         if pickup_buses and not pickup_buses == ['']:
+#             queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
+#         if drop_buses and not drop_buses == ['']:
+#             queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
+        
+#         # Send the filtered queryset to the Celery task for export
+#         # export_tickets_to_excel.apply_async(
+#         #     args=[request.user.id, registration_slug, search_term, {
+#         #         'institution': institution,
+#         #         'pickup_points': pickup_points,
+#         #         'drop_points': drop_points,
+#         #         'schedule': schedule,
+#         #         'pickup_buses': pickup_buses,
+#         #         'drop_buses': drop_buses,
+#         #     }]
+#         # )
+        
+        
+#         thread = threading.Thread(target=export_tickets_to_excel, args=[
+#             request.user.id, registration_slug, search_term, {
+#                 'institution': institution,
+#                 'pickup_points': pickup_points,
+#                 'drop_points': drop_points,
+#                 'schedule': schedule,
+#                 'pickup_buses': pickup_buses,
+#                 'drop_buses': drop_buses,
+#             }
+#         ])
+#         thread.start()
+        
+#         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
+    
+
+class TicketExportView(View):
+    def get(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
         institution = request.GET.get('institution')
         pickup_points = request.GET.getlist('pickup_point')
         drop_points = request.GET.getlist('drop_point')
         schedule = request.GET.get('schedule')
-        pickup_buses = self.request.GET.getlist('pickup_bus')
-        drop_buses = self.request.GET.getlist('drop_bus')
-        
-        # Base queryset filtered by registration and institution
-        queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
-        
-        # Apply search term filters
-        if search_term:
-            queryset = queryset.filter(
-                Q(student_name__icontains=search_term) |
-                Q(student_email__icontains=search_term) |
-                Q(student_id__icontains=search_term) |
-                Q(contact_no__icontains=search_term) |
-                Q(alternative_contact_no__icontains=search_term)
-            )
-        
-        # Apply other filters
-        if institution:
-            queryset = queryset.filter(institution_id=institution)
-        if pickup_points and pickup_points != ['']:
-            queryset = queryset.filter(pickup_point_id__in=pickup_points)
-        if drop_points and drop_points != ['']:
-            queryset = queryset.filter(drop_point_id__in=drop_points)
-        if schedule:
-            queryset = queryset.filter(schedule_id=schedule)
-        if pickup_buses and not pickup_buses == ['']:
-            queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
-        if drop_buses and not drop_buses == ['']:
-            queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
-        
-        # Send the filtered queryset to the Celery task for export
-        # export_tickets_to_excel.apply_async(
-        #     args=[request.user.id, registration_slug, search_term, {
-        #         'institution': institution,
-        #         'pickup_points': pickup_points,
-        #         'drop_points': drop_points,
-        #         'schedule': schedule,
-        #         'pickup_buses': pickup_buses,
-        #         'drop_buses': drop_buses,
-        #     }]
-        # )
-        
-        
-        thread = threading.Thread(target=export_tickets_to_excel, args=[
-            request.user.id, registration_slug, search_term, {
-                'institution': institution,
-                'pickup_points': pickup_points,
-                'drop_points': drop_points,
-                'schedule': schedule,
-                'pickup_buses': pickup_buses,
-                'drop_buses': drop_buses,
-            }
-        ])
-        thread.start()
-        
-        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
+        pickup_buses = request.GET.getlist('pickup_bus')
+        drop_buses = request.GET.getlist('drop_bus')
+
+        filters = {
+            'institution': institution,
+            'pickup_points': pickup_points,
+            'drop_points': drop_points,
+            'schedule': schedule,
+            'pickup_buses': pickup_buses,
+            'drop_buses': drop_buses,
+        }
+
+        return export_tickets_to_excel(request.user.id, registration_slug, search_term, filters)
     
 
 class BusRequestListView(ListView):
@@ -905,25 +1012,40 @@ class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
         if change_type == 'pickup':
             new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
             current_pickup_bus_record = ticket.pickup_bus_record
-            
-            current_pickup_bus_record.pickup_booking_count -= 1
-            new_bus_record.pickup_booking_count += 1
-            new_bus_record.save()
-            current_pickup_bus_record.save()
-            
+
+            # If the new bus record is different from the current one, update counts
+            if new_bus_record != current_pickup_bus_record:
+                if current_pickup_bus_record.pickup_booking_count > 0:
+                    current_pickup_bus_record.pickup_booking_count -= 1
+                    current_pickup_bus_record.save()
+                else:
+                    # Optionally, log this or raise an error to avoid accidental negative counts
+                    print("Warning: Pickup booking count cannot go negative!")
+                    
+                new_bus_record.pickup_booking_count += 1
+                new_bus_record.save()
+
             ticket.pickup_bus_record = new_bus_record
             ticket.pickup_point = stop
             ticket.save()
+
             
         if change_type == 'drop':
             new_bus_record = get_object_or_404(BusRecord, slug=bus_record_slug)
             current_drop_bus_record = ticket.drop_bus_record
-            
-            current_drop_bus_record.drop_booking_count -= 1
-            new_bus_record.drop_booking_count += 1
-            new_bus_record.save()
-            current_drop_bus_record.save()
-            
+
+            if new_bus_record != current_drop_bus_record:
+                if current_drop_bus_record:
+                    print("Current bus count (before decrement):", current_drop_bus_record.drop_booking_count)
+                    current_drop_bus_record.drop_booking_count -= 1
+                    current_drop_bus_record.save()
+                    print("Current bus count (after decrement):", current_drop_bus_record.drop_booking_count)
+
+                print("New bus count (before increment):", new_bus_record.drop_booking_count)
+                new_bus_record.drop_booking_count += 1
+                new_bus_record.save()
+                print("New bus count (after increment):", new_bus_record.drop_booking_count)
+
             ticket.drop_bus_record = new_bus_record
             ticket.drop_point = stop
             ticket.save()

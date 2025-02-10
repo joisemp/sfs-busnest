@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'styles/central_admin/route_create/style.css' %}">
+<link rel="stylesheet" href="{% static 'styles/central_admin/route_update/style.css' %}">
 {% endblock style %}
 
 {% block sidebar %}
@@ -14,7 +14,7 @@
 <form action="" method="post">
     {% csrf_token %}
     {{form.as_p|safe}}
-    <button type="submit" class="btn-primary">Create route</button>
+    <button type="submit" class="btn-primary">Update stop</button>
 </form>
 
 {% endblock content %}

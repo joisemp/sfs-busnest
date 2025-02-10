@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/stop_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h3>Stops</h3> 
+<a href="{% url 'central_admin:stop_create' 
+    registration_slug=registration.slug 
+    route_slug=route.slug %}" 
+    class="btn btn-sm btn-dark">Create</a>
+<ul>
+    {% for stop in stops %}
+    <li>{{stop}} - 
+        <a href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}" class="text-danger btn btn-sm">Delete</a> | 
+        <a href="{% url 'central_admin:stop_update' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}" class="text-primary btn btn-sm">Edit</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock content %}
