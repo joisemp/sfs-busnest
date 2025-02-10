@@ -12,17 +12,22 @@
 {% block content %}
 
 <section id="routes">
-    <div class="mb-3">
+    <div class="mb-3 d-flex justify-content-between">
         <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+        <div class="group">
+            <a class="btn btn-primary" href="{% url 'central_admin:route_create' registration_slug=registration.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
+            <a href="{% url 'central_admin:route_file_upload' registration_slug=registration.slug %}" class="btn btn-dark"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload files</a>
+        </div>
+        
     </div>
     <div class="title-section">
         <h3>Routes</h3>
         <div>
             <div class="dropdown">
+                <a href="{% url 'institution_admin:receipt_data_file_upload' %}" class="btn btn-dark"><i class="fa-solid fa-cloud-arrow-up me-2">
+                </i>Upload files</a>
                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
-                    <a href="{% url 'institution_admin:receipt_data_file_upload' %}" class="btn btn-dark"><i class="fa-solid fa-cloud-arrow-up me-2">
-                    </i>Upload files</a>
                     <span class="me-2"><i class="fa-solid fa-plus me-2"></i>Create</span> 
                 </button>
                 <ul class="dropdown-menu">
