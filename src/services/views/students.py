@@ -5,10 +5,10 @@ from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from services.forms.students import StopSelectForm, ValidateStudentForm, TicketForm, BusRequestForm
 from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
-from services.tasks import send_email_task
+from config.mixins.access_mixin import RegistrationOpenCheckMixin
 from services.utils import get_filtered_bus_records
 
-class ValidateStudentFormView(FormView):
+class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
     template_name = 'students/validate_student_form.html'
     form_class = ValidateStudentForm  
     
@@ -45,7 +45,7 @@ class ValidateStudentFormView(FormView):
         return reverse('students:rules_and_regulations', kwargs={'registration_code': registration_code})
     
 
-class RulesAndRegulationsView(TemplateView):
+class RulesAndRegulationsView(RegistrationOpenCheckMixin, TemplateView):
     template_name = 'students/rules_and_regulations.html'
     
     def get_context_data(self, **kwargs):
@@ -54,7 +54,7 @@ class RulesAndRegulationsView(TemplateView):
         return context
 
 
-class StopSelectFormView(FormView):
+class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
     template_name = 'students/search_form.html'
     form_class = StopSelectForm
 
@@ -79,7 +79,7 @@ class StopSelectFormView(FormView):
         return reverse('students:schedule_group_select', kwargs={'registration_code': registration_code})
     
 
-class SelectScheduleGroupView(View):
+class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
     template_name = 'students/select_schedule_group.html'
 
     def get(self, request, registration_code):
@@ -118,7 +118,7 @@ class SelectScheduleGroupView(View):
         return HttpResponseRedirect(reverse('students:bus_search_results', kwargs={'registration_code': registration_code}))
 
 
-class BusSearchResultsView(ListView):
+class BusSearchResultsView(RegistrationOpenCheckMixin, ListView):
     template_name = 'students/search_results.html'
     context_object_name = 'buses'
 
@@ -165,7 +165,7 @@ class BusSearchResultsView(ListView):
         return context
 
 
-class BusNotFoundView(TemplateView):
+class BusNotFoundView(RegistrationOpenCheckMixin, TemplateView):
     template_name = 'students/bus_not_found.html'
     
     def get_context_data(self, **kwargs):
@@ -174,7 +174,7 @@ class BusNotFoundView(TemplateView):
         return context
     
 
-class BusRequestFormView(CreateView):
+class BusRequestFormView(RegistrationOpenCheckMixin, CreateView):
     model = BusRequest
     template_name = 'students/bus_request.html'
     form_class = BusRequestForm
@@ -193,7 +193,7 @@ class BusRequestFormView(CreateView):
         return HttpResponseRedirect(reverse('students:bus_request_success', kwargs={'registration_code':registration.code}))
     
 
-class BusRequestSuccessView(TemplateView):
+class BusRequestSuccessView(RegistrationOpenCheckMixin, TemplateView):
     template_name = 'students/bus_request_success.html'
     
     def get_context_data(self, **kwargs):
@@ -202,7 +202,7 @@ class BusRequestSuccessView(TemplateView):
         return context
     
 
-class BusBookingView(CreateView):
+class BusBookingView(RegistrationOpenCheckMixin, CreateView):
     model = Ticket
     template_name = 'students/bus_booking.html'
     form_class = TicketForm
@@ -314,7 +314,7 @@ class BusBookingView(CreateView):
         return redirect('students:book_success')
     
 
-class BusBookingSuccessView(TemplateView):
+class BusBookingSuccessView(RegistrationOpenCheckMixin, TemplateView):
     template_name = 'students/bus_booking_success.html'
     
     def get_context_data(self, **kwargs):
