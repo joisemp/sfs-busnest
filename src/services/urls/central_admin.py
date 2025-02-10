@@ -40,8 +40,11 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/routes/create/', central_admin.RouteCreateView.as_view(), name='route_create'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/update/', central_admin.RouteUpdateView.as_view(), name='route_update'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/delete/', central_admin.RouteDeleteView.as_view(), name='route_delete'),
-     path('registrations/<slug:registration_slug>/routes/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
-     path('registrations/<slug:registration_slug>/routes/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
+     
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/add/', central_admin.StopCreateView.as_view(), name='stop_create'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/', central_admin.StopListView.as_view(), name='stop_list'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/update/', central_admin.StopUpdateView.as_view(), name='stop_update'),
+     path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),
@@ -52,9 +55,15 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
      path('registrations/<slug:registration_slug>/schedules/<slug:schedule_slug>/update/', central_admin.ScheduleUpdateView.as_view(), name='schedule_update'),
      
+     path('registrations/<slug:registration_slug>/schedule-groups/', central_admin.ScheduleGroupListView.as_view(), name='schedule_group_list'),
+     path('registrations/<slug:registration_slug>/schedule-groups/create/', central_admin.ScheduleGroupCreateView.as_view(), name='schedule_group_create'),
+     
      path('registrations/<slug:registration_slug>/bus-records/', central_admin.BusRecordListView.as_view(), name='bus_record_list'),
      path('registrations/<slug:registration_slug>/bus-records/create/', central_admin.BusRecordCreateView.as_view(), name='bus_record_create'),
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/update/', central_admin.BusRecordUpdateView.as_view(), name='bus_record_update'),
+     
+     path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/', central_admin.TripListView.as_view(), name='trip_list'),
+     path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/create/', central_admin.TripCreateView.as_view(), name='trip_create'),
      
      path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/', central_admin.BusSearchFormView.as_view(), name='bus_search'),
      path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/available-buses/', central_admin.BusSearchResultsView.as_view(), name='bus_search_results'),

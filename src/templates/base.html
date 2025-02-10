@@ -25,9 +25,11 @@
                 </a>
                 <div class="profile">
                     <div class="dropdown">
-                        <div class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="https://th.bing.com/th/id/OIP.WRU5MtefqKM493DeLtnzxwHaHa?rs=1&pid=ImgDetMain"
-                                height="40px" width="40px" style="border-radius: 50%; object-fit: cover;" alt="">
+                        <div class="dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div style="border-radius: 50%; object-fit: cover; overflow: hidden; border: 3px solid #4f46e5;">
+                                <img src="{% static 'images/profile-default-icon.jpg' %}"
+                                height="35px" width="35px" alt="">
+                            </div>
                         </div>
                         <ul class="dropdown-menu">
                             <!-- <li><a class="dropdown-item" href="#">View profile</a></li> -->

@@ -15,12 +15,12 @@
   <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
     {% if not search_term %}
     <div>
-      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-dark"><i
-          class="fa-solid fa-arrow-left me-2"></i>Back</a>
+      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
+        class="btn btn-dark"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
       <!-- <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i
           class="fa-solid fa-file-excel ms-2"></i></button> -->
-      <a href="{% url 'central_admin:ticket_export' registration_slug=registration.slug %}" type="button" class="btn btn-success p-2 ms-1">Export data<i
-          class="fa-solid fa-file-excel ms-2"></i></a>
+      <a href="{% url 'central_admin:ticket_export' registration_slug=registration.slug %}" type="button"
+        class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></a>
     </div>
     <div>
       {% if filters %}
@@ -159,19 +159,21 @@
         class="fa-solid fa-xmark me-2"></i>Clear search</button>
     {% endif %}
   </div>
-
+  {% if tickets %}
   <div class="table-responsive">
     <table class="table">
       <thead>
         <tr>
+          <th scope="col" class="font">Type</th>
           <th scope="col" class="font">Student ID</th>
           <th scope="col" class="font">Name</th>
           <th scope="col" class="font">School</th>
           <th scope="col" class="font">Pickup bus</th>
           <th scope="col" class="font">Drop bus</th>
-          <th scope="col" class="font">Pickup</th>
-          <th scope="col" class="font">Drop</th>
-          <th scope="col" class="font">Timming</th>
+          <th scope="col" class="font">Pickup stop</th>
+          <th scope="col" class="font">Drop stop</th>
+          <th scope="col" class="font">Pickup time</th>
+          <th scope="col" class="font">Drop time</th>
           <th scope="col" class="font">Ticket ID</th>
           <th scope="col" class="font">Action</th>
         </tr>
@@ -179,14 +181,35 @@
       <tbody>
         {% for ticket in tickets %}
         <tr>
+          <td>
+            <span class="badge rounded-pill 
+            {% if ticket.ticket_type == 'one_way' %}text-bg-primary
+            {% elif ticket.ticket_type == 'two_way' %}text-bg-dark
+            {% endif %} px-3" style="padding-bottom: 6px;">
+              {{ ticket.get_ticket_type_display }}
+            </span>
+          </td>
           <td>{{ticket.student_id}}</td>
           <td>{{ticket.student_name}}</td>
           <td>{{ticket.institution.name}}</td>
-          <td>{{ticket.pickup_bus_record.label}}</td>
-          <td>{{ticket.drop_bus_record.label}}</td>
-          <td>{{ticket.pickup_point}}</td>
-          <td>{{ticket.drop_point}}</td>
-          <td>{{ticket.schedule.name}}</td>
+          <td>
+            {{ ticket.pickup_bus_record.label|default:"-----" }}
+          </td>
+          <td>
+            {{ ticket.drop_bus_record.label|default:"-----" }}
+          </td>
+          <td>
+            {{ ticket.pickup_point.name|default:"-----" }}
+          </td>
+          <td>
+            {{ ticket.drop_point|default:"-----" }}
+          </td>
+          <td>
+            {{ ticket.pickup_schedule.name|default:"-----" }}
+          </td>
+          <td>
+            {{ ticket.drop_schedule.name|default:"-----" }}
+          </td>
           <td>{{ticket.ticket_id}}</td>
           <td>
 
@@ -224,9 +247,15 @@
                       </button>
                       <ul class="dropdown-menu shadow-lg">
                         <!-- <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-user me-2"></i>Update student info</a></li> -->
-                        <li class="p-3"><a class="dropdown-item" href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=pickup"><i class="fa-solid fa-location-dot me-2"></i>Change pickup bus/stop</a></li>
-                        <li class="p-3"><a class="dropdown-item" href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=drop"><i class="fa-solid fa-flag me-2"></i>Change drop bus/stop</a></li>
-                        <li class="p-3"><a class="dropdown-item text-danger" href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
+                        <li class="p-3"><a class="dropdown-item"
+                            href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=pickup"><i
+                              class="fa-solid fa-location-dot me-2"></i>Change pickup bus/stop</a></li>
+                        <li class="p-3"><a class="dropdown-item"
+                            href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=drop"><i
+                              class="fa-solid fa-flag me-2"></i>Change drop bus/stop</a></li>
+                        <li class="p-3"><a class="dropdown-item text-danger"
+                            href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
+                              class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
                       </ul>
                     </div>
                   </div>
@@ -239,7 +268,15 @@
       </tbody>
     </table>
   </div>
+  {% else %}
+  <div class="text-center p-5">
+    <p class="fw-semibold text-muted">No tickets are found</p>
+  </div>
+  {% endif %}
+
 </section>
+
+{% endblock content %}
 
 {% block scripts %}
 <script>
@@ -276,5 +313,3 @@
 
 </script>
 {% endblock scripts %}
-
-{% endblock content %}

@@ -2,6 +2,9 @@ from django.contrib.auth.mixins import AccessMixin
 from django.http import HttpResponsePermanentRedirect
 from django.urls import reverse
 from django.http import Http404
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from services.models import Registration
 
 
 class CentralAdminOnlyAccessMixin(AccessMixin):
@@ -44,3 +47,14 @@ class RedirectLoggedInUsersMixin(AccessMixin):
                 return HttpResponsePermanentRedirect(reverse('institution_admin:registration_list'))
 
         return super().dispatch(request, *args, **kwargs)
+    
+
+class RegistrationOpenCheckMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        registration_code = kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+        if not registration.status:
+            raise Http404("Registration is not open.")
+        return super().dispatch(request, *args, **kwargs)
+        
+        

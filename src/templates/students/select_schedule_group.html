@@ -1,0 +1,67 @@
+{% extends 'logged_out_user_base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/students/bus_search/style.css' %}">
+{% endblock style %}
+
+{% block navbar %}
+{% include 'logged_out_user_navbar.html' %}
+{% endblock navbar %}
+
+{% block content %}
+<div class="back mb-4 mb-md-5">
+    <button class="btn btn-dark btn-sm" onclick="history.back()"><i class="fa-solid fa-arrow-left me-2"></i>Go back</button>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="mb-4">
+    <h2 class="mb-1">Schedule</h2>
+    <h6 class="text-muted mb-3">Select the schedule according to preferences</h6>
+    </div>
+
+    {% if error_message %}
+    <div class="alert alert-danger" role="alert">
+        {{error_message}}
+      </div>
+    {% endif %}
+
+    {% for group in schedule_groups %}
+    <div class="card mb-3" style="width: 100%; border: none; padding: 1rem;">
+        <div class="card-body">
+            <div class="form-check mb-2">
+                <input class="form-check-input" style="margin-top: 5px;" type="radio" name="schedule_group"
+                    value="{{ group.id }}">
+                <label class="form-check-label">
+                    <h5>{{ group.pick_up_schedule.name }} - {{ group.drop_schedule.name }}</h5>
+                </label>
+            </div>
+            {% if group.allow_one_way %}
+            <div class="d-flex mb-3">
+                <div class="form-check ms-4">
+                    <input class="form-check-input" type="checkbox" name="pickup_{{group.id}}" checked
+                        value="{{group.pick_up_schedule.id}}">
+                    <label class="form-check-label">
+                        Pickup
+                    </label>
+                </div>
+                <div class="form-check ms-3">
+                    <input class="form-check-input" type="checkbox" name="drop_{{group.id}}" checked
+                        value="{{group.drop_schedule.id}}">
+                    <label class="form-check-label">
+                        Drop
+                    </label>
+                </div>
+            </div>
+            {% endif %}
+            <hr class="text-secondary">
+            <span class="card-text text-muted fw-semibold">{{group.description}}</span>
+        </div>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Find bus<i class="fa-solid fa-angle-right ms-2"></i></button>
+</form>
+
+{% endblock content %}

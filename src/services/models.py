@@ -59,12 +59,14 @@ class Institution(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.label}"
-    
 
-class Stop(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
-    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
+
+class Route(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -75,17 +77,15 @@ class Stop(models.Model):
         
     def __str__(self):
         return f"{self.name}"
+    
 
-
-class Route(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
-    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
+class Stop(models.Model):
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
+    registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='stops')
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='stops')
     name = models.CharField(max_length=200)
-    stops = models.ManyToManyField(Stop, related_name='stops')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
-
+    
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.name}")
@@ -100,6 +100,7 @@ def rename_uploaded_file(instance, filename):
     base_name = os.path.splitext(filename)[0]
     ext = os.path.splitext(filename)[1]
     return f"{instance.org.slug}/route_files/{slugify(base_name)}-{uuid4()}{ext}"
+
 
 def rename_bus_uploaded_file(instance, filename):
     base_name = os.path.splitext(filename)[0]
@@ -164,6 +165,17 @@ class Schedule(models.Model):
         return f"{self.name} ({self.start_time} - {self.end_time})"
     
 
+class ScheduleGroup(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='schedule_groups')
+    pick_up_schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='pickup_groups')
+    drop_schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='drop_groups')
+    allow_one_way = models.BooleanField(default=False)
+    description = models.CharField(max_length=500)
+    
+    def __str__(self):
+        return f"{self.pick_up_schedule.name}-{self.drop_schedule.name}"
+    
+
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
     registration_no = models.CharField(max_length=100)
@@ -186,56 +198,54 @@ class BusRecord(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
     bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
-    route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True)
-    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True)
     label = models.CharField(max_length=20)
-    pickup_booking_count = models.PositiveIntegerField(default=0)
-    drop_booking_count = models.PositiveIntegerField(default=0)
-    total_available_seats = models.PositiveIntegerField()
+    min_required_capacity = models.PositiveIntegerField(default=0)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     class Meta:
-        unique_together = ('bus', 'registration', 'schedule')
+        unique_together = ('bus', 'registration')
         
     def clean(self):
         if self.bus:
-            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            if max_booking_count > self.bus.capacity:
+            if self.min_required_capacity > self.bus.capacity:
                 raise ValidationError(
-                    f"The bus cpacity ({self.bus.capacity}) is less than the booking count ({max_booking_count})."
+                    f"The bus cpacity ({self.bus.capacity}) is less than the minimum capacity of ({self.min_required_capacity})."
                 )
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(f"bus-record-{self.registration.name}")
+            base_slug = slugify(f"record-{self.bus.registration_no}-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
-        
-        existing_record = None  # Ensure variable is initialized
-
-        # Ensure that no other record exists with the same bus and schedule
-        if self.bus and self.schedule:
-            existing_record = BusRecord.objects.filter(bus=self.bus, schedule=self.schedule).exclude(id=self.id).first()
-            if existing_record:
-                existing_record.bus = None
-                existing_record.save(update_fields=['bus'])  # Update only the bus field
-
-        if self.bus:
-            max_booking_count = max(self.pickup_booking_count, self.drop_booking_count)
-            self.total_available_seats = max(0, self.bus.capacity - max_booking_count)
-        else:
-            self.total_available_seats = 0
-
         super().save(*args, **kwargs)
-        
-    @property
-    def total_filled_seats_percentage(self):
-        if not self.bus or self.bus.capacity == 0:
-            return 0
-        filled_seats = self.bus.capacity - self.total_available_seats
-        return (filled_seats * 100) // self.bus.capacity
 
     def __str__(self):
         return f"{self.label}"
+    
+
+class Trip(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='trips')
+    record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='trips')
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='trips')
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='trips')
+    booking_count = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('registration', 'record', 'schedule')
+    
+    @property
+    def total_filled_seats_percentage(self):
+        if not self.record.bus or self.record.bus.capacity == 0:
+            return 0
+        return (self.booking_count * 100) // self.record.bus.capacity
+    
+    def __str__(self):
+        return f"{self.schedule} | {self.route}"
+
+
+TICKET_TYPES = ( 
+    ("one_way", "One way"), 
+    ("two_way", "Two way"),  
+)
 
 
 class Ticket(models.Model):
@@ -256,12 +266,14 @@ class Ticket(models.Model):
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
-    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='pickup_tickets')
-    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, related_name='drop_tickets')
-    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_pickups')
-    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, related_name='ticket_drops')
-    schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='tickets')
-    status = models.BooleanField(default=False)  # Indicates if the ticket is confirmed or pending
+    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='pickup_tickets')
+    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='drop_tickets')
+    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='ticket_pickups')
+    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='ticket_drops')
+    pickup_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='pickup_tickets')
+    drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='drop_tickets')
+    ticket_type = models.CharField(max_length=300, choices=TICKET_TYPES, default='twoway')
+    status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -275,7 +287,7 @@ class Ticket(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Ticket for {self.student_name} on {self.pickup_bus_record.label} ({self.schedule.name})"
+        return f"Ticket for {self.student_name}"
 
 
 class StudentGroup(models.Model):
