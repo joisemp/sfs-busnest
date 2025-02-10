@@ -224,4 +224,20 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+.gear {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.gear .button {
+  display: flex;
+  justify-content: center;
+}
+
+tbody, td, tfoot, th, thead, tr {
+  background: rgba(255, 255, 255, 0) !important;
+  white-space: nowrap;
+  padding: 1rem !important;
 }/*# sourceMappingURL=style.css.map */
