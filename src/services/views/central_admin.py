@@ -665,8 +665,8 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         
         # Add the filter options to the context
         context['registration'] = self.registration
-        context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration)
-        context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration)
+        context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
+        context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
         context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")
