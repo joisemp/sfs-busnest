@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from services.forms.students import StopSelectForm, ValidateStudentForm, TicketForm, BusRequestForm
 from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
 from config.mixins.access_mixin import RegistrationOpenCheckMixin
+from services.tasks import send_email_task
 from services.utils import get_filtered_bus_records
 
 class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
@@ -315,6 +316,25 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         if drop_trip:
             drop_trip.save()
         ticket.save()
+        
+        subject = "Booking Confirmation"
+        message = (
+            f"Hello {ticket.student_name},\n\n"
+            f"Welcome aboard! This is an confirmation email for your booking for bus service.\n"
+            f"\n\nYour booking details are as follows:"
+            f"\n\nPickup Bus: {ticket.pickup_bus_record.label}"
+            f"\nPickup Schedule: {ticket.pickup_schedule.name}"
+            f"\nPickup Point: {ticket.pickup_point}"
+            f"\n\nDrop Bus: {ticket.drop_bus_record.label}"
+            f"\nDrop Schedule: {ticket.drop_schedule.name}"
+            f"\nDrop Point: {ticket.drop_point}"
+            f"\n\nPlease make sure to be on time at the pickup point."
+            f"\n\nIncase of any issues please contact your respective insitution"
+            f"\n\nYour ticket id is : {ticket.ticket_id}"
+            f"\n\nBest regards,\nSFSBusNest Team"
+            )
+        recipient_list = [f"{ticket.student_email}"]
+        send_email_task.delay(subject, message, recipient_list)
         
         self.request.session['success_message'] = f"Bus ticket successfully booked for {ticket.student_name}."
         self.request.session['registration_code'] = self.kwargs.get('registration_code')
