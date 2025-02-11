@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
+from services.forms.students import StopSelectForm
 from services.models import Bus, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
@@ -449,3 +450,29 @@ class TicketExportView(View):
         }
 
         return export_tickets_to_excel(request.user.id, registration_slug, search_term, filters)
+    
+    
+class StopSelectFormView(FormView):
+    template_name = 'students/search_form.html'
+    form_class = StopSelectForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all()
+        return form
+
+    def form_valid(self, form):
+        stop = form.cleaned_data['stop']
+        self.request.session['stop_id'] = stop.id
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        return reverse('institution_admin:schedule_group_select', kwargs={'registration_code': registration_code, 'ticket_id':self.kwargs.get('ticket_id')})
+    
