@@ -19,8 +19,8 @@
         <div class="success">
             <div>
                 <h1>Booking Success</h1>
-                <p>{{ ticket }}</p>
-                <a href="{% url 'students:validate_student' registration_code=ticket.registration.code %}" class="btn text-light">Book another<i class="fa-solid fa-arrow-right ms-2"></i></a>
+                <p>{{ message }}</p>
+                <a href="{% url 'students:validate_student' registration_code=registration.code %}" class="btn text-light">Book another<i class="fa-solid fa-arrow-right ms-2"></i></a>
             </div>
         </div>
     </div>

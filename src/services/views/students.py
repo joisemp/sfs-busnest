@@ -68,6 +68,11 @@ class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
         registration = self.get_registration()
         form.fields['stop'].queryset = registration.stops.all()
         return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.get_registration()
+        return context
 
     def form_valid(self, form):
         stop = form.cleaned_data['stop']
@@ -310,17 +315,22 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         if drop_trip:
             drop_trip.save()
         ticket.save()
+        
+        self.request.session['success_message'] = f"Bus ticket successfully booked for {ticket.student_name}."
+        self.request.session['registration_code'] = self.kwargs.get('registration_code')
 
         return redirect('students:book_success')
     
 
-class BusBookingSuccessView(RegistrationOpenCheckMixin, TemplateView):
+class BusBookingSuccessView(TemplateView):
     template_name = 'students/bus_booking_success.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ticket = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
-        context['ticket'] = ticket
+        message = self.request.session.get('success_message')
+        registration = get_object_or_404(Registration, code=self.request.session.get('registration_code'))
+        context['message'] = message
+        context['registration'] = registration
         return context
 
         
