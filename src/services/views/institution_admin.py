@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
 from services.forms.students import StopSelectForm
-from services.models import Bus, BusRecord, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
+from services.models import Bus, BusRecord, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -521,13 +521,26 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
         change_type = self.request.GET.get('type')
         
         if change_type == 'pickup':
+            new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
+            existing_trip = Trip.objects.get(registration=registration, record=ticket.pickup_bus_record, schedule=ticket.pickup_schedule)
             ticket.pickup_bus_record = bus_record
             ticket.pickup_point = pickup_point
             ticket.pickup_schedule = schedule
+            existing_trip.booking_count -= 1
+            existing_trip.save()
+            new_trip.booking_count += 1
+            new_trip.save()
+        
         elif change_type == 'drop':
+            new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
+            existing_trip = Trip.objects.get(registration=registration, record=ticket.drop_bus_record, schedule=ticket.drop_schedule)
             ticket.drop_bus_record = bus_record
             ticket.drop_point = drop_point
             ticket.drop_schedule = schedule
+            existing_trip.booking_count -= 1
+            existing_trip.save()
+            new_trip.booking_count += 1
+            new_trip.save()
         
         ticket.save()
         
