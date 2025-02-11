@@ -1,6 +1,6 @@
 import threading
 from django.db import transaction
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
@@ -11,6 +11,7 @@ from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel
+from services.utils import get_filtered_bus_records
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
@@ -479,42 +480,74 @@ class StopSelectFormView(FormView):
     
 
 class SelectScheduleGroupView(View):
-    template_name = 'students/select_schedule_group.html'
+    template_name = 'institution_admin/select_schedule_group.html'
 
     def get(self, request, registration_code, ticket_id):
-        schedule_groups = ScheduleGroup.objects.all()
-        return render(request, self.template_name, {'schedule_groups': schedule_groups})
+        schedules = Schedule.objects.all()
+        query_string = self.request.GET.get('type', '')
+        type = query_string if query_string else 'pickup and drop'
+        return render(request, self.template_name, {'schedules': schedules, 'type': type})
 
     def post(self, request, registration_code, ticket_id):
         selected_id = request.POST.get("schedule_group")
-        pickup = request.POST.get(f"pickup_{selected_id}")  # Checkbox value
-        drop = request.POST.get(f"drop_{selected_id}")  # Checkbox value
 
         if not selected_id:
-            schedule_groups = ScheduleGroup.objects.all()
+            schedules = Schedule.objects.all()
+            query_string = self.request.GET.get('type', '')
+            type = query_string if query_string else 'pickup and drop'
             return render(
                 request,
                 self.template_name,
                 {
-                    'schedule_groups': schedule_groups,
-                    'error_message': "Please select a schedule group.",
+                    'schedules': schedules,
+                    'type': type,
+                    'error_message': "Please select a schedule.",
                 }
             )
 
-        selected_group = ScheduleGroup.objects.get(id=selected_id)
+        selected_schedule = Schedule.objects.get(id=selected_id)
         
         # Process the selection
         selection_details = {
-            "selected_group": selected_group,
-            "pickup": pickup,
-            "drop": drop
+            "selected_schedule": selected_schedule,
         }
         
-        self.request.session['schedule_group_id'] = selection_details['selected_group'].id
-        self.request.session['pickup'] = selection_details['pickup']
-        self.request.session['drop'] = selection_details['drop']
+        self.request.session['schedule_id'] = selection_details['selected_schedule'].id
         query_string = self.request.GET.get('type', '')
-        return HttpResponseRedirect(reverse('students:bus_search_results', kwargs={'registration_code': registration_code})+ f"?type={query_string}")
+        return HttpResponseRedirect(reverse('institution_admin:bus_search_results', kwargs={'registration_code': registration_code, 'ticket_id': self.kwargs.get('ticket_id')})+ f"?type={query_string}")
     
+    
+class BusSearchResultsView(ListView):
+    template_name = 'students/search_results.html'
+    context_object_name = 'buses'
+
+    def get_queryset(self):
+        # Get pickup point, drop point, and schedule from session
+        stop_id = self.request.session.get('stop_id')
+        schedule_id = self.request.session.get('schedule_id')
+        query_string = self.request.GET.get('type', '')
+
+        schedule = Schedule.objects.get(id=int(schedule_id))
+        
+        if query_string != '':
+            schedule_ids = [schedule.id]
+        else:
+            raise Http404("Invalid query string")
+        
+        buses = get_filtered_bus_records(schedule_ids, int(stop_id))
+        return buses
+    
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if not self.object_list:
+            registration_code = self.kwargs.get('registration_code')
+            return HttpResponseRedirect(reverse('students:bus_not_found', kwargs={'registration_code': registration_code}))
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
     
     

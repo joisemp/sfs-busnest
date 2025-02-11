@@ -20,6 +20,7 @@ urlpatterns = [
      
      path('change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-stop/', institution_admin.StopSelectFormView.as_view(), name='stop_select'),
      path('change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-schedule/', institution_admin.SelectScheduleGroupView.as_view(), name='schedule_group_select'),
+     path('change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-schedule/<slug:schedule_group_slug>/available-buses/', institution_admin.BusSearchResultsView.as_view(), name='bus_search_results'),
      
      
      path('receipts/', institution_admin.ReceiptListView.as_view(), name='receipt_list'),
