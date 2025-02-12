@@ -234,9 +234,9 @@ class Trip(models.Model):
     
     @property
     def total_filled_seats_percentage(self):
-        if not self.record.bus or self.record.bus.capacity == 0:
+        if not self.record or not self.record.bus or self.record.bus.capacity == 0:
             return 0
-        return (self.booking_count * 100) // self.record.bus.capacity
+        return round((self.booking_count * 100) / self.record.bus.capacity, 2)
     
     def __str__(self):
         return f"{self.schedule} | {self.route}"
