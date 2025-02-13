@@ -67,7 +67,7 @@ class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         registration = self.get_registration()
-        form.fields['stop'].queryset = registration.stops.all()
+        form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
     
     def get_context_data(self, **kwargs):
@@ -318,21 +318,28 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         ticket.save()
         
         subject = "Booking Confirmation"
-        message = (
-            f"Hello {ticket.student_name},\n\n"
-            f"Welcome aboard! This is an confirmation email for your booking for bus service.\n"
-            f"\n\nYour booking details are as follows:"
-            f"\n\nPickup Bus: {ticket.pickup_bus_record.label}"
-            f"\nPickup Schedule: {ticket.pickup_schedule.name}"
-            f"\nPickup Point: {ticket.pickup_point}"
-            f"\n\nDrop Bus: {ticket.drop_bus_record.label}"
-            f"\nDrop Schedule: {ticket.drop_schedule.name}"
-            f"\nDrop Point: {ticket.drop_point}"
+        message = f"Hello {ticket.student_name},\n\nWelcome aboard! This is a confirmation email for your booking for bus service.\n\nYour booking details are as follows:"
+
+        if ticket.pickup_bus_record:
+            message += f"\n\nPickup Bus: {ticket.pickup_bus_record.label}"
+        if ticket.pickup_schedule:
+            message += f"\nPickup Schedule: {ticket.pickup_schedule.name}"
+        if ticket.pickup_point:
+            message += f"\nPickup Point: {ticket.pickup_point}"
+
+        if ticket.drop_bus_record:
+            message += f"\n\nDrop Bus: {ticket.drop_bus_record.label}"
+        if ticket.drop_schedule:
+            message += f"\nDrop Schedule: {ticket.drop_schedule.name}"
+        if ticket.drop_point:
+            message += f"\nDrop Point: {ticket.drop_point}"
+
+        message += (
             f"\n\nPlease make sure to be on time at the pickup point."
-            f"\n\nIncase of any issues please contact your respective insitution"
-            f"\n\nYour ticket id is : {ticket.ticket_id}"
+            f"\n\nIn case of any issues, please contact your respective institution."
+            f"\n\nYour ticket ID is: {ticket.ticket_id}"
             f"\n\nBest regards,\nSFSBusNest Team"
-            )
+        )
         recipient_list = [f"{ticket.student_email}"]
         send_email_task.delay(subject, message, recipient_list)
         
