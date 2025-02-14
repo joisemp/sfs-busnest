@@ -51,10 +51,7 @@
       <tbody>
         {% for record in bus_records %}
         <tr>
-          <td>
-            <a style="font-weight: 600;"
-              href="{% url 'central_admin:bus_record_update' registration_slug=registration.slug bus_record_slug=record.slug %}">{{record.label}}</a>
-          </td>
+          <td class="fw-semibold">{{record.label}}</td>
           <td>
             {% if record.bus %}
             {{record.bus.registration_no}}
@@ -70,7 +67,7 @@
             {% endif %}
           </td>
           <td>
-            <a class="text-primary fw-semibold" href="{% url 'central_admin:trip_list' registration_slug=registration.slug bus_record_slug=record.slug %}">View details</a>
+            <a class="fw-semibold btn btn-sm btn-outline-dark" href="{% url 'central_admin:trip_list' registration_slug=registration.slug bus_record_slug=record.slug %}">View details</a>
           </td>
         </tr>
         {% endfor %}
