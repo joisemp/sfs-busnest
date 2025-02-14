@@ -620,6 +620,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Ticket
     template_name = 'central_admin/ticket_list.html'
     context_object_name = 'tickets'
+    paginate_by = 15
     
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
