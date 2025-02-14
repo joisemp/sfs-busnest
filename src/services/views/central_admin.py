@@ -301,6 +301,23 @@ class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
     
+
+class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    model = Trip
+    template_name = 'central_admin/trip_confirm_delete.html'
+    slug_field = 'id'
+    slug_url_kwarg = 'trip_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context['bus_record'] = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:trip_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'bus_record_slug': self.kwargs['bus_record_slug']})
+
+    
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
     template_name = 'central_admin/people_list.html'

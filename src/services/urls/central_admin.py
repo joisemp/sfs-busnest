@@ -64,6 +64,7 @@ urlpatterns = [
      
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/', central_admin.TripListView.as_view(), name='trip_list'),
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/create/', central_admin.TripCreateView.as_view(), name='trip_create'),
+     path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/<slug:trip_slug>/delete/', central_admin.TripDeleteView.as_view(), name='trip_delete'),
      
      path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/', central_admin.BusSearchFormView.as_view(), name='bus_search'),
      path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/available-buses/', central_admin.BusSearchResultsView.as_view(), name='bus_search_results'),

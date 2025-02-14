@@ -48,7 +48,7 @@
                 <span>{{total_filled_seats_percentage |default:"0" }}%</span>
               </div>
             </td>
-            <td><a href="#" class="text-danger" style="text-decoration: none;">Delete</a></td>
+            <td><a href="{% url 'central_admin:trip_delete' registration_slug=trip.registration.slug bus_record_slug=trip.record.slug trip_slug=trip.id %}" class="text-danger fw-semibold" style="text-decoration: none;">Delete</a></td>
           </tr>
             {% endfor %}
         </tbody>
