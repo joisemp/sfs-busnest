@@ -1,15 +1,17 @@
 import threading
 from django.db import transaction
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
-from services.models import Bus, Registration, Receipt, Stop, StudentGroup, Ticket, Schedule, ReceiptFile
+from services.forms.students import StopSelectForm
+from services.models import Bus, BusRecord, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel
+from services.utils import get_filtered_bus_records
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
@@ -304,57 +306,6 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         return context
     
 
-class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
-    @transaction.atomic
-    def get(self, request, registration_code, ticket_id, bus_slug):
-        registration = get_object_or_404(Registration, code=registration_code)
-        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
-        bus = get_object_or_404(Bus, slug=bus_slug)
-        
-        pickup_point_id = self.request.session.get('pickup_point')
-        drop_point_id = self.request.session.get('drop_point')
-        schedule_id = self.request.session.get('schedule')
-        
-        pickup_point = get_object_or_404(Stop, id=pickup_point_id)
-        drop_point = get_object_or_404(Stop, id=drop_point_id)
-        schedule = get_object_or_404(Schedule, id=schedule_id)
-        
-        # bus_capacity = BusCapacity.objects.get(
-        #     bus=ticket.bus, 
-        #     registration=registration
-        #     )
-
-        # bus_capacity.available_seats += 1
-        # bus_capacity.save()
-        
-        # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
-        
-        ticket.bus = bus
-        ticket.pickup_point = pickup_point
-        ticket.drop_point = drop_point
-        ticket.schedule = schedule
-        ticket.save()
-        
-        # bus_capacity, created = BusCapacity.objects.get_or_create(
-        #     bus=ticket.bus, 
-        #     registration=registration, 
-        #     defaults={'available_seats': bus.capacity - 1}
-        #     )
-        
-        # if not created:
-        #     bus_capacity.available_seats -= 1
-
-        # bus_capacity.save()
-        
-        # print(f"BUS CAPACITY : {bus_capacity.available_seats}")
-        
-        return redirect(
-            reverse('institution_admin:ticket_list', 
-                    kwargs={'registration_slug': registration.slug}
-                )
-            )
-
-
 # class TicketExportView(View):
 #     def post(self, request, *args, **kwargs):
 #         registration_slug = self.kwargs.get('registration_slug')
@@ -449,3 +400,152 @@ class TicketExportView(View):
         }
 
         return export_tickets_to_excel(request.user.id, registration_slug, search_term, filters)
+    
+    
+class StopSelectFormView(FormView):
+    template_name = 'students/search_form.html'
+    form_class = StopSelectForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all()
+        return form
+
+    def form_valid(self, form):
+        stop = form.cleaned_data['stop']
+        self.request.session['stop_id'] = stop.id
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        query_string = self.request.GET.get('type', '')
+        return reverse('institution_admin:schedule_group_select', kwargs={'registration_code': registration_code, 'ticket_id': self.kwargs.get('ticket_id')}) + f"?type={query_string}"
+    
+
+class SelectScheduleGroupView(View):
+    template_name = 'institution_admin/select_schedule_group.html'
+
+    def get(self, request, registration_code, ticket_id):
+        schedules = Schedule.objects.all()
+        query_string = self.request.GET.get('type', '')
+        type = query_string if query_string else 'pickup and drop'
+        return render(request, self.template_name, {'schedules': schedules, 'type': type})
+
+    def post(self, request, registration_code, ticket_id):
+        selected_id = request.POST.get("schedule_group")
+
+        if not selected_id:
+            schedules = Schedule.objects.all()
+            query_string = self.request.GET.get('type', '')
+            type = query_string if query_string else 'pickup and drop'
+            return render(
+                request,
+                self.template_name,
+                {
+                    'schedules': schedules,
+                    'type': type,
+                    'error_message': "Please select a schedule.",
+                }
+            )
+
+        selected_schedule = Schedule.objects.get(id=selected_id)
+        
+        # Process the selection
+        selection_details = {
+            "selected_schedule": selected_schedule,
+        }
+        
+        self.request.session['schedule_id'] = selection_details['selected_schedule'].id
+        query_string = self.request.GET.get('type', '')
+        return HttpResponseRedirect(reverse('institution_admin:bus_search_results', kwargs={'registration_code': registration_code, 'ticket_id': self.kwargs.get('ticket_id')})+ f"?type={query_string}")
+    
+    
+class BusSearchResultsView(ListView):
+    template_name = 'institution_admin/search_results.html'
+    context_object_name = 'buses'
+
+    def get_queryset(self):
+        # Get pickup point, drop point, and schedule from session
+        stop_id = self.request.session.get('stop_id')
+        schedule_id = self.request.session.get('schedule_id')
+        query_string = self.request.GET.get('type', '')
+
+        schedule = Schedule.objects.get(id=int(schedule_id))
+        
+        if query_string != '':
+            schedule_ids = [schedule.id]
+        else:
+            raise Http404("Invalid query string")
+        
+        buses = get_filtered_bus_records(schedule_ids, int(stop_id))
+        return buses
+    
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if not self.object_list:
+            registration_code = self.kwargs.get('registration_code')
+            return HttpResponseRedirect(reverse('students:bus_not_found', kwargs={'registration_code': registration_code}))
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
+        context['change_type'] = self.request.GET.get('type', '')
+        context['stop'] = Stop.objects.get(id=self.request.session.get('stop_id'))
+        context['schedule'] = Schedule.objects.get(id=self.request.session.get('schedule_id'))
+        return context
+
+
+class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    @transaction.atomic
+    def get(self, request, registration_code, ticket_id, bus_slug):
+        registration = get_object_or_404(Registration, code=registration_code)
+        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+        bus_record = get_object_or_404(BusRecord, slug=bus_slug)
+        
+        stop_id = self.request.session.get('stop_id')
+        schedule_id = self.request.session.get('schedule_id')
+        
+        pickup_point = get_object_or_404(Stop, id=stop_id)
+        drop_point = get_object_or_404(Stop, id=stop_id)
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        
+        change_type = self.request.GET.get('type')
+        
+        if change_type == 'pickup':
+            new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
+            existing_trip = Trip.objects.get(registration=registration, record=ticket.pickup_bus_record, schedule=ticket.pickup_schedule)
+            ticket.pickup_bus_record = bus_record
+            ticket.pickup_point = pickup_point
+            ticket.pickup_schedule = schedule
+            existing_trip.booking_count -= 1
+            existing_trip.save()
+            new_trip.booking_count += 1
+            new_trip.save()
+        
+        elif change_type == 'drop':
+            new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
+            existing_trip = Trip.objects.get(registration=registration, record=ticket.drop_bus_record, schedule=ticket.drop_schedule)
+            ticket.drop_bus_record = bus_record
+            ticket.drop_point = drop_point
+            ticket.drop_schedule = schedule
+            existing_trip.booking_count -= 1
+            existing_trip.save()
+            new_trip.booking_count += 1
+            new_trip.save()
+        
+        ticket.save()
+        
+        return redirect(
+            reverse('institution_admin:ticket_list', 
+                    kwargs={'registration_slug': registration.slug}
+                )
+            )

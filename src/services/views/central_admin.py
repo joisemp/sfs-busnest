@@ -301,6 +301,23 @@ class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
     
+
+class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    model = Trip
+    template_name = 'central_admin/trip_confirm_delete.html'
+    slug_field = 'id'
+    slug_url_kwarg = 'trip_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context['bus_record'] = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:trip_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'bus_record_slug': self.kwargs['bus_record_slug']})
+
+    
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = UserProfile
     template_name = 'central_admin/people_list.html'
@@ -603,6 +620,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Ticket
     template_name = 'central_admin/ticket_list.html'
     context_object_name = 'tickets'
+    paginate_by = 15
     
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
@@ -665,8 +683,8 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         
         # Add the filter options to the context
         context['registration'] = self.registration
-        context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration)
-        context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration)
+        context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
+        context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
         context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")

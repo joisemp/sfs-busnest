@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/stop_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h4>Are you sure you want to delete {{ object.schedule.name }} trip for {{ object.record.label }}?</h4>
+<p>This action cannot be undone.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger me-2" type="submit">Yes remove</button>
+    <a class="btn text-primary" href="{% url 'central_admin:trip_list' registration_slug=object.registration.slug bus_record_slug=object.record.slug %}">Cancel</a>
+</form>
+{% endblock %}

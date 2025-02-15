@@ -23,8 +23,13 @@
                  <form method="post">
                     {% csrf_token %}
                     {{ form.as_p|safe }}
-                    <div class="footer">
+                    <div class="footer mb-3">
                       <button type="submit" class="btn btn-primary btn-sm ml-5">Next<i class="fa-solid fa-angle-right ms-2"></i></button>
+                    </div>
+                    <div>
+                      <p>
+                        Stop not found? <a href="{% url 'students:bus_request' registration_code=registration.code %}" class="text-primary fw-semibold">Request for stop</a>
+                      </p>
                     </div>
                  </form>
               </div>    

@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from services.forms.students import StopSelectForm, ValidateStudentForm, TicketForm, BusRequestForm
 from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
 from config.mixins.access_mixin import RegistrationOpenCheckMixin
+from services.tasks import send_email_task
 from services.utils import get_filtered_bus_records
 
 class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
@@ -66,8 +67,13 @@ class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         registration = self.get_registration()
-        form.fields['stop'].queryset = registration.stops.all()
+        form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.get_registration()
+        return context
 
     def form_valid(self, form):
         stop = form.cleaned_data['stop']
@@ -310,17 +316,48 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         if drop_trip:
             drop_trip.save()
         ticket.save()
+        
+        subject = "Booking Confirmation"
+        message = f"Hello {ticket.student_name},\n\nWelcome aboard! This is a confirmation email for your booking for bus service.\n\nYour booking details are as follows:"
+
+        if ticket.pickup_bus_record:
+            message += f"\n\nPickup Bus: {ticket.pickup_bus_record.label}"
+        if ticket.pickup_schedule:
+            message += f"\nPickup Schedule: {ticket.pickup_schedule.name}"
+        if ticket.pickup_point:
+            message += f"\nPickup Point: {ticket.pickup_point}"
+
+        if ticket.drop_bus_record:
+            message += f"\n\nDrop Bus: {ticket.drop_bus_record.label}"
+        if ticket.drop_schedule:
+            message += f"\nDrop Schedule: {ticket.drop_schedule.name}"
+        if ticket.drop_point:
+            message += f"\nDrop Point: {ticket.drop_point}"
+
+        message += (
+            f"\n\nPlease make sure to be on time at the pickup point."
+            f"\n\nIn case of any issues, please contact your respective institution."
+            f"\n\nYour ticket ID is: {ticket.ticket_id}"
+            f"\n\nBest regards,\nSFSBusNest Team"
+        )
+        recipient_list = [f"{ticket.student_email}"]
+        send_email_task.delay(subject, message, recipient_list)
+        
+        self.request.session['success_message'] = f"Bus ticket successfully booked for {ticket.student_name}."
+        self.request.session['registration_code'] = self.kwargs.get('registration_code')
 
         return redirect('students:book_success')
     
 
-class BusBookingSuccessView(RegistrationOpenCheckMixin, TemplateView):
+class BusBookingSuccessView(TemplateView):
     template_name = 'students/bus_booking_success.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ticket = get_object_or_404(Ticket, id=self.request.session.get('ticket_id'))
-        context['ticket'] = ticket
+        message = self.request.session.get('success_message')
+        registration = get_object_or_404(Registration, code=self.request.session.get('registration_code'))
+        context['message'] = message
+        context['registration'] = registration
         return context
 
         

@@ -10,13 +10,13 @@
 {% endblock sidebar %}
 
 {% block content %}
-<a class="btn btn-secondary mb-3" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+<a class="btn btn-secondary mb-3" href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
 <div class="gear">
     <div>
-      <h2>Bus 1</h2>
+      <h2>{{bus_record.label}}</h2>
     </div>
      <div class="button">
-        <a href="" class="btn text-black me-2 mt-1" style="height:37px">Settings<i class="fa-solid fa-gear ms-2"></i></a>
+        <a href="{% url 'central_admin:bus_record_update' registration_slug=registration.slug bus_record_slug=bus_record.slug %}" class="btn text-black me-2 mt-1" style="height:37px">Settings<i class="fa-solid fa-gear ms-2"></i></a>
         <a href="{% url 'central_admin:trip_create' registration_slug=registration.slug bus_record_slug=bus_record.slug %}" class="btn btn-primary ms-2 mt-1" style="height:37px">Add<i class="fa-solid fa-plus ms-2"></i></a>
      </div>
   </div>
@@ -42,17 +42,19 @@
             <td>{{ trip.booking_count }}</td>
             <td>
               <div class="bar" style="width:180px;">
-                <div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
-                  <div class="progress-bar w-{{total_filled_seats_percentage |default:'0'}}"></div>
+                <div class="progress" style="border-radius: 10px; margin-bottom: 0.3rem;" role="progressbar" aria-label="Basic example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress-bar bg-dark" style="width: {{trip.get_total_filled_seats_percentage}}%;"></div>
                 </div>
-                <span>{{total_filled_seats_percentage |default:"0" }}%</span>
+                <span class="text-muted fw-semibold">{{trip.total_filled_seats_percentage |default:"0" }}%</span>
               </div>
             </td>
-            <td><a href="#" class="text-danger" style="text-decoration: none;">Delete</a></td>
+            <td><a href="{% url 'central_admin:trip_delete' registration_slug=trip.registration.slug bus_record_slug=trip.record.slug trip_slug=trip.id %}" class="text-danger fw-semibold" style="text-decoration: none;">Delete</a></td>
           </tr>
             {% endfor %}
         </tbody>
       </table>
   </div>
+
+  <span class="text-muted">Bus total capacity : {{ bus_record.bus.capacity }}</span>
 
 {% endblock content %}

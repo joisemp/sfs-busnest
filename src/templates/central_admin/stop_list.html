@@ -13,7 +13,7 @@
 
 <section id="routes">
     <div class="mb-3 d-flex justify-content-between">
-        <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+        <a class="btn btn-secondary me-2" href="{% url 'central_admin:route_list' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
         <div class="group">
             <a class="btn btn-primary" href="{% url 'central_admin:stop_create' registration_slug=registration.slug route_slug=route.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
         </div>
@@ -25,8 +25,8 @@
             {% for stop in stops %}
             <div class="card mb-2">
                 <div class="card-body d-flex align-item-center" style="justify-content: space-between;">
-                <div class="info">
-                    <p class="fw-semibold">{{stop}}</p>
+                <div class="info fw-semibold">
+                    <div class="btn">{{stop}}</div>
                 </div>
                 <div class="buttons">
                    <a class="btn btn-sm text-danger" href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Delete<i class="fa-solid fa-trash-can ms-2"></i></a>
