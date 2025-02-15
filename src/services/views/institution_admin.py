@@ -414,8 +414,13 @@ class StopSelectFormView(FormView):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         registration = self.get_registration()
-        form.fields['stop'].queryset = registration.stops.all()
+        form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
 
     def form_valid(self, form):
         stop = form.cleaned_data['stop']
