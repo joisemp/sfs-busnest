@@ -3,6 +3,43 @@
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'styles/students/bus_search/style.css' %}">
+
+<style>
+  .select2-container--default {
+    max-width: 100% !important;
+
+    .select2-selection--single {
+      height: 50px;
+      border-radius: 0.25rem;
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+      color: #495057;
+      background-color: #eef2ff !important;
+      border: none;
+      background-color: #fff;
+      background-clip: padding-box;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+      &:focus {
+        outline: 0;
+      }
+
+      .select2-selection__rendered {
+        line-height: 2.25rem;
+      }
+
+      .select2-selection__arrow {
+        height: 50px;
+      }
+    }
+
+    .select2-results {
+      background-color: #fff;
+      border: none !important;
+    }
+  }
+</style>
 {% endblock style %}
 
 {% block navbar %}
@@ -12,40 +49,43 @@
 {% block content %}
 
 <section id="student-bus-search-form">
-    <section id="form-section">
-      <div class="row">
-        <div class="column col-12 col-lg">
-          <div class="wrap">
-            <div class="card">
-              <div class="form ">
-                <h2 class="mb-1">Book seat</h2>
-                <p class="text-muted mb-3">Select your stop and timing to find the buses available</p>
-                 <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p|safe }}
-                    <div class="footer mb-3">
-                      <button type="submit" class="btn btn-primary btn-sm ml-5">Next<i class="fa-solid fa-angle-right ms-2"></i></button>
-                    </div>
-                    <div>
-                      <p>
-                        Stop not found? <a href="{% url 'students:bus_request' registration_code=registration.code %}" class="text-primary fw-semibold">Request for stop</a>
-                      </p>
-                    </div>
-                 </form>
-              </div>    
-          </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg mb-3 d-none d-lg-block">
-          <div class="student-image">
-            <div class="image">
-              <img class="school" src="https://img.freepik.com/premium-photo/poster-school-bus-with-children-carrying-school-supplies_783884-22482.jpg">
+  <section id="form-section">
+    <div class="row">
+      <div class="column col-12 col-lg">
+        <div class="wrap">
+          <div class="card">
+            <div class="form ">
+              <h2 class="mb-1">Book seat</h2>
+              <p class="text-muted mb-3">Select your stop and timing to find the buses available</p>
+              <form method="post">
+                {% csrf_token %}
+                {{ form.as_p|safe }}
+                <div class="footer mb-3">
+                  <button type="submit" class="btn btn-primary btn-sm ml-5">Next<i
+                      class="fa-solid fa-angle-right ms-2"></i></button>
+                </div>
+                <div>
+                  <p>
+                    Stop not found? <a href="{% url 'students:bus_request' registration_code=registration.code %}"
+                      class="text-primary fw-semibold">Request for stop</a>
+                  </p>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       </div>
-    </section>
-    <!-- <hr>
+      <div class="col-12 col-lg mb-3 d-none d-lg-block">
+        <div class="student-image">
+          <div class="image">
+            <img class="school"
+              src="https://img.freepik.com/premium-photo/poster-school-bus-with-children-carrying-school-supplies_783884-22482.jpg">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- <hr>
     <section id="faq-instruction">
       <div class="frequently-section">
         <div class="Instruction">
@@ -96,6 +136,6 @@
 
     </div>
     </section> -->
-  </section>
+</section>
 
 {% endblock content %}
