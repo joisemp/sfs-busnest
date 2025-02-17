@@ -20,6 +20,6 @@ urlpatterns = [
      path('bus-results/<str:registration_code>/request/', students.BusRequestFormView.as_view(), name='bus_request'),
      path('bus-results/<str:registration_code>/request/success/', students.BusRequestSuccessView.as_view(), name='bus_request_success'),
      path('book/<str:registration_code>/', students.BusBookingView.as_view(), name='book_bus'),
-     path('book/success/', students.BusBookingSuccessView.as_view(), name='book_success'),
+     path('book/<str:registration_code>/success/', students.BusBookingSuccessView.as_view(), name='book_success'),
 
 ]

@@ -373,7 +373,7 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         self.request.session['success_message'] = f"Bus ticket successfully booked for {ticket.student_name}."
         self.request.session['registration_code'] = self.kwargs.get('registration_code')
 
-        return redirect('students:book_success')
+        return HttpResponseRedirect(reverse('students:book_success', kwargs={'registration_code':registration.code}))
     
 
 class BusBookingSuccessView(TemplateView):
