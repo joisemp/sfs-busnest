@@ -82,7 +82,7 @@ class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
 
     def get_success_url(self):
         registration_code = self.get_registration().code
-        return reverse('students:schedule_group_select', kwargs={'registration_code': registration_code})
+        return reverse('students:bus_search_results', kwargs={'registration_code': registration_code})
     
 
 class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
@@ -121,7 +121,9 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
         self.request.session['pickup'] = selection_details['pickup']
         self.request.session['drop'] = selection_details['drop']
 
-        return HttpResponseRedirect(reverse('students:bus_search_results', kwargs={'registration_code': registration_code}))
+        if pickup and drop:
+            return HttpResponseRedirect(reverse('students:pickup_stop_select', kwargs={'registration_code': registration_code}))
+        return HttpResponseRedirect(reverse('students:stop_select', kwargs={'registration_code': registration_code}))
 
 
 class BusSearchResultsView(RegistrationOpenCheckMixin, ListView):
@@ -215,12 +217,21 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        self.bus_record = get_object_or_404(BusRecord, slug=self.kwargs.get('bus_slug'))
         self.schedule_group_id = self.request.session.get('schedule_group_id')
         self.pickup_id = self.request.session.get('pickup')
         self.drop_id = self.request.session.get('drop')
-        
         self.schedule_group = ScheduleGroup.objects.get(id=int(self.schedule_group_id))
+        
+        if self.schedule_group.allow_one_way:
+            if not self.pickup_id and self.drop_id:
+                self.bus_record = get_object_or_404(BusRecord, slug=self.request.GET.get('bus_slug'))
+            elif self.pickup_id and not self.drop_id:
+                self.bus_record = get_object_or_404(BusRecord, slug=self.request.GET.get('bus_slug'))
+            else:
+                self.pickup_bus_record = get_object_or_404(BusRecord, slug=self.request.GET.get('pickup_bus'))
+                self.drop_bus_record = get_object_or_404(BusRecord, slug=self.request.GET.get('drop_bus'))
+        else:
+            self.bus_record = get_object_or_404(BusRecord, slug=self.request.GET.get('bus_slug'))
         
         
         if self.schedule_group.allow_one_way:
@@ -233,8 +244,8 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                 form.fields['drop_point'].queryset = drop_trip.route.stops.all()
                 del form.fields['pickup_point']
             else:
-                pickup_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.pick_up_schedule)
-                drop_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.drop_schedule)
+                pickup_trip = Trip.objects.get(record=self.pickup_bus_record, schedule=self.schedule_group.pick_up_schedule)
+                drop_trip = Trip.objects.get(record=self.drop_bus_record, schedule=self.schedule_group.drop_schedule)
                 form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
                 form.fields['drop_point'].queryset = drop_trip.route.stops.all()
         else:
@@ -258,20 +269,36 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         ticket.student_group = receipt.student_group
         ticket.recipt = receipt
         ticket.student_id = std_id
+        
+        
+        if self.schedule_group.allow_one_way:
+            if self.pickup_id and not self.drop_id:
+                pickup_bus_record = self.pickup_bus_record
+                drop_bus_record = self.drop_bus_record
+            elif not self.pickup_id and self.drop_id:
+                pickup_bus_record = self.pickup_bus_record
+                drop_bus_record = self.drop_bus_record
+            else:
+                pickup_bus_record = self.pickup_bus_record
+                drop_bus_record = self.drop_bus_record
+        else:
+            pickup_bus_record = self.bus_record
+            drop_bus_record = self.bus_record
 
         try:
-            pickup_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.pick_up_schedule)
-            if 'pickup_point' in form.fields:
-                form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
+            pickup_trip = Trip.objects.get(record=pickup_bus_record, schedule=self.schedule_group.pick_up_schedule)
         except Trip.DoesNotExist:
             pickup_trip = None
-
+            
         try:
-            drop_trip = Trip.objects.get(record=self.bus_record, schedule=self.schedule_group.drop_schedule)
-            if 'drop_point' in form.fields:
-                form.fields['drop_point'].queryset = drop_trip.route.stops.all()
+            drop_trip = Trip.objects.get(record=drop_bus_record, schedule=self.schedule_group.drop_schedule)
         except Trip.DoesNotExist:
             drop_trip = None
+            
+        if 'pickup_point' in form.fields:
+                form.fields['pickup_point'].queryset = pickup_trip.route.stops.all()
+        if 'drop_point' in form.fields:
+                form.fields['drop_point'].queryset = drop_trip.route.stops.all()
 
         if self.schedule_group.allow_one_way:
             if self.pickup_id and not self.drop_id:  # One-way pickup only
@@ -289,8 +316,8 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                 ticket.ticket_type = 'one_way'
 
             else:  # Both pickup and drop (two-way)
-                ticket.pickup_bus_record = self.bus_record
-                ticket.drop_bus_record = self.bus_record
+                ticket.pickup_bus_record = self.pickup_bus_record
+                ticket.drop_bus_record = self.drop_bus_record
                 ticket.pickup_schedule = self.schedule_group.pick_up_schedule
                 ticket.drop_schedule = self.schedule_group.drop_schedule
                 if pickup_trip:
@@ -358,6 +385,150 @@ class BusBookingSuccessView(TemplateView):
         registration = get_object_or_404(Registration, code=self.request.session.get('registration_code'))
         context['message'] = message
         context['registration'] = registration
+        return context
+    
+
+class PickupStopSelectFormView(RegistrationOpenCheckMixin, FormView):
+    template_name = 'students/search_form.html'
+    form_class = StopSelectForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.get_registration()
+        return context
+
+    def form_valid(self, form):
+        stop = form.cleaned_data['stop']
+        self.request.session['pickup_stop_id'] = stop.id
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        registration_code = self.get_registration().code
+        return reverse('students:pickup_bus_select', kwargs={'registration_code': registration_code})
+    
+
+class PickupBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
+    template_name = 'students/pickup_bus_results.html'
+    context_object_name = 'buses'
+
+    def get_queryset(self):
+        # Retrieve the registration based on the registration code
+        registration_code = self.kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+
+        # Get pickup point, drop point, and schedule from session
+        stop_id = self.request.session.get('pickup_stop_id')
+        schedule_group_id = self.request.session.get('schedule_group_id')
+        pickup = self.request.session.get('pickup')
+        drop = self.request.session.get('drop')
+        
+
+        schedule_group = ScheduleGroup.objects.get(id=int(schedule_group_id))
+        
+        
+        schedule_ids = [schedule_group.pick_up_schedule.id, schedule_group.drop_schedule.id]
+        
+        if schedule_group.allow_one_way:
+            if pickup and drop:
+                schedule_ids = [int(pickup)]
+
+        buses = get_filtered_bus_records(schedule_ids, int(stop_id))
+
+        return buses
+    
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if not self.object_list:
+            registration_code = self.kwargs.get('registration_code')
+            return HttpResponseRedirect(reverse('students:bus_not_found', kwargs={'registration_code': registration_code}))
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        return context
+    
+    
+class DropStopSelectFormView(RegistrationOpenCheckMixin, FormView):
+    template_name = 'students/search_form.html'
+    form_class = StopSelectForm
+
+    def get_registration(self):
+        """Fetch registration using the code from the URL."""
+        registration_code = self.kwargs.get('registration_code')
+        return get_object_or_404(Registration, code=registration_code)
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = self.get_registration()
+        form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.get_registration()
+        return context
+
+    def form_valid(self, form):
+        stop = form.cleaned_data['stop']
+        self.request.session['drop_stop_id'] = stop.id
+        registration_code = self.get_registration().code
+        pickup_bus = self.request.GET.get('pickup_bus')
+        return HttpResponseRedirect(reverse('students:drop_bus_select', kwargs={'registration_code': registration_code}) + f"?pickup_bus={pickup_bus}")
+
+
+class DropBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
+    template_name = 'students/drop_bus_results.html'
+    context_object_name = 'buses'
+
+    def get_queryset(self):
+        # Retrieve the registration based on the registration code
+        registration_code = self.kwargs.get('registration_code')
+        registration = get_object_or_404(Registration, code=registration_code)
+
+        stop_id = self.request.session.get('drop_stop_id')
+        schedule_group_id = self.request.session.get('schedule_group_id')
+        pickup = self.request.session.get('pickup')
+        drop = self.request.session.get('drop')
+        
+
+        schedule_group = ScheduleGroup.objects.get(id=int(schedule_group_id))
+        
+        
+        schedule_ids = [schedule_group.pick_up_schedule.id, schedule_group.drop_schedule.id]
+        
+        if schedule_group.allow_one_way:
+            if pickup and drop:
+                schedule_ids = [int(drop)]
+
+        buses = get_filtered_bus_records(schedule_ids, int(stop_id))
+
+        return buses
+    
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if not self.object_list:
+            registration_code = self.kwargs.get('registration_code')
+            return HttpResponseRedirect(reverse('students:bus_not_found', kwargs={'registration_code': registration_code}))
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        """Include additional context like the registration."""
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+        context['pickup_bus_record_slug'] = self.request.GET.get('pickup_bus')
         return context
 
         
