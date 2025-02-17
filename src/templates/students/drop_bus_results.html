@@ -44,11 +44,7 @@
                     <div class="d-flex justify-content-end">
                         <div class="button-block d-flex">
 
-                            <a href="#" class="btn btn-secondary btn-sm me-2" data-bs-toggle="modal"
-                                data-bs-target="#routeModal{{bus.id}}">View route<i
-                                    class="fa-solid fa-arrow-up-right-from-square ms-2"></i></a>
-
-                            <a href="{% url 'students:book_bus' registration_code=registration.code %}?bus_slug={{bus.slug}}" class="btn btn-primary btn-sm">Book now<i
+                            <a href="{% url 'students:book_bus' registration_code=registration.code %}?pickup_bus={{pickup_bus_record_slug}}&drop_bus={{bus.slug}}" class="btn btn-primary btn-sm">Select bus<i
                                     class="fa-solid fa-arrow-right ms-2"></i></a>
 
                             <div class="modal fade" id="routeModal{{bus.id}}" tabindex="-1" aria-hidden="true">

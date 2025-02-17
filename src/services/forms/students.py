@@ -7,7 +7,7 @@ class StopSelectForm(form_mixin.BootstrapFormMixin, forms.Form):
         queryset=Stop.objects.all(),
         label="",
         required=True,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={'class': 'form-control select2-searchable'}),
         empty_label='Select stop'
     )
     
