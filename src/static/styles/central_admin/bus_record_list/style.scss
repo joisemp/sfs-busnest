@@ -1,9 +1,17 @@
 @import '../../sidebar_navbar_base';
 
 #bus_record{
-    .back{
+   
+    .gear{
         display:flex;
         justify-content: space-between;
+        flex-wrap: wrap;
+       
+        .button{
+            display: flex;
+            justify-content: center;
+            
+        }
     }
 }
 
