@@ -224,4 +224,14 @@
     margin-bottom: 76px;
     width: 100%;
   }
+}
+
+.gear {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.gear .button {
+  display: flex;
+  justify-content: center;
 }/*# sourceMappingURL=style.css.map */
