@@ -58,10 +58,10 @@
                                 <!-- Default dropup button -->
                                 <div class="btn-group dropup">
                                     <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Action
+                                    Manage
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#">Action</a></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'central_admin:bus_request_delete' registration_slug=bus_request.registration.slug bus_request_slug=bus_request.slug %}">Delete</a></li>
                                         <li><a class="dropdown-item" href="#">Another action</a></li>
                                         <li><a class="dropdown-item" href="#">Something else here</a></li>
                                     </ul>

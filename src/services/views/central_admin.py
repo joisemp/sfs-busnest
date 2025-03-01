@@ -917,6 +917,21 @@ class BusRequestListView(ListView):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
+    
+
+class BusRequestDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    model = BusRequest
+    template_name = 'central_admin/bus_request_confirm_delete.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'bus_request_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.object.registration
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:bus_request_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
 
 class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
@@ -1073,4 +1088,4 @@ class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
                     kwargs={'registration_slug': registration.slug}
                 )
             )
-    
+
