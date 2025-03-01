@@ -226,9 +226,14 @@
   }
 }
 
-#bus_record .back {
+#bus_record .gear {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+}
+#bus_record .gear .button {
+  display: flex;
+  justify-content: center;
 }
 
 tbody, td, tfoot, th, thead, tr {

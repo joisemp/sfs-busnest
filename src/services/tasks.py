@@ -216,8 +216,8 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
                         ]
 
                         if not (receipt_id and student_id and class_name and class_section):
-                            logger.warning(f"Row {row_number} is incomplete: {row}")
-                            raise ValueError(f"Incomplete data in row {row_number}. Rolling back the operation.")
+                            logger.error(f"Incomplete data in row {row_number}. Skipping this row.")
+                            continue
 
                         group_name = f"{class_name} - {class_section}"
 
