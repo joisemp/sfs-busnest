@@ -14,13 +14,20 @@
 <section id="bus_record">
   <div class="container">
     <!-- button -->
-    <div class="back mt-3 mb-3">
-      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
-        class="btn btn-secondary"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
-      <a class="btn  btn-primary btn-sm"
-        href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}"><i
-          class="fa-solid fa-plus me-2"></i>Add bus record</a>
-    </div>
+    <div class="section-header">
+      <div>
+          <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+       </div>
+       <div class="gear">
+         <div>
+           <h2>Records</h2>
+         </div>
+          <div class="button">
+             <a href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}" class="btn btn-primary ms-2 mt-1" style="height:37px">Add<i class="fa-solid fa-plus ms-2"></i></a>
+          </div>
+      </div>
+      <hr>
+  </div>
     <!-- alert message -->
     {% if blank_records and not reset_filter %}
     <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}?noneRecords=True"

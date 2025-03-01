@@ -12,12 +12,20 @@
 {% block content %}
 
 <section id="bus-list">
-  <div class="d-md-flex d-block justify-content-between align-items-center  mt-2 mb-4">
-    <div class="mb-3 mb-md-0">
-      <a href="{% url 'central_admin:bus_create' %}" class="btn btn-primary me-2 me-md-0"><i
-          class="fa-solid fa-plus me-md-2 me-0"></i>Add bus</a>
-          <a href="{% url 'central_admin:bus_upload' %}" class="btn btn-dark"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload files</a>
-    </div>
+  
+    <div class="section-header">
+       <div class="d-flex justify-content-between">
+         <div>
+           <h2>Buses</h2>
+         </div>
+          <div class="button">
+            <a href="{% url 'central_admin:bus_create' %}" class="btn btn-primary me-2 me-md-0 me-2"><i
+              class="fa-solid fa-plus me-md-2 me-0"></i>Add bus</a>
+            <a href="{% url 'central_admin:bus_upload' %}" class="btn btn-secondary"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload files</a>
+          </div>
+      </div>
+      <hr>
+  </div>
     <!-- <div>
       <form class="d-flex" role="search">
         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
@@ -25,7 +33,7 @@
           <span class="d-none d-md-inline">Search</span><i class="fa-solid fa-magnifying-glass ms-md-2"></i></button>
       </form>
     </div> -->
-  </div>
+  
   <div class="table-responsive">
     <table class="table">
       <thead>
