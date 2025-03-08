@@ -10,17 +10,23 @@
 {% endblock sidebar %}
 
 {% block content %}
-
-<section id="routes">
-    <div class="mb-4 d-flex justify-content-between">
-        <a class="btn btn-secondary me-2" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
-        <div class="group">
-            <a href="{% url 'central_admin:route_file_upload' registration_slug=registration.slug %}" class="btn btn-dark"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload files</a>
-            <a class="btn btn-primary" href="{% url 'central_admin:route_create' registration_slug=registration.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
-        </div>
-        
+<div class="section-header">
+    <div>
+        <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+     </div>
+     <div class="gear d-flex justify-content-between">
+       <div>
+         <h3>Route</h3>
+       </div>
+       <div class="group">
+        <a href="{% url 'central_admin:route_file_upload' registration_slug=registration.slug %}" class="btn btn-dark"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload files</a>
+        <a class="btn btn-primary" href="{% url 'central_admin:route_create' registration_slug=registration.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
+       </div>
     </div>
+    <hr>
+</div>
 
+<section id="routes"> 
     <div>
         <div class="content mt-3" style="cursor: pointer;">
             {% for route in routes %}
