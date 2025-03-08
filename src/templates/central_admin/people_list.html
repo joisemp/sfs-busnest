@@ -10,13 +10,25 @@
 {% endblock sidebar %}
 
 {% block content %}
+<div class="section-header">
+  <div>
+      <a href="#" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+   </div>
+   <div class="gear d-flex justify-content-between">
+     <div>
+       <h2>People</h2>
+     </div>
+     <div class="mb-3 mb-md-0">
+      <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add people</a>
+    </div>
+  </div>
+  <hr>
+</div>
 
 <section id="people-list">
   <!-- search bar -->
   <div class="d-md-flex d-block justify-content-between align-items-center  mt-2 mb-4">
-    <div class="mb-3 mb-md-0">
-      <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add people</a>
-    </div>
+   
     <!-- <div>
       <form class="d-flex" role="search">
         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
