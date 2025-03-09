@@ -112,7 +112,7 @@
                                     {% endfor %}
                                     {% endif %}
                                 </div>
-                                <form method="post" action="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-post="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-target="#comment-section-{{bus_request.id}}" hx-swap="beforeend">
+                                <form method="post" action="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-post="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-target="#comment-section-{{bus_request.id}}" hx-swap="beforeend" hx-boost="true">
                                     {% csrf_token %}
                                     <div class="mb-3">
                                         <label for="comment" class="form-label">Add Comment</label>
@@ -129,12 +129,42 @@
                                         Manage
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{% url 'central_admin:bus_request_status_update' registration_slug=bus_request.registration.slug bus_request_slug=bus_request.slug %}">{% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %}</a></li>
+                                        <li>
+                                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#StatusModal{{bus_request.id}}">
+                                                {% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %}
+                                            </button>
+                                        </li>
                                         <li><a class="dropdown-item text-danger"
                                                 href="{% url 'central_admin:bus_request_delete' registration_slug=bus_request.registration.slug bus_request_slug=bus_request.slug %}">Delete</a>
                                         </li>
                                     </ul>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Update Modal -->
+                <div class="modal fade" id="StatusModal{{bus_request.id}}" tabindex="-1"
+                    aria-labelledby="StatusModalLabel{{bus_request.id}}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="StatusModalLabel{{bus_request.id}}">
+                                    {% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %} Request
+                                </h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="post" action="{% url 'central_admin:bus_request_status_update' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-post="{% url 'central_admin:bus_request_status_update' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-target="#Modal{{bus_request.id}} .modal-body" hx-swap="outerHTML" hx-boost="true" onsubmit="setTimeout(function(){ location.reload(); }, 1000);">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="status-comment" class="form-label">Comment</label>
+                                        <textarea class="form-control" id="status-comment" name="comment" rows="3" placeholder="Add a comment" required></textarea>
+                                    </div>
+                                    <button type="submit" data-bs-dismiss="modal" class="btn btn-primary">{% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %} Request</button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -149,6 +179,5 @@
         {% endif %}
     </div>
 </section>
-
 
 {% endblock content %}

@@ -1118,35 +1118,23 @@ class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
             )
 
 
-class BusRequestStatusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
-    template_name = 'central_admin/bus_request_status_update.html'
-    form_class = BusRequestStatusForm
-
-    def form_valid(self, form):
+class BusRequestStatusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
         bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
-        
-        # Update status only if it has changed
-        if form.cleaned_data['status'] != bus_request.status:
-            bus_request.status = form.cleaned_data['status']
-            bus_request.save()
-        
-        # Save the comment
-        comment_form = BusRequestCommentForm(self.request.POST)
-        if comment_form.is_valid():
+        new_status = 'open' if bus_request.status == 'closed' else 'closed'
+        comment_text = request.POST.get('comment')
+        bus_request.status = new_status
+        bus_request.save()
+        if comment_text:
             BusRequestComment.objects.create(
                 bus_request=bus_request,
-                comment=comment_form.cleaned_data['comment'],
-                created_by=self.request.user
+                comment=comment_text,
+                created_by=request.user
             )
-        
-        return redirect('central_admin:bus_request_list', registration_slug=bus_request.registration.slug)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['bus_request'] = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
-        context['comment_form'] = BusRequestCommentForm()
-        return context
-
+        modal_body_html = render_to_string('central_admin/bus_request_modal_body.html', {'bus_request': bus_request})
+        response = HttpResponse(modal_body_html)
+        response['HX-Trigger'] = 'reloadPage'
+        return response
 
 class BusRequestCommentView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
     def post(self, request, *args, **kwargs):
