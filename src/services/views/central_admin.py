@@ -917,7 +917,34 @@ class BusRequestListView(ListView):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
+
+class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = BusRequest
+    template_name = 'central_admin/bus_request_list.html'
+    context_object_name = 'bus_requests'
     
+    def get_queryset(self):
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='open')
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+
+class BusRequestClosedListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = BusRequest
+    template_name = 'central_admin/bus_request_list.html'
+    context_object_name = 'bus_requests'
+    
+    def get_queryset(self):
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='closed')
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
 
 class BusRequestDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
     model = BusRequest
