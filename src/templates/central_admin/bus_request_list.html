@@ -118,7 +118,7 @@
                                         <label for="comment" class="form-label">Add Comment</label>
                                         <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-primary">Submit Comment</button>
+                                    <button type="submit" class="btn btn-secondary">Submit Comment</button>
                                 </form>
                             </div>
                             <div class="modal-footer">
@@ -163,7 +163,7 @@
                                         <label for="status-comment" class="form-label">Comment</label>
                                         <textarea class="form-control" id="status-comment" name="comment" rows="3" placeholder="Add a comment" required></textarea>
                                     </div>
-                                    <button type="submit" data-bs-dismiss="modal" class="btn btn-primary">{% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %} Request</button>
+                                    <button type="submit" class="btn btn-primary">{% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %} Request</button>
                                 </form>
                             </div>
                         </div>

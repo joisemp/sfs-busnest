@@ -2,7 +2,7 @@ import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip, ScheduleGroup, BusRequestComment
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -36,7 +36,6 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
         context['active_registrations'] = Registration.objects.filter(org=self.request.user.profile.org).count()
         context['buses_available'] = Bus.objects.filter(org=self.request.user.profile.org).count()
         context['institution_count'] = Institution.objects.filter(org=self.request.user.profile.org).count()
-        context['recent_activities'] = OrganisationActivity.objects.filter(org=self.request.user.profile.org).count()
         return context
 
 
