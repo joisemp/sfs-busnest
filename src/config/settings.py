@@ -191,14 +191,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 if ENVIRONMENT == 'development':
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    # EMAIL_HOST = env('EMAIL_HOST', default='in-v3.mailjet.com')
-    # EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-    # EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-    # EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-    # EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-    # DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = env('EMAIL_HOST', default='in-v3.mailjet.com')
+    EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+    EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+    EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+    DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 if not DEBUG:
     LOGGING = {
