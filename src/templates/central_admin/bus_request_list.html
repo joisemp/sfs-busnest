@@ -3,6 +3,12 @@
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'styles/central_admin/bus_request_list/style.css' %}">
+<style>
+    .badge-status {
+        font-size: 0.9rem;
+        padding: 0.5em 1em;
+    }
+</style>
 {% endblock style %}
 
 {% block sidebar %}
@@ -34,6 +40,7 @@
                     </div>
                     <div class="date">
                         <span class="text-muted">{{bus_request.created_at.date}}</span>
+                        <span class="badge rounded-pill badge-status {% if bus_request.status == 'closed' %}text-bg-danger{% else %}text-bg-primary{% endif %} ms-2">{{ bus_request.get_status_display }}</span>
                     </div>
                 </div>
                 <div class="modal fade" id="Modal{{bus_request.id}}" tabindex="-1"
@@ -42,17 +49,17 @@
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="ModalLabel{{bus_request.id}}">Bus request for
-                                    {{bus_request.student_name}}</h1>
+                                    {{bus_request.student_name}}</h1> 
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                               
-                                    <p>Institution : {{bus_request.institution}}</p>
-                                    <p>Receipt : {{bus_request.receipt}}</p>
-                                    <p>Pickup address : {{bus_request.pickup_address}}</p>
-                                    <p>Drop address : {{bus_request.drop_address}}</p>
-                             
+                                <p>Institution : {{bus_request.institution}}</p>
+                                <p>Receipt : {{bus_request.receipt}}</p>
+                                <p>Pickup address : {{bus_request.pickup_address}}</p>
+                                <p>Drop address : {{bus_request.drop_address}}</p>
+                                <p>Contact No : {{bus_request.contact_no}}</p>
+                                <p>Contact Email : {{bus_request.contact_email}}</p>
                             </div>
                             <div class="modal-footer">
                                 <!-- Default dropup button -->
