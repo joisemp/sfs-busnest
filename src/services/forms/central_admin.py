@@ -1,6 +1,6 @@
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -147,4 +147,21 @@ class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label='Select timing'
-    ) 
+    )
+
+
+class BusRequestStatusForm(forms.ModelForm):
+    class Meta:
+        model = BusRequest
+        fields = ['status']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+class BusRequestCommentForm(forms.ModelForm):
+    class Meta:
+        model = BusRequestComment
+        fields = ['comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={'class': 'form-control'}),
+        }

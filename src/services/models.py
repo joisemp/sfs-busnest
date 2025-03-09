@@ -309,7 +309,7 @@ class Receipt(models.Model):
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
     is_expired = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -335,7 +335,7 @@ class ReceiptFile(models.Model):
     file = models.FileField(upload_to=rename_uploaded_file_receipt, validators=[validate_excel_file])
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -353,7 +353,7 @@ class FAQ(models.Model):
     question = models.CharField(max_length=500)
     answer = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -364,6 +364,15 @@ class FAQ(models.Model):
         
     def __str__(self):
         return f"{self.receipt_id}"
+
+class BusRequestComment(models.Model):
+    bus_request = models.ForeignKey('BusRequest', on_delete=models.CASCADE, related_name='comments')
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Comment by {self.created_by} on {self.created_at}"
 
 class BusRequest(models.Model):
     STATUS_CHOICES = ( 
@@ -411,7 +420,7 @@ class BusFile(models.Model):
     name = models.CharField(max_length=255)
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):

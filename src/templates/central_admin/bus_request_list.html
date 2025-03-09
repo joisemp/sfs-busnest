@@ -13,6 +13,32 @@
         background-color: #007bff;
         color: white;
     }
+
+    .modal-lg {
+        max-width: 80%;
+    }
+
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .comment-section {
+        margin-top: 1em;
+    }
+
+    .comment {
+        padding: 0.5em;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 0.5em;
+    }
+
+    .comment small {
+        display: block;
+        margin-top: 0.5em;
+        color: #888;
+    }
 </style>
 {% endblock style %}
 
@@ -60,7 +86,7 @@
                 </div>
                 <div class="modal fade" id="Modal{{bus_request.id}}" tabindex="-1"
                     aria-labelledby="ModalLabel{{bus_request.id}}" aria-hidden="true">
-                    <div class="modal-dialog">
+                    <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="ModalLabel{{bus_request.id}}">Bus request for
@@ -75,6 +101,25 @@
                                 <p>Drop address : {{bus_request.drop_address}}</p>
                                 <p>Contact No : {{bus_request.contact_no}}</p>
                                 <p>Contact Email : {{bus_request.contact_email}}</p>
+                                <div class="comment-section" id="comment-section-{{bus_request.id}}">
+                                    {% if bus_request.comments.all %}
+                                    <h5>Comments</h5>
+                                    {% for comment in bus_request.comments.all %}
+                                    <div class="comment">
+                                        <p>{{ comment.comment }}</p>
+                                        <small>- {{ comment.created_by }} on {{ comment.created_at.date }}</small>
+                                    </div>
+                                    {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <form method="post" action="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-post="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-target="#comment-section-{{bus_request.id}}" hx-swap="beforeend">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="comment" class="form-label">Add Comment</label>
+                                        <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Submit Comment</button>
+                                </form>
                             </div>
                             <div class="modal-footer">
                                 <!-- Default dropup button -->
@@ -84,11 +129,10 @@
                                         Manage
                                     </button>
                                     <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'central_admin:bus_request_status_update' registration_slug=bus_request.registration.slug bus_request_slug=bus_request.slug %}">{% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %}</a></li>
                                         <li><a class="dropdown-item text-danger"
                                                 href="{% url 'central_admin:bus_request_delete' registration_slug=bus_request.registration.slug bus_request_slug=bus_request.slug %}">Delete</a>
                                         </li>
-                                        <li><a class="dropdown-item" href="#">Another action</a></li>
-                                        <li><a class="dropdown-item" href="#">Something else here</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -105,5 +149,6 @@
         {% endif %}
     </div>
 </section>
+
 
 {% endblock content %}

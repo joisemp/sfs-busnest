@@ -2,23 +2,24 @@ import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip, ScheduleGroup
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, OrganisationActivity, Trip, ScheduleGroup, BusRequestComment
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.db.models import Q, Count, F
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib import messages
 from urllib.parse import urlencode
+from django.template.loader import render_to_string
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm, ScheduleGroupForm
+from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm, ScheduleGroupForm, BusRequestStatusForm, BusRequestCommentForm
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
@@ -1115,4 +1116,49 @@ class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
                     kwargs={'registration_slug': registration.slug}
                 )
             )
+
+
+class BusRequestStatusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
+    template_name = 'central_admin/bus_request_status_update.html'
+    form_class = BusRequestStatusForm
+
+    def form_valid(self, form):
+        bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
+        
+        # Update status only if it has changed
+        if form.cleaned_data['status'] != bus_request.status:
+            bus_request.status = form.cleaned_data['status']
+            bus_request.save()
+        
+        # Save the comment
+        comment_form = BusRequestCommentForm(self.request.POST)
+        if comment_form.is_valid():
+            BusRequestComment.objects.create(
+                bus_request=bus_request,
+                comment=comment_form.cleaned_data['comment'],
+                created_by=self.request.user
+            )
+        
+        return redirect('central_admin:bus_request_list', registration_slug=bus_request.registration.slug)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['bus_request'] = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
+        context['comment_form'] = BusRequestCommentForm()
+        return context
+
+
+class BusRequestCommentView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
+        bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
+        comment_form = BusRequestCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = BusRequestComment.objects.create(
+                bus_request=bus_request,
+                comment=comment_form.cleaned_data['comment'],
+                created_by=request.user
+            )
+            comment_html = render_to_string('central_admin/comment.html', {'comment': comment}).strip()
+            return HttpResponse(comment_html)
+        return HttpResponse('Invalid form submission', status=400)
 

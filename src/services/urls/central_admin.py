@@ -74,6 +74,8 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/bus-requests/open/', central_admin.BusRequestOpenListView.as_view(), name='bus_request_open_list'),
      path('registrations/<slug:registration_slug>/bus-requests/closed/', central_admin.BusRequestClosedListView.as_view(), name='bus_request_closed_list'),
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/delete/', central_admin.BusRequestDeleteView.as_view(), name='bus_request_delete'),
+     path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/status/', central_admin.BusRequestStatusUpdateView.as_view(), name='bus_request_status_update'),
+     path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/comment/', central_admin.BusRequestCommentView.as_view(), name='bus_request_comment'),
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
      
