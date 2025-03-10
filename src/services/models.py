@@ -440,3 +440,19 @@ class UserActivity(models.Model):
     def __str__(self):
         return f'{self.user.email} - {self.action} - {self.timestamp}'
 
+def log_user_activity(user, action, description):
+    """
+    Creates an instance of UserActivity to log user actions.
+    
+    Args:
+        user (User): The user performing the action.
+        action (str): A short description of the action.
+        description (str): A detailed description of the action.
+    """
+    UserActivity.objects.create(
+        user=user,
+        org=user.profile.org,
+        action=action,
+        description=description
+    )
+

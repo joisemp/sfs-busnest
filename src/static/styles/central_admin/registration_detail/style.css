@@ -226,6 +226,19 @@
   }
 }
 
+tbody, td, tfoot, th, thead, tr {
+  background: rgba(255, 255, 255, 0) !important;
+  white-space: nowrap;
+  padding: 1rem !important;
+}
+tbody .text-muted, td .text-muted, tfoot .text-muted, th .text-muted, thead .text-muted, tr .text-muted {
+  font-weight: 508;
+}
+tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, thead .table-link a, tr .table-link a {
+  text-decoration: none !important;
+  font-weight: 500;
+}
+
 #registration-dashobard {
   padding-top: 1rem;
 }

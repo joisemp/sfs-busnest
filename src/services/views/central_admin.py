@@ -2,7 +2,7 @@ import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment, UserActivity, log_user_activity
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -36,6 +36,7 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
         context['active_registrations'] = Registration.objects.filter(org=self.request.user.profile.org).count()
         context['buses_available'] = Bus.objects.filter(org=self.request.user.profile.org).count()
         context['institution_count'] = Institution.objects.filter(org=self.request.user.profile.org).count()
+        context['recent_activities'] = UserActivity.objects.filter(org=self.request.user.profile.org).order_by('-timestamp')[:10]
         return context
 
 
@@ -77,6 +78,7 @@ class InstitutionCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cre
         user = self.request.user
         institution.org = user.profile.org
         institution.save()
+        log_user_activity(user, f"Created Insitution : {institution.name}", f"{institution.name} with {institution.incharge.first_name} {institution.incharge.last_name} as incharge was created.")
         return redirect('central_admin:institution_list')
     
 
@@ -92,6 +94,16 @@ class InstitutionUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Upd
         return form
 
     def form_valid(self, form):
+        try:
+            institution = form.save()
+        except IntegrityError as e:
+            form.add_error(None, f"An error occurred: {str(e)}")
+            return self.form_invalid(form)
+        institution.save()
+        user = self.request.user
+        action = f"Updated Institution: {institution.name}"
+        description = f"{institution.name} with {institution.incharge.first_name} {institution.incharge.last_name} as incharge was updated."
+        log_user_activity(user, action, description)
         return super().form_valid(form)
 
 
