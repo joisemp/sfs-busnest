@@ -35,16 +35,16 @@
                     <div class="card-body">
                         <div class="content">
                             <div class="form-check">
-                                <h3>Bus 1</h3>
-                                <p>Total capacity : 30</p>
+                                <h3>{{bus.label}}</h3>
+                                <p>Total capacity : {{bus.bus.capacity}}</p>
                             </div>
                             <div class="gear">
                                 <div class="info">
                                     <h6>Seat availability</h6>
-                                    <p class="text-muted">Morning :10 Afternoon :20 Evening:5</p>
+                                    <p class="text-muted">Morning :30 Afternoon :20 Evening:5</p>
                                 </div>
                                 <div class="button">
-                                    <a class="btn btn-primary" href="#">Book<i class="fa-solid fa-arrow-right ms-2"></i></a>
+                                    <a class="btn btn-primary" href="{% url 'students:book_bus' registration_code=registration.code %}?bus_slug={{bus.slug}}">Book<i class="fa-solid fa-arrow-right ms-2"></i></a>
                                 </div>
                             </div>
                         </div>
@@ -54,41 +54,3 @@
     </div>
 </section>
 {% endblock content %}
-<div class="card-wrap">
-    <div class="card">
-        <div class="mb-3">
-            <div class="mb-3">
-                <h5 class="card-title">{{bus.label}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{bus.bus_no}}</h6>
-            </div>
-            <h6 class="card-subtitle mb-2 text-muted">Seats available</h6>
-        </div>
-        <div class="d-flex justify-content-end">
-            <div class="button-block d-flex">
-
-                <a href="#" class="btn btn-secondary btn-sm me-2" data-bs-toggle="modal"
-                    data-bs-target="#routeModal{{bus.id}}">View route<i
-                        class="fa-solid fa-arrow-up-right-from-square ms-2"></i></a>
-
-                <a href="{% url 'students:book_bus' registration_code=registration.code %}?bus_slug={{bus.slug}}" class="btn btn-primary btn-sm">Book now<i
-                        class="fa-solid fa-arrow-right ms-2"></i></a>
-
-                <div class="modal fade" id="routeModal{{bus.id}}" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="routeModalLabel">{{bus.label}} Route</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                ....
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
