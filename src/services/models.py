@@ -202,13 +202,15 @@ class BusRecord(models.Model):
         if not self.slug:
             base_slug = slugify(f"record-{self.bus.registration_no}-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
-            
+        
+        super().save(*args, **kwargs)  # Save the instance to ensure it has a primary key
+        
         # calculate minimum required capacity
         related_trips = self.trips.all()
         if related_trips.exists():
             self.min_required_capacity = max(trip.booking_count for trip in related_trips)
-            
-        super().save(*args, **kwargs)
+        
+        super().save(*args, **kwargs)  # Save again to update min_required_capacity
 
     def __str__(self):
         return f"{self.label}"
