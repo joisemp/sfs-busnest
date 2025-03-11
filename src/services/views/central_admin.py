@@ -1,4 +1,3 @@
-import threading
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
@@ -28,6 +27,23 @@ User = get_user_model()
 
 
 class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    DashboardView is a Django class-based view that renders the central admin dashboard.
+    Inherits:
+        LoginRequiredMixin: Ensures that the user is authenticated.
+        CentralAdminOnlyAccessMixin: Ensures that the user has central admin access.
+        TemplateView: Renders a template.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+    Methods:
+        get_context_data(**kwargs):
+            Adds additional context data to the template, including:
+            - org: The organization associated with the current user's profile.
+            - active_registrations: The count of active registrations for the organization.
+            - buses_available: The count of buses available for the organization.
+            - institution_count: The count of institutions associated with the organization.
+            - recent_activities: The 10 most recent user activities for the organization, ordered by timestamp.
+    """
     template_name = 'central_admin/dashboard.html'
     
     def get_context_data(self, **kwargs):
@@ -41,6 +57,20 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
 
 
 class InstitutionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    InstitutionListView is a Django class-based view that displays a list of institutions.
+    It inherits from LoginRequiredMixin, CentralAdminOnlyAccessMixin, and ListView.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (Institution).
+        context_object_name (str): The name of the context variable that will contain the list of institutions.
+    Methods:
+        get_queryset(self):
+            Retrieves the queryset of institutions filtered by the organization of the logged-in user.
+            If a search term is provided via GET parameters, it filters the queryset further based on the search term.
+        get_context_data(self, **kwargs):
+            Adds the search term to the context data to be used in the template.
+    """
     template_name = 'central_admin/institution_list.html'
     model = Institution
     context_object_name = 'institutions'
@@ -64,6 +94,21 @@ class InstitutionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     
 
 class InstitutionCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    InstitutionCreateView is a Django class-based view that handles the creation of new Institution instances.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (Institution).
+        form_class (Form): The form class used to create an Institution instance.
+    Methods:
+        get_form(self, form_class=None):
+            Customizes the form to filter the 'incharge' field queryset to include only users who are institution admins
+            within the same organization as the current user.
+        form_valid(self, form):
+            Saves the new Institution instance, assigns the organization based on the current user's profile,
+            logs the creation activity, and redirects to the institution list view.
+    """
     template_name = 'central_admin/institution_create.html'
     model = Institution
     form_class = InstitutionForm
@@ -83,6 +128,23 @@ class InstitutionCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cre
     
 
 class InstitutionUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View to handle the update of an Institution.
+    Inherits from:
+        LoginRequiredMixin: Ensures that the user is logged in.
+        CentralAdminOnlyAccessMixin: Ensures that the user has central admin access.
+        UpdateView: Generic view to handle update operations.
+    Attributes:
+        model (Institution): The model to be updated.
+        form_class (InstitutionForm): The form class used to update the model.
+        template_name (str): The template used to render the update form.
+        success_url (str): The URL to redirect to upon successful update.
+    Methods:
+        get_form(form_class=None):
+            Customizes the form to filter the 'incharge' field queryset based on the user's organization and role.
+        form_valid(form):
+            Handles the form submission. Saves the institution, logs the update action, and handles any integrity errors.
+    """
     model = Institution
     form_class = InstitutionForm
     template_name = 'central_admin/institution_update.html'
@@ -103,17 +165,39 @@ class InstitutionUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Upd
         user = self.request.user
         action = f"Updated Institution: {institution.name}"
         description = f"{institution.name} with {institution.incharge.first_name} {institution.incharge.last_name} as incharge was updated."
-        log_user_activity(user, action, description)
         return super().form_valid(form)
 
 
 class InstitutionDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View to handle the deletion of an institution.
+    """
     model = Institution
     template_name = 'central_admin/institution_confirm_delete.html'
     success_url = reverse_lazy('central_admin:institution_list')
 
+    def delete(self, request, *args, **kwargs):
+        institution = self.get_object()
+        user = self.request.user
+        log_user_activity(user, f"Deleted Institution: {institution.name}", f"{institution.name} was deleted.")
+        return super().delete(request, *args, **kwargs)
+
 
 class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    BusListView is a Django class-based view that displays a list of Bus objects.
+    This view inherits from:
+    - LoginRequiredMixin: Ensures that the user is authenticated.
+    - CentralAdminOnlyAccessMixin: Ensures that the user has central admin access.
+    - ListView: Provides the ability to display a list of objects.
+    Attributes:
+        model (Bus): The model that this view will display.
+        template_name (str): The path to the template that will render the view.
+        context_object_name (str): The name of the context variable that will contain the list of buses.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of Bus objects filtered by the organization of the currently logged-in user.
+    """
     model = Bus
     template_name = 'central_admin/bus_list.html'
     context_object_name = 'buses'
@@ -124,6 +208,18 @@ class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
 
 
 class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    BusCreateView is a Django class-based view that handles the creation of new Bus instances.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (Bus).
+        form_class (Form): The form class used to create a Bus instance.
+    Methods:
+        form_valid(self, form):
+            Saves the new Bus instance, assigns the organization based on the current user's profile,
+            logs the creation activity, and redirects to the bus list view.
+    """
     template_name = 'central_admin/bus_create.html'
     model = Bus
     form_class = BusForm
@@ -133,20 +229,52 @@ class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView)
         user = self.request.user
         bus.org = user.profile.org
         bus.save()
+        log_user_activity(user, f"Created Bus: {bus.registration_no}", f"Bus {bus.registration_no} was created.")
         return redirect('central_admin:bus_list')
     
     
 class BusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    BusUpdateView is a Django class-based view that handles the update of existing Bus instances.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (Bus).
+        form_class (Form): The form class used to update a Bus instance.
+        success_url (str): The URL to redirect to upon successful update.
+    Methods:
+        form_valid(self, form):
+            Handles the form submission, saves the updated Bus instance, logs the update activity,
+            and redirects to the bus list view.
+    """
     model = Bus
     form_class = BusForm
     template_name = 'central_admin/bus_update.html'
     success_url = reverse_lazy('central_admin:bus_list')
 
     def form_valid(self, form):
+        bus = form.save()
+        user = self.request.user
+        log_user_activity(user, f"Updated Bus: {bus.registration_no}", f"Bus {bus.registration_no} was updated.")
         return super().form_valid(form)
 
 
 class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for handling the upload of bus files by central admin users.
+    This view allows central admin users to upload bus files. It ensures that the user is logged in and has the necessary permissions. Upon successful upload, the bus file is processed asynchronously.
+    Attributes:
+        template_name (str): The path to the template used for rendering the view.
+        model (BusFile): The model associated with this view.
+        fields (list): The fields of the model to be displayed in the form.
+    Methods:
+        form_valid(form):
+            Handles the form submission. Associates the uploaded file with the user's organization and user profile, saves the file, and triggers asynchronous processing of the uploaded file.
+            Args:
+                form (Form): The submitted form instance.
+            Returns:
+                HttpResponse: A redirect to the bus list view upon successful form submission.
+    """
     template_name = 'central_admin/bus_file_upload.html'
     model = BusFile
     fields = ['name', 'file']
@@ -162,12 +290,46 @@ class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateV
 
 
 class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    BusDeleteView is a Django class-based view that handles the deletion of Bus instances.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (Bus).
+        success_url (str): The URL to redirect to upon successful deletion.
+    Methods:
+        delete(self, request, *args, **kwargs):
+            Handles the deletion of the Bus instance, logs the deletion activity, and redirects to the bus list view.
+    """
     model = Bus
     template_name = 'central_admin/bus_confirm_delete.html'
     success_url = reverse_lazy('central_admin:bus_list')
+
+    def delete(self, request, *args, **kwargs):
+        bus = self.get_object()
+        user = self.request.user
+        log_user_activity(user, f"Deleted Bus: {bus.registration_no}", f"Bus {bus.registration_no} was deleted.")
+        return super().delete(request, *args, **kwargs)
     
 
 class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    BusRecordListView is a Django class-based view that displays a list of BusRecord objects for the central admin.
+    Inherits:
+        LoginRequiredMixin: Ensures that the user is logged in.
+        CentralAdminOnlyAccessMixin: Ensures that only central admin users can access this view.
+        ListView: Provides the default behavior for displaying a list of objects.
+    Attributes:
+        model (BusRecord): The model that this view will display.
+        template_name (str): The template used to render the view.
+        context_object_name (str): The context variable name for the list of BusRecord objects.
+    Methods:
+        get_queryset(self):
+            Retrieves the queryset of BusRecord objects based on the user's organization and the registration slug.
+            If the 'noneRecords' GET parameter is 'True', filters the queryset to include only records with no associated bus.
+        get_context_data(self, **kwargs):
+            Adds additional context data to the template, including the registration object and flags for blank records and filter reset.
+    """
     model = BusRecord
     template_name = 'central_admin/bus_record_list.html'
     context_object_name = 'bus_records'
@@ -191,6 +353,20 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
     
 
 class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    BusRecordCreateView is a Django class-based view that handles the creation of new BusRecord instances.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (BusRecord).
+        form_class (Form): The form class used to create a BusRecord instance.
+    Methods:
+        get_form(self, form_class=None):
+            Customizes the form to filter the 'bus' field queryset to include only buses within the same organization as the current user.
+        form_valid(self, form):
+            Saves the new BusRecord instance, assigns the organization and registration based on the current user's profile,
+            logs the creation activity, and redirects to the bus record list view.
+    """
     model = BusRecord
     template_name = 'central_admin/bus_record_create.html'
     form_class = BusRecordCreateForm
@@ -218,6 +394,10 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         bus_record.registration = registration
         bus_record.min_required_capacity = bus.capacity
         bus_record.save()
+
+        # Log user activity
+        user = self.request.user
+        log_user_activity(user, f"Created BusRecord: {bus_record.label}", f"BusRecord {bus_record.label} was created.")
 
         messages.success(self.request, "Bus Record created successfully!")
         return redirect(self.get_success_url())
