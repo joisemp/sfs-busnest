@@ -10,16 +10,22 @@
 {% endblock sidebar %}
 
 {% block content %}
+<div class="section-header">
+    <div>
+        <a href="{% url 'central_admin:route_list' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+     </div>
+     <div class="gear d-flex justify-content-between">
+       <div>
+         <h2>Stops</h2>
+       </div>
+       <div class="group">
+        <a class="btn btn-primary" href="{% url 'central_admin:stop_create' registration_slug=registration.slug route_slug=route.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
+       </div>
+    </div>
+    <hr>
+  </div>
 
 <section id="routes">
-    <div class="mb-3 d-flex justify-content-between">
-        <a class="btn btn-secondary me-2" href="{% url 'central_admin:route_list' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
-        <div class="group">
-            <a class="btn btn-primary" href="{% url 'central_admin:stop_create' registration_slug=registration.slug route_slug=route.slug %}"><i class="fa-solid fa-plus me-2"></i>Create</a>
-        </div>
-        
-    </div>
-
     <div>
         <div class="content mt-3" style="cursor: pointer;">
             {% for stop in stops %}

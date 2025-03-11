@@ -51,14 +51,12 @@
         <h4>Recent Activities</h4>
         {% if recent_activities %}
         <table class="table table-hover">
+            {% for activity in recent_activities %}
             <tr>
-                <td>Updated bus for Rahul kumar..</td>
-                <td>25 Jan 2025</td>
+                <td>{{ activity.action }}</td>
+                <td>{{ activity.timestamp.date }}</td>
             </tr>
-            <tr>
-                <td>Updated bus for Rahul kumar..</td>
-                <td>25 Jan 2025</td>
-            </tr>
+            {% endfor %}
         </table>
         {% else %}
         <p>No activites yet</p>

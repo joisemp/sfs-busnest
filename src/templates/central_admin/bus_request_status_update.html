@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section id="bus-request-status-update">
+    <div class="container">
+        <div class="section-header">
+            <h2>Update Bus Request Status</h2>
+            <hr>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            {{ comment_form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+</section>
+{% endblock content %}

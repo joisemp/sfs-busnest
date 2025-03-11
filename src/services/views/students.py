@@ -222,6 +222,10 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         self.drop_id = self.request.session.get('drop')
         self.schedule_group = ScheduleGroup.objects.get(id=int(self.schedule_group_id))
         
+        # Initialize attributes
+        self.pickup_bus_record = None
+        self.drop_bus_record = None
+        
         if self.schedule_group.allow_one_way:
             if not self.pickup_id and self.drop_id:
                 self.bus_record = get_object_or_404(BusRecord, slug=self.request.GET.get('bus_slug'))
@@ -263,6 +267,11 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         std_id = self.request.session.get('student_id')
         receipt = get_object_or_404(Receipt, id=receipt_id)
 
+        # Check if a ticket already exists for this receipt
+        if Ticket.objects.filter(recipt=receipt).exists():
+            form.add_error(None, "A ticket already exists for this receipt.")
+            return self.form_invalid(form)
+
         ticket.org = registration.org
         ticket.registration = registration
         ticket.institution = receipt.institution
@@ -273,11 +282,11 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         
         if self.schedule_group.allow_one_way:
             if self.pickup_id and not self.drop_id:
-                pickup_bus_record = self.pickup_bus_record
-                drop_bus_record = self.drop_bus_record
+                pickup_bus_record = self.bus_record
+                drop_bus_record = None
             elif not self.pickup_id and self.drop_id:
-                pickup_bus_record = self.pickup_bus_record
-                drop_bus_record = self.drop_bus_record
+                pickup_bus_record = None
+                drop_bus_record = self.bus_record
             else:
                 pickup_bus_record = self.pickup_bus_record
                 drop_bus_record = self.drop_bus_record
@@ -531,4 +540,3 @@ class DropBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
         context['pickup_bus_record_slug'] = self.request.GET.get('pickup_bus')
         return context
 
-        

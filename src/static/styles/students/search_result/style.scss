@@ -3,70 +3,33 @@
 .container {
     padding-top: 2rem;
 }
-
-#details-bar {
-    .table-content {
-        display: flex;
-        // background-color: $indigo-100;
-        align-items: center;
-
-        p {
-            width: 171px;
-            font-weight: 507;
-
-            span {
-                font-weight: 500;
-            }
-        }
-
-        .table {
-            thead {
-
-                tr,
-                td {
-                    p {
-                        width: 195px;
-                    }
-
-                    display:flex;
-                    align-items: center;
-                    padding:0;
-                    margin-top: 9px;
-                    background-color: rgba(114, 114, 114, 0.027);
-                }
-            }
-        }
-    }
-}
-
 #search-card {
-
-    .main-wrap {
-        .content-wrap {
-            display: flex;
+    .card-body{
+        display:flex;
+        justify-content: center;
+        .content{
+            display:flex;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
-            width: fit-content; // This ensures the content-wrap takes only the required space
-
-            @media screen and (max-width: 805px) {
+            width:100%;
+            .form-check{
+                padding:0;
+            }
+            .gear{
+                display:flex;
                 justify-content: center;
-            }
-
-            .card-wrap {
-                min-width: 20rem;
-                max-width: fit-content !important;
-                width: 100%;
-                margin: 5px;
-
-                // For tablet and mobile
-                @media screen and (max-width: 805px) {
-                    min-width: 100%;
-                }
-
-                .card {
-                    width: 100%;
-                    padding: 30px 20px;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                width:391px;
+                .button{
+                    margin-top:14px;
+                    @media  screen and (max-width:399px) {
+                        margin-top: 0px;
+                    }
                 }
             }
+           
         }
     }
 }

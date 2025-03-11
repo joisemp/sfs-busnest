@@ -10,16 +10,28 @@
 {% endblock sidebar %}
 
 {% block content %}
+<div class="section-header">
+    <div>
+        <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+     </div>
+     <div class="gear d-flex justify-content-between">
+       <div>
+         <h3>Schedule groups</h3>
+       </div>
+       <div>
+            <a class="btn btn-dark me-2" href="{% url 'central_admin:schedule_list' registration_slug=registration.slug %}">Groups</a>
+            <a href="{% url 'central_admin:schedule_group_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule group</a>
+       </div>
+    </div>
+    <hr>
+</div>
 
 <section id="schedule">
     <div class="d-flex justify-content-between mb-4">
         <div class="button-group">
-            <a class="btn btn-secondary" href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"><i class="fa-solid fa-angle-left me-2"></i>Go back</a>
+            
         </div>
-        <div>
-            <a class="btn btn-dark me-2" href="{% url 'central_admin:schedule_list' registration_slug=registration.slug %}">Groups</a>
-            <a href="{% url 'central_admin:schedule_group_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule group</a>
-        </div>
+        
     </div>
     <div class="main-wrap">
         <div class="wrap">

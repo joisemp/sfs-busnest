@@ -10,13 +10,22 @@
 {% endblock sidebar %}
 
 {% block content %}
+<div class="section-header">
+  <div>
+      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+   </div>
+   <div class="gear d-flex justify-content-between">
+     <div>
+       <h2>Ticket List</h2>
+     </div>
+  </div>
+  <hr>
+</div>
 
 <section id="ticket-list">
   <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
     {% if not search_term %}
     <div>
-      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
-        class="btn btn-dark"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
       <!-- <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i
           class="fa-solid fa-file-excel ms-2"></i></button> -->
       <a href="{% url 'central_admin:ticket_export' registration_slug=registration.slug %}" type="button"
