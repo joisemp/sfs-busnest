@@ -3,6 +3,43 @@
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'styles/central_admin/bus_request_list/style.css' %}">
+<style>
+    .badge-status {
+        font-size: 0.9rem;
+        padding: 0.5em 1em;
+    }
+
+    .filter-links .btn.active {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .modal-lg {
+        max-width: 80%;
+    }
+
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .comment-section {
+        margin-top: 1em;
+    }
+
+    .comment {
+        padding: 0.5em;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 0.5em;
+    }
+
+    .comment small {
+        display: block;
+        margin-top: 0.5em;
+        color: #888;
+    }
+</style>
 {% endblock style %}
 
 {% block sidebar %}
@@ -12,17 +49,26 @@
 {% block content %}
 <section id="bus-requests">
     <div class="container">
-        
+
         <div class="section-header">
             <div>
-                <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-             </div>
-             <div class="gear">
-               <div>
-                 <h2>Requests</h2>
-               </div>
+                <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
+                    class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Requests</h2>
+                </div>
             </div>
             <hr>
+            <div class="filter-links">
+                <a href="{% url 'central_admin:bus_request_list' registration_slug=registration.slug %}"
+                    class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'bus_request_list' %}active{% endif %}">All</a>
+                <a href="{% url 'central_admin:bus_request_open_list' registration_slug=registration.slug %}"
+                    class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'bus_request_open_list' %}active{% endif %}">Open</a>
+                <a href="{% url 'central_admin:bus_request_closed_list' registration_slug=registration.slug %}"
+                    class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'bus_request_closed_list' %}active{% endif %}">Closed</a>
+            </div>
         </div>
         {% if bus_requests %}
         {% for bus_request in bus_requests %}
@@ -34,11 +80,13 @@
                     </div>
                     <div class="date">
                         <span class="text-muted">{{bus_request.created_at.date}}</span>
+                        <span
+                            class="badge rounded-pill badge-status {% if bus_request.status == 'closed' %}text-bg-danger{% else %}text-bg-dark{% endif %} ms-2">{{bus_request.get_status_display }}</span>
                     </div>
                 </div>
                 <div class="modal fade" id="Modal{{bus_request.id}}" tabindex="-1"
                     aria-labelledby="ModalLabel{{bus_request.id}}" aria-hidden="true">
-                    <div class="modal-dialog">
+                    <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="ModalLabel{{bus_request.id}}">Bus request for
@@ -47,25 +95,76 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                               
-                                    <p>Institution : {{bus_request.institution}}</p>
-                                    <p>Receipt : {{bus_request.receipt}}</p>
-                                    <p>Pickup address : {{bus_request.pickup_address}}</p>
-                                    <p>Drop address : {{bus_request.drop_address}}</p>
-                             
+                                <p>Institution : {{bus_request.institution}}</p>
+                                <p>Receipt : {{bus_request.receipt}}</p>
+                                <p>Pickup address : {{bus_request.pickup_address}}</p>
+                                <p>Drop address : {{bus_request.drop_address}}</p>
+                                <p>Contact No : {{bus_request.contact_no}}</p>
+                                <p>Contact Email : {{bus_request.contact_email}}</p>
+                                <div class="comment-section" id="comment-section-{{bus_request.id}}">
+                                    {% if bus_request.comments.all %}
+                                    <h5>Comments</h5>
+                                    {% for comment in bus_request.comments.all %}
+                                    <div class="comment">
+                                        <p>{{ comment.comment }}</p>
+                                        <small>- {{ comment.created_by }} on {{ comment.created_at.date }}</small>
+                                    </div>
+                                    {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <form method="post" action="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-post="{% url 'central_admin:bus_request_comment' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-target="#comment-section-{{bus_request.id}}" hx-swap="beforeend" hx-boost="true">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="comment" class="form-label">Add Comment</label>
+                                        <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary">Submit Comment</button>
+                                </form>
                             </div>
                             <div class="modal-footer">
                                 <!-- Default dropup button -->
                                 <div class="btn-group dropup">
-                                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Action
+                                    <button type="button" class="btn btn-primary dropdown-toggle"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        Manage
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#">Action</a></li>
-                                        <li><a class="dropdown-item" href="#">Another action</a></li>
-                                        <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                        <li>
+                                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#StatusModal{{bus_request.id}}">
+                                                {% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %}
+                                            </button>
+                                        </li>
+                                        <li><a class="dropdown-item text-danger"
+                                                href="{% url 'central_admin:bus_request_delete' registration_slug=bus_request.registration.slug bus_request_slug=bus_request.slug %}">Delete</a>
+                                        </li>
                                     </ul>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Update Modal -->
+                <div class="modal fade" id="StatusModal{{bus_request.id}}" tabindex="-1"
+                    aria-labelledby="StatusModalLabel{{bus_request.id}}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="StatusModalLabel{{bus_request.id}}">
+                                    {% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %} Request
+                                </h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="post" action="{% url 'central_admin:bus_request_status_update' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-post="{% url 'central_admin:bus_request_status_update' registration_slug=registration.slug bus_request_slug=bus_request.slug %}" hx-target="#Modal{{bus_request.id}} .modal-body" hx-swap="outerHTML" hx-boost="true" onsubmit="setTimeout(function(){ location.reload(); }, 1000);">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="status-comment" class="form-label">Comment</label>
+                                        <textarea class="form-control" id="status-comment" name="comment" rows="3" placeholder="Add a comment" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">{% if bus_request.status == 'closed' %}Reopen{% else %}Close{% endif %} Request</button>
+                                </form>
                             </div>
                         </div>
                     </div>

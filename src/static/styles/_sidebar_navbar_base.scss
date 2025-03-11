@@ -154,3 +154,19 @@
     }
   }
 }
+
+tbody, td, tfoot, th, thead, tr {
+  background: #ffffff00 !important;
+  white-space: nowrap;
+  padding: 1rem !important;
+  .text-muted{
+      font-weight: 508;
+  }
+
+  .table-link {
+      a {
+          text-decoration: none !important;
+          font-weight: 500;
+      }
+  }
+}

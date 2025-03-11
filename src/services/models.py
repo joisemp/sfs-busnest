@@ -7,9 +7,6 @@ from django.core.validators import RegexValidator
 from config.validators import validate_excel_file
 from config.utils import generate_unique_slug, generate_unique_code
 from django.conf import settings
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
-
 
 class Organisation(models.Model):
     name = models.CharField(max_length=200, db_index=True)
@@ -34,7 +31,6 @@ class Organisation(models.Model):
 
     def __str__(self):
         return f"{self.name}"
-    
 
 class Institution(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='institutions')
@@ -60,7 +56,6 @@ class Institution(models.Model):
     def __str__(self):
         return f"{self.name} - {self.label}"
 
-
 class Route(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
     registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
@@ -77,7 +72,6 @@ class Route(models.Model):
         
     def __str__(self):
         return f"{self.name}"
-    
 
 class Stop(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='stops')
@@ -95,18 +89,15 @@ class Stop(models.Model):
     def __str__(self):
         return f"{self.name}"
     
-    
 def rename_uploaded_file(instance, filename):
     base_name = os.path.splitext(filename)[0]
     ext = os.path.splitext(filename)[1]
     return f"{instance.org.slug}/route_files/{slugify(base_name)}-{uuid4()}{ext}"
 
-
 def rename_bus_uploaded_file(instance, filename):
     base_name = os.path.splitext(filename)[0]
     ext = os.path.splitext(filename)[1]
     return f"{instance.org.slug}/bus_files/{slugify(base_name)}-{uuid4()}{ext}"
-
 
 class RouteFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='route_files')
@@ -126,7 +117,6 @@ class RouteFile(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-
 class Registration(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='registrations')
     name = models.CharField(max_length=200)
@@ -145,7 +135,6 @@ class Registration(models.Model):
     
     def __str__(self):
         return f"{self.org}{self.name}"
-    
 
 class Schedule(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='schedules')
@@ -163,7 +152,6 @@ class Schedule(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.start_time} - {self.end_time})"
-    
 
 class ScheduleGroup(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='schedule_groups')
@@ -174,7 +162,6 @@ class ScheduleGroup(models.Model):
     
     def __str__(self):
         return f"{self.pick_up_schedule.name}-{self.drop_schedule.name}"
-    
 
 class Bus(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
@@ -192,7 +179,6 @@ class Bus(models.Model):
 
     def __str__(self):
         return f"{self.registration_no} (Capacity : {self.capacity})"
-    
 
 class BusRecord(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
@@ -226,7 +212,6 @@ class BusRecord(models.Model):
 
     def __str__(self):
         return f"{self.label}"
-    
 
 class Trip(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='trips')
@@ -250,12 +235,10 @@ class Trip(models.Model):
     def __str__(self):
         return f"{self.schedule} | {self.route}"
 
-
 TICKET_TYPES = ( 
     ("one_way", "One way"), 
     ("two_way", "Two way"),  
 )
-
 
 class Ticket(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='tickets')
@@ -298,7 +281,6 @@ class Ticket(models.Model):
     def __str__(self):
         return f"Ticket for {self.student_name}"
 
-
 class StudentGroup(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='groups')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='groups')
@@ -316,7 +298,6 @@ class StudentGroup(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-
 class Receipt(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipts')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='recipts')
@@ -326,7 +307,7 @@ class Receipt(models.Model):
     student_group = models.ForeignKey(StudentGroup, on_delete=models.CASCADE)
     is_expired = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -340,12 +321,10 @@ class Receipt(models.Model):
     def __str__(self):
         return f"{self.receipt_id}"
     
-
 def rename_uploaded_file_receipt(instance, filename):
     base_name = os.path.splitext(filename)[0]
     ext = os.path.splitext(filename)[1]
     return f"{instance.org.slug}/{instance.institution.slug}/receipt_files/{slugify(base_name)}-{uuid4()}{ext}"
-
 
 class ReceiptFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='recipt_files')
@@ -354,7 +333,7 @@ class ReceiptFile(models.Model):
     file = models.FileField(upload_to=rename_uploaded_file_receipt, validators=[validate_excel_file])
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -365,7 +344,6 @@ class ReceiptFile(models.Model):
         
     def __str__(self):
         return f"{self.name}"
-    
 
 class FAQ(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='faqs')
@@ -373,7 +351,7 @@ class FAQ(models.Model):
     question = models.CharField(max_length=500)
     answer = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -384,9 +362,21 @@ class FAQ(models.Model):
         
     def __str__(self):
         return f"{self.receipt_id}"
-    
+
+class BusRequestComment(models.Model):
+    bus_request = models.ForeignKey('BusRequest', on_delete=models.CASCADE, related_name='comments')
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Comment by {self.created_by} on {self.created_at}"
 
 class BusRequest(models.Model):
+    STATUS_CHOICES = ( 
+        ("open", "Open"), 
+        ("closed", "Closed"),  
+    )
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_requests')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='bus_requests')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_requests')
@@ -400,6 +390,7 @@ class BusRequest(models.Model):
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
     contact_email = models.EmailField()
+    status = models.CharField(choices=STATUS_CHOICES, max_length=20, default='open')
     created_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
     
@@ -411,7 +402,6 @@ class BusRequest(models.Model):
         
     def __str__(self):
         return self.student_name
-    
 
 class ExportedFile(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # User who requested the export
@@ -421,7 +411,6 @@ class ExportedFile(models.Model):
     def __str__(self):
         return f"Exported File for {self.user.username} - {self.created_at}"
 
-
 class BusFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE)
     user=models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -429,7 +418,7 @@ class BusFile(models.Model):
     name = models.CharField(max_length=255)
     added = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
@@ -440,32 +429,30 @@ class BusFile(models.Model):
         
     def __str__(self):
         return f"{self.created_at}"
-    
 
-class OrganisationActivity(models.Model):
-    org = models.ForeignKey(Organisation, on_delete=models.CASCADE)
-    user=models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    action = models.CharField(max_length=200)
-    created_at = models.DateTimeField(auto_now_add=True)
-    slug = models.SlugField(unique=True, db_index=True, max_length=255)
-    
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(f"{self.org}-{self.user}")
-            self.slug = generate_unique_slug(self, base_slug)
-        super().save(*args, **kwargs)
-        
+class UserActivity(models.Model):
+    user = models.ForeignKey('core.User', on_delete=models.CASCADE)
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE)  # Update the reference to Organisation
+    action = models.CharField(max_length=255)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"{self.created_at}"
-    
+        return f'{self.user.email} - {self.action} - {self.timestamp}'
 
-# @receiver(post_delete, sender=Ticket)
-# def increment_bus_capacity_on_ticket_delete(sender, instance, **kwargs):
-#     try:
-#         # Find the associated BusCapacity instance
-#         bus_capacity = BusCapacity.objects.get(bus=instance.bus, registration=instance.registration)
-#         # Increment the available seats
-#         bus_capacity.available_seats += 1
-#         bus_capacity.save()
-#     except BusCapacity.DoesNotExist:
-#         pass
+def log_user_activity(user, action, description):
+    """
+    Creates an instance of UserActivity to log user actions.
+    
+    Args:
+        user (User): The user performing the action.
+        action (str): A short description of the action.
+        description (str): A detailed description of the action.
+    """
+    UserActivity.objects.create(
+        user=user,
+        org=user.profile.org,
+        action=action,
+        description=description
+    )
+
