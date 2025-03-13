@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment, UserActivity, log_user_activity
+from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, StudentGroup, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment, UserActivity, log_user_activity
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -828,6 +828,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         schedule = self.request.GET.get('schedule')
         pickup_buses = self.request.GET.getlist('pickup_bus')
         drop_buses = self.request.GET.getlist('drop_bus')
+        student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
         
         self.search_term = self.request.GET.get('search', '')
@@ -860,6 +861,9 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         if drop_buses and not drop_buses == ['']:
             queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
             filters = True
+        if student_group:
+            queryset = queryset.filter(student_group_id=student_group)
+            filters = True
         
         # Pass the filters flag to context (done in get_context_data)
         self.filters = filters  # Store in the instance for later access
@@ -880,6 +884,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")
+        context['student_groups'] = StudentGroup.objects.filter(org = self.request.user.profile.org).order_by('name')
         context['search_term'] = self.search_term
 
         return context
