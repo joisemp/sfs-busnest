@@ -44,6 +44,7 @@ from services.models import (
     ScheduleGroup, 
     BusRequestComment, 
     UserActivity, 
+    Notification,
     log_user_activity
 )
 
@@ -331,7 +332,7 @@ class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateV
         bus_file.org = user.profile.org
         bus_file.user = user
         bus_file.save()
-        process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
+        process_uploaded_bus_excel.delay(self.request.user, bus_file.file.name, bus_file.org.id)
         return redirect(reverse('central_admin:bus_list'))
 
 
@@ -661,7 +662,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         route_file.org = user.profile.org
         route_file.save()
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        process_uploaded_route_excel.delay(self.request.user, route_file.file.name, user.profile.org.id, registration.id)
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 

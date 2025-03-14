@@ -468,13 +468,14 @@ class Notification(models.Model):
         ("info", "Info"),
         ("warning", "Warning"),
         ("error", "Error"),
+        ("success", "Success"),
     )
     user = models.ForeignKey('core.User', on_delete=models.CASCADE)
     action = models.CharField(max_length=255)
     description = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="unread")
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="info")
-    progress_notification = models.BooleanField(default=True)
+    priority = models.BooleanField(default=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

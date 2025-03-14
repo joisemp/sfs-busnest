@@ -7,7 +7,7 @@ from io import BytesIO
 from django.conf import settings
 import logging, time, os
 from django.core.mail import send_mail
-from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus
+from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -59,7 +59,8 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 
 
 @shared_task(name='process_uploaded_route_excel')
-def process_uploaded_route_excel(file_path, org_id, registration_id):
+def process_uploaded_route_excel(user, file_path, org_id, registration_id):
+    notification = Notification.objects.create(user=user, action="Route Excel Processing", description="Route Excel processing has started.", type="info")
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
 
@@ -106,6 +107,7 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
             for col_index, route_name in enumerate(headers, start=1):
                 if not route_name:
                     logger.warning(f"Skipping empty header in column {col_index}.")
+                    notification.description += f"\nSkipping empty header in column {col_index}."
                     continue
 
                 try:
@@ -143,19 +145,29 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                 
                 except Exception as e:
                     logger.error(f"Error processing Route {route_name}: {e}")
+                    notification.description += f"\nError processing Route {route_name}: {e}"
+                    notification.type = "error"
+                    notification.save()
                     raise
 
             logger.info("Excel processing completed successfully.")
+            notification.description = "Route Excel processing completed successfully."
+            notification.type = "success"
+            notification.save()
 
     except Exception as e:
         logger.error(f"Error while processing Excel file: {e}")
+        notification.description += f"\nError while processing Excel file: {e}"
+        notification.type = "error"
+        notification.save()
         raise
     finally:
         logger.info("Task Ended: process_uploaded_route_excel")
 
 
 @shared_task(name='process_uploaded_receipt_data_excel')
-def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_id):
+def process_uploaded_receipt_data_excel(user, file_path, org_id, institution_id, reg_id):
+    notification = Notification.objects.create(user=user, action="Receipt Data Excel Processing", description="Receipt Data Excel processing has started.", type="info")
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
 
@@ -252,9 +264,13 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
 
                     except Exception as e:
                         logger.error(f"Error processing Row {row_number}: {row}. Error: {e}")
+                        notification.description += f"\nError processing Row {row_number}: {row}. Error: {e}"
                         raise
 
                 logger.info("Excel processing completed successfully.")
+                notification.description = "Receipt Data Excel processing completed successfully."
+                notification.type = "success"
+                notification.save()
 
             except Exception as e:
                 logger.error(f"Error while processing Excel file: {e}")
@@ -262,11 +278,13 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
 
     except Exception as e:
         logger.error(f"Error while processing Excel: {e}")
+        notification.description += f"\nError while processing Excel: {e}"
+        notification.type = "error"
+        notification.save()
         raise
     finally:
         file.close()
         logger.info("Task Ended: process_uploaded_receipt_data_excel")
-        
         
 
 
@@ -424,10 +442,11 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
 
 @shared_task(name='process_uploaded_bus_excel')
-def process_uploaded_bus_excel(file_path, org_id):
+def process_uploaded_bus_excel(user, file_path, org_id):
+    notification = Notification.objects.create(user=user, action="Bus Excel Processing", description="Bus Excel processing has started.", type="info")
     try:
         logger.info(f"Task Started: Processing file: {file_path}")
-        
+
         # Determine file location (local vs cloud storage)
         if settings.DEBUG:
             full_path = os.path.join(settings.MEDIA_ROOT, file_path)  # Local file
@@ -476,6 +495,7 @@ def process_uploaded_bus_excel(file_path, org_id):
 
                 if not registration or not driver or not capacity:
                     logger.warning(f"Skipping incomplete row: {row}")
+                    notification.description += f"\nSkipping incomplete row: {row}"
                     continue
 
                 try:
@@ -496,18 +516,24 @@ def process_uploaded_bus_excel(file_path, org_id):
 
                 except Exception as e:
                     logger.error(f"Error processing bus {registration}: {e}")
+                    notification.description += f"\nError processing bus {registration}: {e}"
                     raise
 
             bus_file.added = True
             bus_file.save()
             logger.info("Excel processing completed successfully.")
+            notification.description = "Bus Excel processing completed successfully."
+            notification.type = "success"
+            notification.save()
 
     except Exception as e:
         logger.error(f"Error while processing Excel file: {e}")
+        notification.description += f"\nError while processing Excel file: {e}"
+        notification.type = "error"
+        notification.save()
         raise
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
-        
 
 @shared_task
 def mark_expired_receipts():
