@@ -458,3 +458,25 @@ def log_user_activity(user, action, description):
         description=description
     )
 
+
+class Notification(models.Model):
+    STATUS_CHOICES = (
+        ("unread", "Unread"),
+        ("read", "Read"),
+    )
+    TYPE_CHOICES = (
+        ("info", "Info"),
+        ("warning", "Warning"),
+        ("error", "Error"),
+    )
+    user = models.ForeignKey('core.User', on_delete=models.CASCADE)
+    action = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="unread")
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="info")
+    progress_notification = models.BooleanField(default=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user.email} - {self.action} - {self.timestamp}'
+    
