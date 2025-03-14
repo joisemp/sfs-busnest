@@ -332,7 +332,7 @@ class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateV
         bus_file.org = user.profile.org
         bus_file.user = user
         bus_file.save()
-        process_uploaded_bus_excel.delay(self.request.user, bus_file.file.name, bus_file.org.id)
+        process_uploaded_bus_excel.delay(user.id, bus_file.file.name, bus_file.org.id)
         return redirect(reverse('central_admin:bus_list'))
 
 

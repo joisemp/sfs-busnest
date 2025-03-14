@@ -440,11 +440,13 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     return response
 
 
-
 @shared_task(name='process_uploaded_bus_excel')
-def process_uploaded_bus_excel(user, file_path, org_id):
-    notification = Notification.objects.create(user=user, action="Bus Excel Processing", description="Bus Excel processing has started.", type="info")
+def process_uploaded_bus_excel(user_id, file_path, org_id):
     try:
+        user = User.objects.get(id=user_id)
+        notification = Notification.objects.create(user=user, action="Bus Excel Processing", description="Processing Bus Excel file.", type="info")
+        notification.save()
+        
         logger.info(f"Task Started: Processing file: {file_path}")
 
         # Determine file location (local vs cloud storage)
@@ -486,7 +488,10 @@ def process_uploaded_bus_excel(user, file_path, org_id):
             # Validate headers
             headers = [cell.value for cell in sheet[1]]
             if headers != ["Registration", "Driver", "Capacity"]:
-                logger.error("Invalid headers in the Excel file.")
+                logger.error("Invalid headers in the Bus Excel file.")
+                notification.description = f"Invalid headers in the Excel file"
+                notification.type = "error"
+                notification.save()
                 return
 
             # Process rows
@@ -534,6 +539,7 @@ def process_uploaded_bus_excel(user, file_path, org_id):
         raise
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
+
 
 @shared_task
 def mark_expired_receipts():

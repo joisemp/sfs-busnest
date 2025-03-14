@@ -1,0 +1,13 @@
+{% if priority_notifications %}
+    <div class="priority-notifications">
+        <h3>Priority Notifications</h3>
+        <ul>
+            {% for notification in priority_notifications %}
+                <li>
+                    <strong>{{ notification.type|title }}:</strong> {{ notification.description }}
+                    <span>{{ notification.timestamp }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

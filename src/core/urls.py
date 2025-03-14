@@ -15,4 +15,5 @@ urlpatterns = [
           views.ConfirmPasswordResetView.as_view(), name='confirm_password_reset'),
      path('complete-password-reset/', views.CompletePasswordResetView.as_view(),
           name='complete_password_reset'),
+     path('priority-notifications/', views.priority_notifications_view, name='priority_notifications'),
 ]

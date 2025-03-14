@@ -89,3 +89,12 @@ class CompletePasswordResetView(PasswordResetCompleteView):
     template_name = 'core/password_reset/password_reset_complete.html'
 
 
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from services.models import Notification
+
+@login_required
+def priority_notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user, priority=True, status="unread")
+    return render(request, 'core/priority_notifications.html', {'priority_notifications': notifications})
