@@ -1,7 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, StudentGroup, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment, UserActivity, log_user_activity
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -18,7 +16,55 @@ from django.template.loader import render_to_string
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm, ScheduleGroupForm, BusRequestStatusForm, BusRequestCommentForm
+from django.views.generic import (
+    ListView, 
+    CreateView, 
+    UpdateView, 
+    DeleteView, 
+    DetailView, 
+    TemplateView, 
+    View, 
+    FormView
+)
+from services.models import (
+    Institution, 
+    Bus, 
+    Stop, 
+    Route, 
+    RouteFile, 
+    Registration, 
+    StudentGroup, 
+    Ticket, 
+    FAQ, 
+    Schedule, 
+    BusRequest, 
+    BusRecord, 
+    BusFile, 
+    Trip, 
+    ScheduleGroup, 
+    BusRequestComment, 
+    UserActivity, 
+    log_user_activity
+)
+
+from services.forms.central_admin import (
+    PeopleCreateForm, 
+    PeopleUpdateForm, 
+    InstitutionForm, 
+    BusForm, 
+    RouteForm, 
+    StopForm, 
+    RegistrationForm, 
+    FAQForm, 
+    ScheduleForm, 
+    BusRecordCreateForm, 
+    BusRecordUpdateForm, 
+    BusSearchForm, 
+    TripCreateForm, 
+    ScheduleGroupForm, 
+    BusRequestStatusForm, 
+    BusRequestCommentForm
+)
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
