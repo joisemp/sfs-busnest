@@ -146,7 +146,7 @@ def process_uploaded_route_excel(user, file_path, org_id, registration_id):
                 except Exception as e:
                     logger.error(f"Error processing Route {route_name}: {e}")
                     notification.description += f"\nError processing Route {route_name}: {e}"
-                    notification.type = "error"
+                    notification.type = "danger"
                     notification.save()
                     raise
 
@@ -158,7 +158,7 @@ def process_uploaded_route_excel(user, file_path, org_id, registration_id):
     except Exception as e:
         logger.error(f"Error while processing Excel file: {e}")
         notification.description += f"\nError while processing Excel file: {e}"
-        notification.type = "error"
+        notification.type = "danger"
         notification.save()
         raise
     finally:
@@ -279,7 +279,7 @@ def process_uploaded_receipt_data_excel(user, file_path, org_id, institution_id,
     except Exception as e:
         logger.error(f"Error while processing Excel: {e}")
         notification.description += f"\nError while processing Excel: {e}"
-        notification.type = "error"
+        notification.type = "danger"
         notification.save()
         raise
     finally:
@@ -444,8 +444,13 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 def process_uploaded_bus_excel(user_id, file_path, org_id):
     try:
         user = User.objects.get(id=user_id)
-        notification = Notification.objects.create(user=user, action="Bus Excel Processing", description="Processing Bus Excel file.", type="info")
-        notification.save()
+        notification = Notification.objects.create(
+            user=user,
+            action="Bus Excel Processing",
+            description="<p>Processing Bus Excel file has started.</p>",
+            file_processing_task=True,
+            type="info"
+        )
         
         logger.info(f"Task Started: Processing file: {file_path}")
 
@@ -457,21 +462,34 @@ def process_uploaded_bus_excel(user_id, file_path, org_id):
             full_path = file_path  # Cloud storage path
             file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
+        processed_count = 0
+        skipped_rows = []
+
         with transaction.atomic():
             # Fetch organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
             except Organisation.DoesNotExist:
-                logger.error(f"Organisation with ID {org_id} does not exist.")
+                error_message = "Organisation does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Organisation with ID {org_id} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
-            
+
             # Fetch BusFile entry
             try:
                 bus_file = BusFile.objects.get(file=file_path)
                 logger.info(f"BusFile entry fetched: {bus_file.name}")
             except BusFile.DoesNotExist:
-                logger.error(f"BusFile with path {file_path} does not exist.")
+                error_message = "BusFile does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>BusFile with path {file_path} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
             # Open Excel file correctly
@@ -480,65 +498,97 @@ def process_uploaded_bus_excel(user_id, file_path, org_id):
                 sheet = workbook.active
                 logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
-                logger.error(f"Failed to open the Excel file: {e}")
+                error_message = "Failed to open the Excel file."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Failed to open the Excel file: {e}</p>"
+                notification.type = "danger"
+                notification.save()
                 raise
             finally:
                 file.close()  # Close file after processing
 
             # Validate headers
             headers = [cell.value for cell in sheet[1]]
-            if headers != ["Registration", "Driver", "Capacity"]:
-                logger.error("Invalid headers in the Bus Excel file.")
-                notification.description = f"Invalid headers in the Excel file"
-                notification.type = "error"
+            expected_headers = ["Registration", "Driver", "Capacity"]
+            if headers != expected_headers:
+                error_message = "Invalid headers in the Bus Excel file."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Expected headers: {expected_headers}</p><p>Found headers: {headers}</p>"
+                notification.type = "danger"
                 notification.save()
                 return
 
             # Process rows
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for row_number, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 registration, driver, capacity = row
 
                 if not registration or not driver or not capacity:
-                    logger.warning(f"Skipping incomplete row: {row}")
-                    notification.description += f"\nSkipping incomplete row: {row}"
+                    warning_message = f"Row {row_number}: Skipping incomplete row: {row}"
+                    logger.warning(warning_message)
+                    skipped_rows.append((row_number, row))
                     continue
 
                 try:
                     bus, created = Bus.objects.get_or_create(
                         org=org,
                         registration_no=registration.strip(),
-                        driver=driver.strip(),
-                        capacity=int(capacity)
+                        defaults={
+                            'driver': driver.strip(),
+                            'capacity': int(capacity)
+                        }
                     )
 
                     if created:
-                        logger.info(f"Bus created: {registration}, Driver: {driver}, Capacity: {capacity}")
+                        logger.info(f"Row {row_number}: Bus created - Registration: {registration}, Driver: {driver}, Capacity: {capacity}")
                     else:
                         bus.driver = driver.strip()
                         bus.capacity = int(capacity)
                         bus.save()
-                        logger.info(f"Bus updated: {registration}, Driver: {driver}, Capacity: {capacity}")
+                        logger.info(f"Row {row_number}: Bus updated - Registration: {registration}, Driver: {driver}, Capacity: {capacity}")
+
+                    processed_count += 1
 
                 except Exception as e:
-                    logger.error(f"Error processing bus {registration}: {e}")
-                    notification.description += f"\nError processing bus {registration}: {e}"
+                    error_message = f"Row {row_number}: Error processing bus {registration}: {e}"
+                    logger.error(error_message)
+                    notification.action = error_message
+                    notification.description += f"<p>{error_message}</p>"
+                    notification.type = "danger"
+                    notification.save()
                     raise
 
             bus_file.added = True
             bus_file.save()
-            logger.info("Excel processing completed successfully.")
-            notification.description = "Bus Excel processing completed successfully."
+
+            success_message = "Bus file processed successfully."
+            logger.info(success_message)
+            notification.action = success_message
+            notification.description = (
+                f"<p>All rows in the Bus Excel file have been processed successfully.</p>"
+                f"<p>Total processed rows: {processed_count}</p>"
+                f"<p>Total skipped rows: {len(skipped_rows)}</p>"
+            )
+            if skipped_rows:
+                notification.description += "<p>Details of skipped rows:</p><ul>"
+                for row_number, row in skipped_rows:
+                    notification.description += f"<li>Row {row_number}: {row}</li>"
+                notification.description += "</ul>"
             notification.type = "success"
             notification.save()
 
     except Exception as e:
-        logger.error(f"Error while processing Excel file: {e}")
-        notification.description += f"\nError while processing Excel file: {e}"
-        notification.type = "error"
+        error_message = "Error while processing Excel file."
+        logger.error(error_message)
+        notification.action = error_message
+        notification.description += f"<p>{e}</p>"
+        notification.type = "danger"
         notification.save()
         raise
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
+        notification.save()
 
 
 @shared_task

@@ -467,7 +467,7 @@ class Notification(models.Model):
     TYPE_CHOICES = (
         ("info", "Info"),
         ("warning", "Warning"),
-        ("error", "Error"),
+        ("danger", "Error"),
         ("success", "Success"),
     )
     user = models.ForeignKey('core.User', on_delete=models.CASCADE)
@@ -475,6 +475,7 @@ class Notification(models.Model):
     description = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="unread")
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="info")
+    file_processing_task = models.BooleanField(default=False)
     priority = models.BooleanField(default=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 

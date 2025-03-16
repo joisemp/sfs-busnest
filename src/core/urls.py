@@ -1,5 +1,6 @@
 from django.urls import path
 from core import views
+from .views import priority_notifications_view, mark_notification_as_read
 
 app_name = 'core'
 
@@ -15,5 +16,6 @@ urlpatterns = [
           views.ConfirmPasswordResetView.as_view(), name='confirm_password_reset'),
      path('complete-password-reset/', views.CompletePasswordResetView.as_view(),
           name='complete_password_reset'),
-     path('priority-notifications/', views.priority_notifications_view, name='priority_notifications'),
+     path('priority-notifications/', priority_notifications_view, name='priority_notifications'),
+     path('notifications/<int:notification_id>/read/', mark_notification_as_read, name='mark_notification_as_read'),
 ]
