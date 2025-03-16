@@ -59,9 +59,17 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 
 
 @shared_task(name='process_uploaded_route_excel')
-def process_uploaded_route_excel(user, file_path, org_id, registration_id):
-    notification = Notification.objects.create(user=user, action="Route Excel Processing", description="Route Excel processing has started.", type="info")
+def process_uploaded_route_excel(user_id, file_path, org_id, registration_id):
     try:
+        user = User.objects.get(id=user_id)
+        notification = Notification.objects.create(
+            user=user,
+            action="Route Excel Processing",
+            description="<p>We have started processing your uploaded Route Excel file.</p>",
+            file_processing_task=True,
+            type="info"
+        )
+
         logger.info(f"Task Started: Processing file: {file_path}")
 
         # Determine file location (local vs cloud storage)
@@ -72,30 +80,43 @@ def process_uploaded_route_excel(user, file_path, org_id, registration_id):
             full_path = file_path  # Cloud storage path
             file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
+        processed_routes = 0
+        skipped_routes = []
+        skipped_stops = []
+
         with transaction.atomic():
             # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
             except Organisation.DoesNotExist:
-                logger.error(f"Organisation with ID {org_id} does not exist.")
+                notification.action = "Organisation Not Found"
+                notification.description = "<p>The organisation linked to the file could not be found. Please check and try again.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
-            
+
             # Fetch Registration
             try:
                 registration_obj = Registration.objects.get(id=registration_id)
                 logger.info(f"Registration fetched successfully: {registration_obj.name} (ID: {registration_id})")
             except Registration.DoesNotExist:
-                logger.error(f"Registration with ID {registration_id} does not exist.")
+                notification.action = "Registration Not Found"
+                notification.description = "<p>The registration linked to the file could not be found. Please check and try again.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
             # Open and process the Excel file
             try:
                 workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
-                logger.info(f"Opened file from storage: {file_path}")
+                logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
-                logger.error(f"Failed to open the Excel file: {e}")
+                notification.action = "File Open Error"
+                notification.description = "<p>We couldn't open the uploaded file. Please ensure it is a valid Excel file and try again.</p>"
+                notification.type = "danger"
+                notification.save()
                 raise
             finally:
                 file.close()  # Ensure the file is closed after processing
@@ -105,9 +126,9 @@ def process_uploaded_route_excel(user, file_path, org_id, registration_id):
             logger.info(f"Extracted headers (route names): {headers}")
 
             for col_index, route_name in enumerate(headers, start=1):
+                column_letter = openpyxl.utils.get_column_letter(col_index)  # Convert column index to Excel-style letter
                 if not route_name:
-                    logger.warning(f"Skipping empty header in column {col_index}.")
-                    notification.description += f"\nSkipping empty header in column {col_index}."
+                    skipped_routes.append((column_letter, "No route name provided"))
                     continue
 
                 try:
@@ -123,46 +144,59 @@ def process_uploaded_route_excel(user, file_path, org_id, registration_id):
                         logger.info(f"Route already exists: {route.name} (ID: {route.id})")
 
                     # Iterate over stops in the column
-                    for row_number, row in enumerate(sheet.iter_rows(min_row=2, min_col=col_index, max_col=col_index), start=2):
+                    for row_number, row in enumerate(sheet.iter_rows(min_row=2, min_col=col_index, max_col=col_index), start=1):
                         stop_name = row[0].value
                         if not stop_name:
-                            logger.warning(f"Row {row_number} in column {col_index} is empty. Skipping.")
+                            skipped_stops.append((row_number, column_letter, "No stop name provided"))
                             continue
 
                         stop_name = stop_name.strip().upper()
 
-                        stop, created = Stop.objects.get_or_create(
+                        Stop.objects.get_or_create(
                             org=org,
                             registration=registration_obj,
                             route=route,
                             name=stop_name
                         )
 
-                        if created:
-                            logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
-                        else:
-                            logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
-                
+                    processed_routes += 1
+
                 except Exception as e:
-                    logger.error(f"Error processing Route {route_name}: {e}")
-                    notification.description += f"\nError processing Route {route_name}: {e}"
+                    notification.action = "Processing Error"
+                    notification.description = "<p>An error occurred while processing the file. Please try again later.</p>"
                     notification.type = "danger"
                     notification.save()
                     raise
 
-            logger.info("Excel processing completed successfully.")
-            notification.description = "Route Excel processing completed successfully."
+            notification.action = "Route Excel Processed"
+            notification.description = (
+                f"<p>The Route Excel file has been processed successfully.</p>"
+                f"<p>Routes added: {processed_routes}.</p>"
+                f"<p>Routes skipped: {len(skipped_routes)}.</p>"
+                f"<p>Stops skipped: {len(skipped_stops)}.</p>"
+            )
+            if skipped_routes:
+                notification.description += "<p>Details of skipped routes:</p><ul>"
+                for column_letter, reason in skipped_routes:
+                    notification.description += f"<li>Column {column_letter}: {reason}</li>"
+                notification.description += "</ul>"
+            if skipped_stops:
+                notification.description += "<p>Details of skipped stops:</p><ul>"
+                for row_number, column_letter, reason in skipped_stops:
+                    notification.description += f"<li>Row {row_number}, Column {column_letter}: {reason}</li>"
+                notification.description += "</ul>"
             notification.type = "success"
             notification.save()
 
     except Exception as e:
-        logger.error(f"Error while processing Excel file: {e}")
-        notification.description += f"\nError while processing Excel file: {e}"
+        notification.action = "Unexpected Error"
+        notification.description = "<p>An unexpected error occurred while processing the file. Please contact support if the issue persists.</p>"
         notification.type = "danger"
         notification.save()
         raise
     finally:
         logger.info("Task Ended: process_uploaded_route_excel")
+        notification.save()
 
 
 @shared_task(name='process_uploaded_receipt_data_excel')
