@@ -12,12 +12,13 @@
 {% block content %}
 <div class="section-header">
   <div>
-      <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-   </div>
-   <div class="gear d-flex justify-content-between">
-     <div>
-       <h2>Ticket List</h2>
-     </div>
+    <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
+      class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+  </div>
+  <div class="gear d-flex justify-content-between">
+    <div>
+      <h2>Ticket List</h2>
+    </div>
   </div>
   <hr>
 </div>
@@ -201,6 +202,32 @@
               </div>
             </div>
 
+            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
+              <div class="accordion accordion-flush" id="accordionFlushExample">
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                      data-bs-target="#std-groups-collapse" aria-expanded="false" aria-controls="std-groups-collapse">
+                      <label class="form-label fw-bold">Student Groups</label>
+                    </button>
+                  </h2>
+                  <div id="std-groups-collapse" class="accordion-collapse collapse p-3"
+                    data-bs-parent="#accordionFlushExample">
+                    <div id="student_groups" class="form-check">
+                      <label class="form-check-label">
+                        <input type="checkbox" name="student_group" value="" class="form-check-input"> All
+                      </label><br>
+                      {% for group in student_groups %}
+                      <label class="form-check-label">
+                        <input type="checkbox" name="student_group" value="{{ group.id }}" class="form-check-input">
+                        {{ group.name }}
+                      </label><br>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <!--
             <div class="bg-light border rounded mb-2" style="overflow: hidden;">
               <div class="accordion accordion-flush" id="accordionFlushExample">

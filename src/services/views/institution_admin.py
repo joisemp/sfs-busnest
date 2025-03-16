@@ -1,15 +1,18 @@
 import threading
+from urllib.parse import urlencode
 from django.db import transaction
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
 from django.urls import reverse, reverse_lazy
+from services.forms.central_admin import BusRequestCommentForm
 from services.forms.students import StopSelectForm
-from services.models import Bus, BusRecord, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip
+from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
+from django.template.loader import render_to_string
 from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel
 from services.utils import get_filtered_bus_records
 
@@ -127,13 +130,21 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
     template_name = 'institution_admin/receipt_list.html'
     context_object_name = 'receipts'
     paginate_by = 30
-    
+
     def get_queryset(self):
+        registration_slug = self.kwargs.get('registration_slug')
+        self.registration = get_object_or_404(Registration, slug=registration_slug)
         queryset = Receipt.objects.filter(
             org=self.request.user.profile.org,
-            institution=self.request.user.profile.institution
-            )
+            institution=self.request.user.profile.institution,
+            registration=self.registration
+        )
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.registration  # Ensure registration is passed to the template
+        return context
     
 
 class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
@@ -147,8 +158,19 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         receipt_data_file.org = user.profile.org
         receipt_data_file.institution = user.profile.institution
         receipt_data_file.save()
-        process_uploaded_receipt_data_excel.delay(receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
-        return redirect(reverse('institution_admin:receipt_list'))
+        process_uploaded_receipt_data_excel.delay(
+            self.request.user.id,
+            receipt_data_file.file.name,
+            user.profile.org.id,
+            user.profile.institution.id,
+            receipt_data_file.registration.id
+        )
+        return redirect(
+            reverse(
+                'institution_admin:receipt_list',
+                kwargs={'registration_slug': receipt_data_file.registration.slug}
+            )
+        )
     
     
 class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
@@ -162,14 +184,24 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Crea
         receipt.org = user.profile.org
         receipt.institution = user.profile.institution
         receipt.save()
-        return redirect('institution_admin:receipt_list')
+        return redirect(
+            reverse(
+                'institution_admin:receipt_list',
+                kwargs={'registration_slug': receipt.registration.slug}
+            )
+        )
     
 
 class ReceiptDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
     model = Receipt
     template_name = 'institution_admin/receipt_confirm_delete.html'
     slug_url_kwarg = 'receipt_slug'
-    success_url = reverse_lazy('institution_admin:receipt_list')
+
+    def get_success_url(self):
+        return reverse(
+            'institution_admin:receipt_list',
+            kwargs={'registration_slug': self.object.registration.slug}
+        )
     
     
 class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -178,33 +210,50 @@ class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
     context_object_name = 'student_groups'  
     
     def get_queryset(self):
+        registration_slug = self.kwargs.get('registration_slug')
+        self.registration = get_object_or_404(Registration, slug=registration_slug)
         queryset = StudentGroup.objects.filter(
-            org = self.request.user.profile.org,
-            institution = self.request.user.profile.institution
+            org=self.request.user.profile.org,
+            institution=self.request.user.profile.institution
         ).order_by('name')
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.registration  # Ensure registration is passed to the template
+        return context
     
     
 class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
     template_name = 'institution_admin/student_group_create.html'
     model = StudentGroup
     form_class = StudentGroupForm
-    
+
     def form_valid(self, form):
-        receipt = form.save(commit=False)
+        student_group = form.save(commit=False)
         user = self.request.user
-        receipt.org = user.profile.org
-        receipt.institution = user.profile.institution
-        receipt.save()
-        return redirect('institution_admin:student_group_list') 
-    
-    
+        student_group.org = user.profile.org
+        student_group.institution = user.profile.institution
+        student_group.save()
+        return redirect(
+            reverse(
+                'institution_admin:student_group_list',
+                kwargs={'registration_slug': self.kwargs['registration_slug']}
+            )
+        )
+
+
 class StudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
     model = StudentGroup
     form_class = StudentGroupForm
     template_name = 'institution_admin/student_group_update.html'
     slug_url_kwarg = 'student_group_slug'
-    success_url = reverse_lazy('institution_admin:student_group_list')
+
+    def get_success_url(self):
+        return reverse(
+            'institution_admin:student_group_list',
+            kwargs={'registration_slug': self.kwargs['registration_slug']}
+        )
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -214,7 +263,17 @@ class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
     model = StudentGroup
     template_name = 'institution_admin/student_group_confirm_delete.html'
     slug_url_kwarg = 'student_group_slug'
-    success_url = reverse_lazy('institution_admin:student_group_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            'institution_admin:student_group_list',
+            kwargs={'registration_slug': self.kwargs['registration_slug']}
+        )
     
     
 class BusSearchFormView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
@@ -527,25 +586,37 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
         
         if change_type == 'pickup':
             new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
-            existing_trip = Trip.objects.get(registration=registration, record=ticket.pickup_bus_record, schedule=ticket.pickup_schedule)
+            if ticket.pickup_bus_record and ticket.pickup_schedule:
+                try:
+                    existing_trip = Trip.objects.get(registration=registration, record=ticket.pickup_bus_record, schedule=ticket.pickup_schedule)
+                    existing_trip.booking_count -= 1
+                    existing_trip.save()
+                except Trip.DoesNotExist:
+                    pass
             ticket.pickup_bus_record = bus_record
             ticket.pickup_point = pickup_point
             ticket.pickup_schedule = schedule
-            existing_trip.booking_count -= 1
-            existing_trip.save()
             new_trip.booking_count += 1
             new_trip.save()
         
         elif change_type == 'drop':
             new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
-            existing_trip = Trip.objects.get(registration=registration, record=ticket.drop_bus_record, schedule=ticket.drop_schedule)
+            if ticket.drop_bus_record and ticket.drop_schedule:
+                try:
+                    existing_trip = Trip.objects.get(registration=registration, record=ticket.drop_bus_record, schedule=ticket.drop_schedule)
+                    existing_trip.booking_count -= 1
+                    existing_trip.save()
+                except Trip.DoesNotExist:
+                    pass
             ticket.drop_bus_record = bus_record
             ticket.drop_point = drop_point
             ticket.drop_schedule = schedule
-            existing_trip.booking_count -= 1
-            existing_trip.save()
             new_trip.booking_count += 1
             new_trip.save()
+        
+        # Update the ticket type to 'two way' if both pickup and drop buses exist
+        if ticket.pickup_bus_record and ticket.drop_bus_record:
+            ticket.ticket_type = 'two_way'
         
         ticket.save()
         
@@ -554,3 +625,93 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
                     kwargs={'registration_slug': registration.slug}
                 )
             )
+
+
+class BusRequestListView(ListView):
+    model = BusRequest
+    template_name = 'institution_admin/bus_request_list.html'
+    context_object_name = 'bus_requests'
+    
+    def get_queryset(self):
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+
+class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    model = BusRequest
+    template_name = 'institution_admin/bus_request_list.html'
+    context_object_name = 'bus_requests'
+    
+    def get_queryset(self):
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='open')
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+
+class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    model = BusRequest
+    template_name = 'institution_admin/bus_request_list.html'
+    context_object_name = 'bus_requests'
+    
+    def get_queryset(self):
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='closed')
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        return context
+
+class BusRequestDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    model = BusRequest
+    template_name = 'institution_admin/bus_request_confirm_delete.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'bus_request_slug'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.object.registration
+        return context
+    
+    def get_success_url(self):
+        return reverse('central_admin:bus_request_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+
+
+class BusRequestStatusUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
+        bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
+        new_status = 'open' if bus_request.status == 'closed' else 'closed'
+        comment_text = request.POST.get('comment')
+        bus_request.status = new_status
+        bus_request.save()
+        if comment_text:
+            BusRequestComment.objects.create(
+                bus_request=bus_request,
+                comment=comment_text,
+                created_by=request.user
+            )
+        modal_body_html = render_to_string('central_admin/bus_request_modal_body.html', {'bus_request': bus_request})
+        response = HttpResponse(modal_body_html)
+        response['HX-Trigger'] = 'reloadPage'
+        return response
+
+class BusRequestCommentView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
+        bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
+        comment_form = BusRequestCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = BusRequestComment.objects.create(
+                bus_request=bus_request,
+                comment=comment_form.cleaned_data['comment'],
+                created_by=request.user
+            )
+            comment_html = render_to_string('institution_admin/comment.html', {'comment': comment}).strip()
+            return HttpResponse(comment_html)
+        return HttpResponse('Invalid form submission', status=400)

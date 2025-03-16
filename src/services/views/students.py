@@ -189,16 +189,22 @@ class BusRequestFormView(RegistrationOpenCheckMixin, CreateView):
     
     @transaction.atomic
     def form_valid(self, form):
-        bus_request = form.save(commit=False)
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         receipt = get_object_or_404(Receipt, id=self.request.session.get('receipt_id'))
+        
+        # Check if a request already exists for this receipt and registration
+        if BusRequest.objects.filter(receipt=receipt, registration=registration).exists():
+            form.add_error(None, "A bus request already exists for this receipt in the current registration.")
+            return self.form_invalid(form)
+        
+        bus_request = form.save(commit=False)
         bus_request.org = registration.org
         bus_request.registration = registration
         bus_request.receipt = receipt
         bus_request.institution = receipt.institution
         bus_request.student_group = receipt.student_group
         bus_request.save()
-        return HttpResponseRedirect(reverse('students:bus_request_success', kwargs={'registration_code':registration.code}))
+        return HttpResponseRedirect(reverse('students:bus_request_success', kwargs={'registration_code': registration.code}))
     
 
 class BusRequestSuccessView(RegistrationOpenCheckMixin, TemplateView):

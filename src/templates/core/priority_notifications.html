@@ -1,0 +1,38 @@
+{% if priority_notifications %}
+<div class="mb-4">
+    {% for notification in priority_notifications %}
+    <div id="notification-{{ notification.id }}"
+        class="alert alert-{{ notification.type }}" role="alert">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <button class="btn btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#notification-details-{{ notification.id }}" aria-expanded="false"
+                    aria-controls="notification-details-{{ notification.id }}"
+                    onclick="this.querySelector('i').classList.toggle('fa-angle-down'); this.querySelector('i').classList.toggle('fa-angle-up');">
+                    <i class="fa-solid fa-angle-down"></i>
+                </button>
+                {{ notification.action }}
+            </div>
+            {% if notification.file_processing_task and notification.type == 'info' %}
+            <button class="btn btn-sm btn-outline-dark" onclick="document.getElementById('notification-{{ notification.id }}').remove();">
+                Close
+            </button>
+            {% else %}
+            <button hx-get="{% url 'core:mark_notification_as_read' notification.id %}" hx-target="#priority-notifications"
+                hx-swap="innerHTML" class="btn btn-sm btn-outline-dark">
+                Mark as Read
+            </button>
+            {% endif %}
+        </div>
+        <div id="notification-details-{{ notification.id }}" class="collapse mt-2">
+            <hr>
+            <div>
+                {{ notification.description | safe }}
+                <br>
+                <small class="text-muted">{{ notification.timestamp }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
