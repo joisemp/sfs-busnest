@@ -147,7 +147,7 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         receipt_data_file.org = user.profile.org
         receipt_data_file.institution = user.profile.institution
         receipt_data_file.save()
-        process_uploaded_receipt_data_excel.delay(self.request.user, receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
+        process_uploaded_receipt_data_excel.delay(self.request.user.id, receipt_data_file.file.name, user.profile.org.id, user.profile.institution.id, receipt_data_file.registration.id)
         return redirect(reverse('institution_admin:receipt_list'))
     
     
