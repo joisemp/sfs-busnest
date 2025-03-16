@@ -230,6 +230,15 @@ class Trip(models.Model):
         if not self.record or not self.record.bus or self.record.bus.capacity == 0:
             return 0
         return round((self.booking_count * 100) / self.record.bus.capacity, 2)
+    
+    @property
+    def total_available_seats_count(self):
+        if not self.record or not self.record.bus or self.record.bus.capacity == 0:
+            return 0
+        return self.record.bus.capacity - self.booking_count
+    
+    def get_total_available_seats_count(self):
+        return self.total_available_seats_count
 
     def get_total_filled_seats_percentage(self):
         return self.total_filled_seats_percentage
