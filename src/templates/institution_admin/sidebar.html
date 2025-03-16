@@ -2,7 +2,9 @@
     <div class="nav">
         <!-- <a href="{% url 'central_admin:institution_list' %}" class="navlink {% if request.resolver_match.url_name == 'institution_list' %}active{% endif %}"> <i class="fa-solid fa-graduation-cap me-2"></i><span>Institution</span></a> -->
         <a href="{% url 'institution_admin:registration_list' %}" class="navlink {% if request.resolver_match.url_name == 'registration_list' %}active{% endif %}"><i class="fa-solid fa-book-open-reader me-2"></i><span>Registration</span></a>
-        <a href="{% url 'institution_admin:receipt_list' %}" class="navlink {% if request.resolver_match.url_name == 'receipt_list' %}active{% endif %}"><i class="fa-solid fa-receipt me-2"></i>Receipts</span></a>
-        <a href="{% url 'institution_admin:student_group_list' %}" class="navlink {% if request.resolver_match.url_name == 'student_group_list' %}active{% endif %}"><i class="fa-solid fa-user-group me-2"></i>Groups</span></a>
+        <a href="{% url 'institution_admin:ticket_list' registration_slug=request.resolver_match.kwargs.registration_slug %}" class="navlink {% if request.resolver_match.url_name == 'ticket_list' %}active{% endif %}"><i class="fa-solid fa-ticket me-2"></i>Tickets</a>
+        <a href="{% url 'institution_admin:bus_request_list' registration_slug=request.resolver_match.kwargs.registration_slug %}" class="navlink {% if request.resolver_match.url_name == 'bus_request_list' %}active{% endif %}"><i class="fa-solid fa-bus me-2"></i>Bus Requests</a>
+        <a href="{% url 'institution_admin:receipt_list' registration_slug=request.resolver_match.kwargs.registration_slug %}" class="navlink {% if request.resolver_match.url_name == 'receipt_list' %}active{% endif %}"><i class="fa-solid fa-receipt me-2"></i>Receipts</a>
+        <a href="{% url 'institution_admin:student_group_list' registration_slug=request.resolver_match.kwargs.registration_slug %}" class="navlink {% if request.resolver_match.url_name == 'student_group_list' %}active{% endif %}"><i class="fa-solid fa-user-group me-2"></i>Groups</a>
     </div>
 </section>

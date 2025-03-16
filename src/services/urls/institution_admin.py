@@ -22,16 +22,22 @@ urlpatterns = [
      path('change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-bus/update-ticket/', institution_admin.BusSearchResultsView.as_view(), name='bus_search_results'),
      path('change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-bus/<slug:bus_slug>/update-ticket/', institution_admin.UpdateBusInfoView.as_view(), name='update_bus_info'),
      
+     path('registrations/<slug:registration_slug>/bus-requests/', institution_admin.BusRequestListView.as_view(), name='bus_request_list'),
+     path('registrations/<slug:registration_slug>/bus-requests/open/', institution_admin.BusRequestOpenListView.as_view(), name='bus_request_open_list'),
+     path('registrations/<slug:registration_slug>/bus-requests/closed/', institution_admin.BusRequestClosedListView.as_view(), name='bus_request_closed_list'),
+     path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/delete/', institution_admin.BusRequestDeleteView.as_view(), name='bus_request_delete'),
+     path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/status/', institution_admin.BusRequestStatusUpdateView.as_view(), name='bus_request_status_update'),
+     path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/comment/', institution_admin.BusRequestCommentView.as_view(), name='bus_request_comment'),
      
-     path('receipts/', institution_admin.ReceiptListView.as_view(), name='receipt_list'),
-     path('receipts/upload/', institution_admin.ReceiptDataFileUploadView.as_view(), name='receipt_data_file_upload'),
-     path('receipts/add/', institution_admin.ReceiptCreateView.as_view(), name='receipt_create'),
-     path('receipts/<slug:receipt_slug>/delete/', institution_admin.ReceiptDeleteView.as_view(), name='receipt_delete'),
+     path('registrations/<slug:registration_slug>/receipts/', institution_admin.ReceiptListView.as_view(), name='receipt_list'),
+     path('registrations/<slug:registration_slug>/receipts/upload/', institution_admin.ReceiptDataFileUploadView.as_view(), name='receipt_data_file_upload'),
+     path('registrations/<slug:registration_slug>/receipts/add/', institution_admin.ReceiptCreateView.as_view(), name='receipt_create'),
+     path('registrations/<slug:registration_slug>/receipts/<slug:receipt_slug>/delete/', institution_admin.ReceiptDeleteView.as_view(), name='receipt_delete'),
      
-     path('student-groups/', institution_admin.StudentGroupListView.as_view(), name='student_group_list'),
-     path('student-groups/create/', institution_admin.StudentGroupCreateView.as_view(), name='student_group_create'),
-     path('student-groups/<slug:student_group_slug>/update/', institution_admin.StudentGroupUpdateView.as_view(), name='student_group_update'),
-     path('student-groups/<slug:student_group_slug>/delete/', institution_admin.StudentGroupDeleteView.as_view(), name='student_group_delete'),
+     path('registrations/<slug:registration_slug>/student-groups/', institution_admin.StudentGroupListView.as_view(), name='student_group_list'),
+     path('registrations/<slug:registration_slug>/student-groups/create/', institution_admin.StudentGroupCreateView.as_view(), name='student_group_create'),
+     path('registrations/<slug:registration_slug>/student-groups/<slug:student_group_slug>/update/', institution_admin.StudentGroupUpdateView.as_view(), name='student_group_update'),
+     path('registrations/<slug:registration_slug>/student-groups/<slug:student_group_slug>/delete/', institution_admin.StudentGroupDeleteView.as_view(), name='student_group_delete'),
      
      path('export/<slug:registration_slug>/', institution_admin.TicketExportView.as_view(), name='ticket_export'),
 ]

@@ -321,6 +321,9 @@ class Receipt(models.Model):
     updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
+    class Meta:
+        unique_together = ('registration', 'receipt_id', 'student_id')
+
     def save(self, *args, **kwargs):
         if self.student_id:
             self.student_id = self.student_id.upper()

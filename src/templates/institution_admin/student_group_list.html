@@ -12,8 +12,9 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-3">
     <div>
-        <a href="{% url 'institution_admin:student_group_create' %}" class="btn btn-primary"><i
-                class="fa-solid fa-plus me-2"></i>Create group</a>
+        <a href="{% url 'institution_admin:student_group_create' registration_slug=registration.slug %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus me-2"></i>Create group
+        </a>
     </div>
 </div>
 
@@ -26,9 +27,9 @@
                     {{group}}
                 </td>
                 <td class="text-end">
-                    <a href="{% url 'institution_admin:student_group_update' student_group_slug=group.slug %}"
+                    <a href="{% url 'institution_admin:student_group_update' registration_slug=registration.slug student_group_slug=group.slug %}"
                         class="btn btn-sm btn-dark">Edit</a>
-                    <a href="{% url 'institution_admin:student_group_delete' student_group_slug=group.slug %}"
+                    <a href="{% url 'institution_admin:student_group_delete' registration_slug=registration.slug student_group_slug=group.slug %}"
                         class="btn btn-danger btn-sm ms-2">Delete</a>
                 </td>
             </tr>
