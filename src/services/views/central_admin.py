@@ -639,15 +639,20 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Route
     template_name = 'central_admin/route_list.html'
     context_object_name = 'routes'
-    
+    paginate_by = 10  # Add pagination with 10 items per page
+
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        self.search_term = self.request.GET.get('search', '')
         queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration)
+        if self.search_term:
+            queryset = queryset.filter(name__icontains=self.search_term)
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        context["search_term"] = self.search_term
         return context
     
 
