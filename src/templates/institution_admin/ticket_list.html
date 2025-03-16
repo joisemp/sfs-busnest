@@ -16,8 +16,6 @@
     <div>
       <a href="{% url 'institution_admin:registration_list' %}" class="btn btn-dark"><i
           class="fa-solid fa-arrow-left me-2"></i>Back</a>
-      <!-- <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i
-          class="fa-solid fa-file-excel ms-2"></i></button> -->
       <a href="{% url 'institution_admin:ticket_export' registration_slug=registration.slug %}" type="button"
         class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></a>
     </div>

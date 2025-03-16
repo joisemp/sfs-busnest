@@ -1,7 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View, FormView
-from services.models import Institution, Bus, Stop, Route, RouteFile, Registration, Ticket, FAQ, Schedule, BusRequest, BusRecord, BusFile, Trip, ScheduleGroup, BusRequestComment, UserActivity, log_user_activity
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
@@ -18,7 +16,56 @@ from django.template.loader import render_to_string
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from services.forms.central_admin import PeopleCreateForm, PeopleUpdateForm, InstitutionForm, BusForm, RouteForm, StopForm, RegistrationForm, FAQForm, ScheduleForm, BusRecordCreateForm, BusRecordUpdateForm, BusSearchForm, TripCreateForm, ScheduleGroupForm, BusRequestStatusForm, BusRequestCommentForm
+from django.views.generic import (
+    ListView, 
+    CreateView, 
+    UpdateView, 
+    DeleteView, 
+    DetailView, 
+    TemplateView, 
+    View, 
+    FormView
+)
+from services.models import (
+    Institution, 
+    Bus, 
+    Stop, 
+    Route, 
+    RouteFile, 
+    Registration, 
+    StudentGroup, 
+    Ticket, 
+    FAQ, 
+    Schedule, 
+    BusRequest, 
+    BusRecord, 
+    BusFile, 
+    Trip, 
+    ScheduleGroup, 
+    BusRequestComment, 
+    UserActivity, 
+    Notification,
+    log_user_activity
+)
+
+from services.forms.central_admin import (
+    PeopleCreateForm, 
+    PeopleUpdateForm, 
+    InstitutionForm, 
+    BusForm, 
+    RouteForm, 
+    StopForm, 
+    RegistrationForm, 
+    FAQForm, 
+    ScheduleForm, 
+    BusRecordCreateForm, 
+    BusRecordUpdateForm, 
+    BusSearchForm, 
+    TripCreateForm, 
+    ScheduleGroupForm, 
+    BusRequestStatusForm, 
+    BusRequestCommentForm
+)
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
 
@@ -285,7 +332,7 @@ class BusFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateV
         bus_file.org = user.profile.org
         bus_file.user = user
         bus_file.save()
-        process_uploaded_bus_excel.delay(bus_file.file.name, bus_file.org.id)
+        process_uploaded_bus_excel.delay(user.id, bus_file.file.name, bus_file.org.id)
         return redirect(reverse('central_admin:bus_list'))
 
 
@@ -592,15 +639,20 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = Route
     template_name = 'central_admin/route_list.html'
     context_object_name = 'routes'
-    
+    paginate_by = 10  # Add pagination with 10 items per page
+
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        self.search_term = self.request.GET.get('search', '')
         queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration)
+        if self.search_term:
+            queryset = queryset.filter(name__icontains=self.search_term)
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
+        context["search_term"] = self.search_term
         return context
     
 
@@ -615,7 +667,7 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         route_file.org = user.profile.org
         route_file.save()
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        process_uploaded_route_excel.delay(route_file.file.name, user.profile.org.id, registration.id)
+        process_uploaded_route_excel.delay(self.request.user.id, route_file.file.name, user.profile.org.id, registration.id)
         return redirect(reverse('central_admin:route_list', kwargs={'registration_slug': self.kwargs['registration_slug']}))
         
 
@@ -828,6 +880,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         schedule = self.request.GET.get('schedule')
         pickup_buses = self.request.GET.getlist('pickup_bus')
         drop_buses = self.request.GET.getlist('drop_bus')
+        student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
         
         self.search_term = self.request.GET.get('search', '')
@@ -860,6 +913,9 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         if drop_buses and not drop_buses == ['']:
             queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
             filters = True
+        if student_group:
+            queryset = queryset.filter(student_group_id=student_group)
+            filters = True
         
         # Pass the filters flag to context (done in get_context_data)
         self.filters = filters  # Store in the instance for later access
@@ -880,6 +936,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")
+        context['student_groups'] = StudentGroup.objects.filter(org = self.request.user.profile.org).order_by('name')
         context['search_term'] = self.search_term
 
         return context

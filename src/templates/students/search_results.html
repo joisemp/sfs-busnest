@@ -41,7 +41,11 @@
                             <div class="gear">
                                 <div class="info">
                                     <h6>Seat availability</h6>
-                                    <p class="text-muted">Morning :30 Afternoon :20 Evening:5</p>
+                                    <p class="text-muted mb-md-0">
+                                        {% for trip in bus.trips.all %}
+                                            <span>{{trip.schedule.name}} : {{trip.total_available_seats_count}} seats available</span><br>
+                                        {% endfor %}
+                                    </p>
                                 </div>
                                 <div class="button">
                                     <a class="btn btn-primary" href="{% url 'students:book_bus' registration_code=registration.code %}?bus_slug={{bus.slug}}">Book<i class="fa-solid fa-arrow-right ms-2"></i></a>

@@ -7,7 +7,7 @@ from io import BytesIO
 from django.conf import settings
 import logging, time, os
 from django.core.mail import send_mail
-from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus
+from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -59,8 +59,17 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 
 
 @shared_task(name='process_uploaded_route_excel')
-def process_uploaded_route_excel(file_path, org_id, registration_id):
+def process_uploaded_route_excel(user_id, file_path, org_id, registration_id):
     try:
+        user = User.objects.get(id=user_id)
+        notification = Notification.objects.create(
+            user=user,
+            action="Route Excel Processing",
+            description="<p>We have started processing your uploaded Route Excel file.</p>",
+            file_processing_task=True,
+            type="info"
+        )
+
         logger.info(f"Task Started: Processing file: {file_path}")
 
         # Determine file location (local vs cloud storage)
@@ -71,30 +80,43 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
             full_path = file_path  # Cloud storage path
             file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
+        processed_routes = 0
+        skipped_routes = []
+        skipped_stops = []
+
         with transaction.atomic():
             # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
             except Organisation.DoesNotExist:
-                logger.error(f"Organisation with ID {org_id} does not exist.")
+                notification.action = "Organisation Not Found"
+                notification.description = "<p>The organisation linked to the file could not be found. Please check and try again.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
-            
+
             # Fetch Registration
             try:
                 registration_obj = Registration.objects.get(id=registration_id)
                 logger.info(f"Registration fetched successfully: {registration_obj.name} (ID: {registration_id})")
             except Registration.DoesNotExist:
-                logger.error(f"Registration with ID {registration_id} does not exist.")
+                notification.action = "Registration Not Found"
+                notification.description = "<p>The registration linked to the file could not be found. Please check and try again.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
             # Open and process the Excel file
             try:
                 workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
-                logger.info(f"Opened file from storage: {file_path}")
+                logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
-                logger.error(f"Failed to open the Excel file: {e}")
+                notification.action = "File Open Error"
+                notification.description = "<p>We couldn't open the uploaded file. Please ensure it is a valid Excel file and try again.</p>"
+                notification.type = "danger"
+                notification.save()
                 raise
             finally:
                 file.close()  # Ensure the file is closed after processing
@@ -104,8 +126,9 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
             logger.info(f"Extracted headers (route names): {headers}")
 
             for col_index, route_name in enumerate(headers, start=1):
+                column_letter = openpyxl.utils.get_column_letter(col_index)  # Convert column index to Excel-style letter
                 if not route_name:
-                    logger.warning(f"Skipping empty header in column {col_index}.")
+                    skipped_routes.append((column_letter, "No route name provided"))
                     continue
 
                 try:
@@ -121,42 +144,73 @@ def process_uploaded_route_excel(file_path, org_id, registration_id):
                         logger.info(f"Route already exists: {route.name} (ID: {route.id})")
 
                     # Iterate over stops in the column
-                    for row_number, row in enumerate(sheet.iter_rows(min_row=2, min_col=col_index, max_col=col_index), start=2):
+                    for row_number, row in enumerate(sheet.iter_rows(min_row=2, min_col=col_index, max_col=col_index), start=1):
                         stop_name = row[0].value
                         if not stop_name:
-                            logger.warning(f"Row {row_number} in column {col_index} is empty. Skipping.")
+                            skipped_stops.append((row_number, column_letter, "No stop name provided"))
                             continue
 
                         stop_name = stop_name.strip().upper()
 
-                        stop, created = Stop.objects.get_or_create(
+                        Stop.objects.get_or_create(
                             org=org,
                             registration=registration_obj,
                             route=route,
                             name=stop_name
                         )
 
-                        if created:
-                            logger.info(f"Row {row_number}: Stop created - {stop.name} (ID: {stop.id})")
-                        else:
-                            logger.info(f"Row {row_number}: Stop already exists - {stop.name} (ID: {stop.id})")
-                
+                    processed_routes += 1
+
                 except Exception as e:
-                    logger.error(f"Error processing Route {route_name}: {e}")
+                    notification.action = "Processing Error"
+                    notification.description = "<p>An error occurred while processing the file. Please try again later.</p>"
+                    notification.type = "danger"
+                    notification.save()
                     raise
 
-            logger.info("Excel processing completed successfully.")
+            notification.action = "Route Excel Processed"
+            notification.description = (
+                f"<p>The Route Excel file has been processed successfully.</p>"
+                f"<p>Routes added: {processed_routes}.</p>"
+                f"<p>Routes skipped: {len(skipped_routes)}.</p>"
+                f"<p>Stops skipped: {len(skipped_stops)}.</p>"
+            )
+            if skipped_routes:
+                notification.description += "<p>Details of skipped routes:</p><ul>"
+                for column_letter, reason in skipped_routes:
+                    notification.description += f"<li>Column {column_letter}: {reason}</li>"
+                notification.description += "</ul>"
+            if skipped_stops:
+                notification.description += "<p>Details of skipped stops:</p><ul>"
+                for row_number, column_letter, reason in skipped_stops:
+                    notification.description += f"<li>Row {row_number}, Column {column_letter}: {reason}</li>"
+                notification.description += "</ul>"
+            notification.type = "success"
+            notification.save()
 
     except Exception as e:
-        logger.error(f"Error while processing Excel file: {e}")
+        notification.action = "Unexpected Error"
+        notification.description = "<p>An unexpected error occurred while processing the file. Please contact support if the issue persists.</p>"
+        notification.type = "danger"
+        notification.save()
         raise
     finally:
         logger.info("Task Ended: process_uploaded_route_excel")
+        notification.save()
 
 
 @shared_task(name='process_uploaded_receipt_data_excel')
-def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_id):
+def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_id, reg_id):
     try:
+        user = User.objects.get(id=user_id)
+        notification = Notification.objects.create(
+            user=user,
+            action="Receipt Data Excel Processing",
+            description="<p>Processing Receipt Data Excel file has started.</p>",
+            file_processing_task=True,
+            type="info"
+        )
+
         logger.info(f"Task Started: Processing file: {file_path}")
 
         # Determine file location (local vs cloud storage)
@@ -167,13 +221,27 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
             full_path = file_path  # Cloud storage path
             file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
+        processed_count = 0
+        skipped_rows = []
+
+        valid_classes = [
+            'LKG', 'UKG', 'PRE KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+            'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'
+        ]
+        valid_sections = [chr(i).upper() for i in range(65, 91)] + ['teaching', 'non-teaching', 'Teaching', 'Non-Teaching']
+
         with transaction.atomic():
             # Fetch Organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
             except Organisation.DoesNotExist:
-                logger.error(f"Organisation with ID {org_id} does not exist.")
+                error_message = "Organisation does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Organisation with ID {org_id} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
             # Fetch Institution
@@ -181,92 +249,141 @@ def process_uploaded_receipt_data_excel(file_path, org_id, institution_id, reg_i
                 institution = Institution.objects.get(id=institution_id)
                 logger.info(f"Institution fetched successfully: {institution.name} (ID: {institution_id})")
             except Institution.DoesNotExist:
-                logger.error(f"Institution with ID {institution_id} does not exist.")
+                error_message = "Institution does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Institution with ID {institution_id} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
-            # Ensure Registration exists (if required)
+            # Fetch Registration
             try:
                 registration = Registration.objects.get(id=reg_id)
+                logger.info(f"Registration fetched successfully: {registration.name} (ID: {reg_id})")
             except Registration.DoesNotExist:
-                logger.error(f"Registration with ID {reg_id} does not exist.")
+                error_message = "Registration does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Registration with ID {reg_id} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
+                return
 
-            # Process Excel File
+            # Open Excel file
             try:
                 workbook = openpyxl.load_workbook(file)
                 sheet = workbook.active
-
-                logger.info(f"Opened file from storage: {file_path}")
-
-                # Validate headings
-                headings = [cell.value.strip().lower() for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
-                expected_headings = ['receipt id', 'student id', 'class', 'section']
-
-                if headings != expected_headings:
-                    logger.error(f"Invalid headings in Excel file. Expected: {expected_headings}, Found: {headings}")
-                    raise ValueError("Invalid headings in Excel file.")
-
-                # Process rows
-                for row_number, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-                    try:
-                        logger.info(f"Processing Row {row_number}: {row}")
-
-                        # Extract data from row
-                        receipt_id, student_id, class_name, class_section = [
-                            str(cell).strip() if cell is not None else '' for cell in row
-                        ]
-
-                        if not (receipt_id and student_id and class_name and class_section):
-                            logger.error(f"Incomplete data in row {row_number}. Skipping this row.")
-                            continue
-
-                        group_name = f"{class_name} - {class_section}"
-
-                        logger.info(f"Row {row_number} - Receipt ID: {receipt_id}, Student ID: {student_id}, Group: {group_name}")
-
-                        # Create or Get StudentGroup
-                        student_group, created = StudentGroup.objects.get_or_create(
-                            org=org,
-                            institution=institution,
-                            name=group_name.upper(),
-                        )
-
-                        if created:
-                            logger.info(f"Row {row_number}: Student Group created - {student_group.name} (ID: {student_group.id})")
-                        else:
-                            logger.info(f"Row {row_number}: Student Group already exists - {student_group.name} (ID: {student_group.id})")
-
-                        # Create Receipt
-                        receipt, created = Receipt.objects.get_or_create(
-                            org=org,
-                            institution=institution,
-                            registration=registration,
-                            receipt_id=receipt_id,
-                            student_id=student_id.upper(),
-                            student_group=student_group,
-                        )
-
-                        if created:
-                            logger.info(f"Row {row_number}: Receipt created - {receipt.receipt_id} (ID: {receipt.id})")
-                        else:
-                            logger.info(f"Row {row_number}: Receipt already exists - {receipt.receipt_id} (ID: {receipt.id})")
-
-                    except Exception as e:
-                        logger.error(f"Error processing Row {row_number}: {row}. Error: {e}")
-                        raise
-
-                logger.info("Excel processing completed successfully.")
-
+                logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
-                logger.error(f"Error while processing Excel file: {e}")
+                error_message = "Failed to open the Excel file."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Failed to open the Excel file: {e}</p>"
+                notification.type = "danger"
+                notification.save()
                 raise
+            finally:
+                file.close()  # Ensure the file is closed after processing
+
+            # Validate headers
+            headers = [str(cell.value).strip().lower() for cell in sheet[1]]
+            expected_headers = ['receipt id', 'student id', 'class', 'section']
+            if headers != expected_headers:
+                error_message = "Invalid headers in the Receipt Data Excel file."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Expected headers: {expected_headers}</p><p>Found headers: {headers}</p>"
+                notification.type = "danger"
+                notification.save()
+                return
+
+            # Process rows
+            for row_number, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+                receipt_id, student_id, class_name, class_section = map(str, row)
+
+                # Strip and validate class and section
+                class_name = class_name.strip().upper().replace(" ", "")
+                class_section = class_section.strip().upper().replace(" ", "")
+
+                if not receipt_id or not student_id or class_name not in valid_classes or class_section not in valid_sections:
+                    warning_message = f"Row {row_number}: Skipping invalid or incomplete row: {row}"
+                    logger.warning(warning_message)
+                    skipped_rows.append((row_number, row, "Invalid or incomplete data"))
+                    continue
+
+                group_name = f"{class_name} - {class_section}"
+
+                try:
+                    # Create or Get StudentGroup
+                    student_group, created = StudentGroup.objects.get_or_create(
+                        org=org,
+                        institution=institution,
+                        name=group_name.upper(),
+                    )
+
+                    if created:
+                        logger.info(f"Row {row_number}: Student Group created - {student_group.name} (ID: {student_group.id})")
+                    else:
+                        logger.info(f"Row {row_number}: Student Group already exists - {student_group.name} (ID: {student_group.id})")
+
+                    # Ensure Receipt is unique
+                    if Receipt.objects.filter(
+                        org=org,
+                        institution=institution,
+                        registration=registration,
+                        receipt_id=receipt_id.strip(),
+                        student_id=student_id.strip().upper()
+                    ).exists():
+                        warning_message = f"Row {row_number}: Duplicate Receipt found - Receipt ID: {receipt_id}, Student ID: {student_id}"
+                        logger.warning(warning_message)
+                        skipped_rows.append((row_number, row, "Duplicate receipt"))
+                        continue
+
+                    # Create Receipt
+                    Receipt.objects.create(
+                        org=org,
+                        institution=institution,
+                        registration=registration,
+                        receipt_id=receipt_id.strip(),
+                        student_id=student_id.strip().upper(),
+                        student_group=student_group,
+                    )
+                    logger.info(f"Row {row_number}: Receipt created - Receipt ID: {receipt_id}, Student ID: {student_id}")
+                    processed_count += 1
+
+                except Exception as e:
+                    error_message = f"Row {row_number}: Error processing receipt - {e}"
+                    logger.error(error_message)
+                    skipped_rows.append((row_number, row, str(e)))
+                    continue
+
+            success_message = "Receipt Data Excel file processed successfully."
+            logger.info(success_message)
+            notification.action = success_message
+            notification.description = (
+                f"<p>Total processed rows: {processed_count}</p>"
+                f"<p>Total skipped rows: {len(skipped_rows)}</p>"
+            )
+            if skipped_rows:
+                notification.description += "<p>Details of skipped rows:</p><ul>"
+                for row_number, row, reason in skipped_rows:
+                    notification.description += f"<li>Row {row_number}: {row} - {reason}</li>"
+                notification.description += "</ul>"
+            notification.type = "success"
+            notification.save()
 
     except Exception as e:
-        logger.error(f"Error while processing Excel: {e}")
+        error_message = "Error while processing Receipt Data Excel file."
+        logger.error(error_message)
+        notification.action = error_message
+        notification.description = f"<p>{e}</p>"
+        notification.type = "danger"
+        notification.save()
         raise
     finally:
-        file.close()
         logger.info("Task Ended: process_uploaded_receipt_data_excel")
-        
+        notification.save()
         
 
 
@@ -422,12 +539,20 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     return response
 
 
-
 @shared_task(name='process_uploaded_bus_excel')
-def process_uploaded_bus_excel(file_path, org_id):
+def process_uploaded_bus_excel(user_id, file_path, org_id):
     try:
-        logger.info(f"Task Started: Processing file: {file_path}")
+        user = User.objects.get(id=user_id)
+        notification = Notification.objects.create(
+            user=user,
+            action="Bus Excel Processing",
+            description="<p>Processing Bus Excel file has started.</p>",
+            file_processing_task=True,
+            type="info"
+        )
         
+        logger.info(f"Task Started: Processing file: {file_path}")
+
         # Determine file location (local vs cloud storage)
         if settings.DEBUG:
             full_path = os.path.join(settings.MEDIA_ROOT, file_path)  # Local file
@@ -436,21 +561,34 @@ def process_uploaded_bus_excel(file_path, org_id):
             full_path = file_path  # Cloud storage path
             file = default_storage.open(full_path, 'rb')  # Open the file from cloud storage
 
+        processed_count = 0
+        skipped_rows = []
+
         with transaction.atomic():
             # Fetch organisation
             try:
                 org = Organisation.objects.get(id=org_id)
                 logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
             except Organisation.DoesNotExist:
-                logger.error(f"Organisation with ID {org_id} does not exist.")
+                error_message = "Organisation does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Organisation with ID {org_id} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
-            
+
             # Fetch BusFile entry
             try:
                 bus_file = BusFile.objects.get(file=file_path)
                 logger.info(f"BusFile entry fetched: {bus_file.name}")
             except BusFile.DoesNotExist:
-                logger.error(f"BusFile with path {file_path} does not exist.")
+                error_message = "BusFile does not exist."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>BusFile with path {file_path} does not exist.</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
             # Open Excel file correctly
@@ -459,55 +597,98 @@ def process_uploaded_bus_excel(file_path, org_id):
                 sheet = workbook.active
                 logger.info(f"Excel file opened successfully: {file_path}")
             except Exception as e:
-                logger.error(f"Failed to open the Excel file: {e}")
+                error_message = "Failed to open the Excel file."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Failed to open the Excel file: {e}</p>"
+                notification.type = "danger"
+                notification.save()
                 raise
             finally:
                 file.close()  # Close file after processing
 
             # Validate headers
             headers = [cell.value for cell in sheet[1]]
-            if headers != ["Registration", "Driver", "Capacity"]:
-                logger.error("Invalid headers in the Excel file.")
+            expected_headers = ["Registration", "Driver", "Capacity"]
+            if headers != expected_headers:
+                error_message = "Invalid headers in the Bus Excel file."
+                logger.error(error_message)
+                notification.action = error_message
+                notification.description = f"<p>Expected headers: {expected_headers}</p><p>Found headers: {headers}</p>"
+                notification.type = "danger"
+                notification.save()
                 return
 
             # Process rows
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for row_number, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 registration, driver, capacity = row
 
                 if not registration or not driver or not capacity:
-                    logger.warning(f"Skipping incomplete row: {row}")
+                    warning_message = f"Row {row_number}: Skipping incomplete row: {row}"
+                    logger.warning(warning_message)
+                    skipped_rows.append((row_number, row))
                     continue
 
                 try:
                     bus, created = Bus.objects.get_or_create(
                         org=org,
                         registration_no=registration.strip(),
-                        driver=driver.strip(),
-                        capacity=int(capacity)
+                        defaults={
+                            'driver': driver.strip(),
+                            'capacity': int(capacity)
+                        }
                     )
 
                     if created:
-                        logger.info(f"Bus created: {registration}, Driver: {driver}, Capacity: {capacity}")
+                        logger.info(f"Row {row_number}: Bus created - Registration: {registration}, Driver: {driver}, Capacity: {capacity}")
                     else:
                         bus.driver = driver.strip()
                         bus.capacity = int(capacity)
                         bus.save()
-                        logger.info(f"Bus updated: {registration}, Driver: {driver}, Capacity: {capacity}")
+                        logger.info(f"Row {row_number}: Bus updated - Registration: {registration}, Driver: {driver}, Capacity: {capacity}")
+
+                    processed_count += 1
 
                 except Exception as e:
-                    logger.error(f"Error processing bus {registration}: {e}")
+                    error_message = f"Row {row_number}: Error processing bus {registration}: {e}"
+                    logger.error(error_message)
+                    notification.action = error_message
+                    notification.description += f"<p>{error_message}</p>"
+                    notification.type = "danger"
+                    notification.save()
                     raise
 
             bus_file.added = True
             bus_file.save()
-            logger.info("Excel processing completed successfully.")
+
+            success_message = "Bus file processed successfully."
+            logger.info(success_message)
+            notification.action = success_message
+            notification.description = (
+                f"<p>All rows in the Bus Excel file have been processed successfully.</p>"
+                f"<p>Total processed rows: {processed_count}</p>"
+                f"<p>Total skipped rows: {len(skipped_rows)}</p>"
+            )
+            if skipped_rows:
+                notification.description += "<p>Details of skipped rows:</p><ul>"
+                for row_number, row in skipped_rows:
+                    notification.description += f"<li>Row {row_number}: {row}</li>"
+                notification.description += "</ul>"
+            notification.type = "success"
+            notification.save()
 
     except Exception as e:
-        logger.error(f"Error while processing Excel file: {e}")
+        error_message = "Error while processing Excel file."
+        logger.error(error_message)
+        notification.action = error_message
+        notification.description += f"<p>{e}</p>"
+        notification.type = "danger"
+        notification.save()
         raise
     finally:
         logger.info("Task Ended: process_uploaded_bus_excel")
-        
+        notification.save()
+
 
 @shared_task
 def mark_expired_receipts():

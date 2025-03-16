@@ -230,6 +230,15 @@ class Trip(models.Model):
         if not self.record or not self.record.bus or self.record.bus.capacity == 0:
             return 0
         return round((self.booking_count * 100) / self.record.bus.capacity, 2)
+    
+    @property
+    def total_available_seats_count(self):
+        if not self.record or not self.record.bus or self.record.bus.capacity == 0:
+            return 0
+        return self.record.bus.capacity - self.booking_count
+    
+    def get_total_available_seats_count(self):
+        return self.total_available_seats_count
 
     def get_total_filled_seats_percentage(self):
         return self.total_filled_seats_percentage
@@ -311,6 +320,9 @@ class Receipt(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
+
+    class Meta:
+        unique_together = ('registration', 'receipt_id', 'student_id')
 
     def save(self, *args, **kwargs):
         if self.student_id:
@@ -458,3 +470,27 @@ def log_user_activity(user, action, description):
         description=description
     )
 
+
+class Notification(models.Model):
+    STATUS_CHOICES = (
+        ("unread", "Unread"),
+        ("read", "Read"),
+    )
+    TYPE_CHOICES = (
+        ("info", "Info"),
+        ("warning", "Warning"),
+        ("danger", "Error"),
+        ("success", "Success"),
+    )
+    user = models.ForeignKey('core.User', on_delete=models.CASCADE)
+    action = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="unread")
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="info")
+    file_processing_task = models.BooleanField(default=False)
+    priority = models.BooleanField(default=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user.email} - {self.action} - {self.timestamp}'
+    

@@ -25,16 +25,20 @@
                 </a>
                 <div class="profile">
                     <div class="dropdown">
-                        <div class="dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div style="border-radius: 50%; object-fit: cover; overflow: hidden; border: 3px solid #4f46e5;">
-                                <img src="{% static 'images/profile-default-icon.jpg' %}"
-                                height="35px" width="35px" alt="">
+                        <div class="dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div
+                                style="border-radius: 50%; object-fit: cover; overflow: hidden; border: 3px solid #4f46e5;">
+                                <img src="{% static 'images/profile-default-icon.jpg' %}" height="35px" width="35px"
+                                    alt="">
                             </div>
                         </div>
                         <ul class="dropdown-menu">
                             <!-- <li><a class="dropdown-item" href="#">View profile</a></li> -->
-                            <li><a class="dropdown-item" href="{% url 'core:change_password' %}">Change password</a></li>
-                            <li><a class="dropdown-item text-danger" href="{% url 'core:logout' %}"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item" href="{% url 'core:change_password' %}">Change password</a>
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'core:logout' %}"><i
+                                        class="fa-solid fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
                         </ul>
                     </div>
                 </div>
@@ -47,6 +51,12 @@
         <!-- Main Content -->
         <section class="main-content">
             <div class="container">
+                <!-- HTMX element to load priority notifications -->
+                <div hx-get="{% url 'core:priority_notifications' %}" hx-trigger="load" hx-target="#priority-notifications" hx-swap="innerHTML">
+                    <div id="priority-notifications">
+                        <!-- Priority notifications will be loaded here -->
+                    </div>
+                </div>
                 {% block content %}{% endblock %}
             </div>
         </section>
