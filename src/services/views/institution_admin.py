@@ -586,25 +586,37 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
         
         if change_type == 'pickup':
             new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
-            existing_trip = Trip.objects.get(registration=registration, record=ticket.pickup_bus_record, schedule=ticket.pickup_schedule)
+            if ticket.pickup_bus_record and ticket.pickup_schedule:
+                try:
+                    existing_trip = Trip.objects.get(registration=registration, record=ticket.pickup_bus_record, schedule=ticket.pickup_schedule)
+                    existing_trip.booking_count -= 1
+                    existing_trip.save()
+                except Trip.DoesNotExist:
+                    pass
             ticket.pickup_bus_record = bus_record
             ticket.pickup_point = pickup_point
             ticket.pickup_schedule = schedule
-            existing_trip.booking_count -= 1
-            existing_trip.save()
             new_trip.booking_count += 1
             new_trip.save()
         
         elif change_type == 'drop':
             new_trip = Trip.objects.get(registration=registration, record=bus_record, schedule=schedule)
-            existing_trip = Trip.objects.get(registration=registration, record=ticket.drop_bus_record, schedule=ticket.drop_schedule)
+            if ticket.drop_bus_record and ticket.drop_schedule:
+                try:
+                    existing_trip = Trip.objects.get(registration=registration, record=ticket.drop_bus_record, schedule=ticket.drop_schedule)
+                    existing_trip.booking_count -= 1
+                    existing_trip.save()
+                except Trip.DoesNotExist:
+                    pass
             ticket.drop_bus_record = bus_record
             ticket.drop_point = drop_point
             ticket.drop_schedule = schedule
-            existing_trip.booking_count -= 1
-            existing_trip.save()
             new_trip.booking_count += 1
             new_trip.save()
+        
+        # Update the ticket type to 'two way' if both pickup and drop buses exist
+        if ticket.pickup_bus_record and ticket.drop_bus_record:
+            ticket.ticket_type = 'two_way'
         
         ticket.save()
         
