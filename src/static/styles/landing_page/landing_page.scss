@@ -20,11 +20,13 @@
 
     color: white;
     margin-top: 4rem;
+    padding: 4rem 0;
     @media screen and (min-width: 992px) {
         // height: 100vh;
         display: flex;
         align-items: center;
         margin-top: 0;
+        padding: 8rem 0;
     }
 
     .board-info {

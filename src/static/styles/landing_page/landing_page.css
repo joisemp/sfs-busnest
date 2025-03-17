@@ -119,12 +119,14 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   background: linear-gradient(0deg, rgb(103, 96, 242) 0%, rgb(103, 96, 242) 6%, rgb(79, 70, 229) 66%, rgb(79, 70, 229) 90%) !important;
   color: white;
   margin-top: 4rem;
+  padding: 4rem 0;
 }
 @media screen and (min-width: 992px) {
   #hero {
     display: flex;
     align-items: center;
     margin-top: 0;
+    padding: 8rem 0;
   }
 }
 #hero .board-info {
