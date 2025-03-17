@@ -119,12 +119,14 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   background: linear-gradient(0deg, rgb(103, 96, 242) 0%, rgb(103, 96, 242) 6%, rgb(79, 70, 229) 66%, rgb(79, 70, 229) 90%) !important;
   color: white;
   margin-top: 4rem;
+  padding: 4rem 0;
 }
 @media screen and (min-width: 992px) {
   #hero {
     display: flex;
     align-items: center;
     margin-top: 0;
+    padding: 8rem 0;
   }
 }
 #hero .board-info {
@@ -168,7 +170,11 @@ header .navbar .offcanvas-body .nav-item .nav-link {
 }
 
 #question {
-  padding: 3rem 0;
+  padding: 4rem 0 0 0;
+}
+#question h2 {
+  font-size: 2rem;
+  font-weight: 700;
 }
 #question .que {
   padding: 15px;
@@ -181,59 +187,92 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   background-color: rgba(213, 210, 210, 0.1607843137);
 }
 
-#feature .container {
-  padding: 2rem 0 1rem 0;
+#features {
+  background-color: #f8f9fa;
+  padding: 3rem 0;
 }
-#feature .container .nest {
-  display: flex;
-  flex-wrap: wrap;
+#features .container {
+  padding: 2rem auto;
 }
-#feature .container .nest .flex-box {
-  padding: 23px;
-  width: 34rem;
-  flex-wrap: wrap;
-  margin: 5px;
-  background-color: #eef2ff;
-  border-radius: 5px;
+#features .container h2 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #343a40;
 }
-@media screen and (max-width: 577px) {
-  #feature .container .nest .flex-box .content {
-    flex-direction: column-reverse;
+#features .container .features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+@media screen and (max-width: 991px) {
+  #features .container .features-grid {
+    grid-template-columns: 1fr;
   }
 }
-#feature .container .nest .flex-box .content .pic .image1 {
-  width: 143px;
-  border-radius: 5px;
+#features .container .feature-card {
+  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0);
+  border-radius: 10px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+#features .container .feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  background-color: white;
+}
+#features .container .feature-card .feature-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+@media screen and (max-width: 577px) {
+  #features .container .feature-card .feature-content {
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+}
+#features .container .feature-card .feature-content .feature-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 10px;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+@media screen and (max-width: 577px) {
+  #features .container .feature-card .feature-content .feature-image {
+    width: 100%;
+    height: auto;
+  }
 }
 @media screen and (max-width: 523px) {
-  #feature .container .nest .flex-box .content .pic {
+  #features .container .feature-card .feature-content .feature-image {
     display: flex;
-    align-content: center;
     justify-content: center;
   }
 }
-#feature .container .nest .flex-box .content .info {
+#features .container .feature-card .feature-content .feature-info {
   display: flex;
-  align-items: center;
-  padding: 13px;
-}
-@media screen and (max-width: 523px) {
-  #feature .container .nest .flex-box .content .info {
-    text-align: center;
-  }
+  flex-direction: column;
+  justify-content: center;
+  flex-grow: 1;
 }
 
 #footer {
   margin-top: 23px;
   width: 100%;
-  padding: 7px;
-  color: aliceblue;
-  background-color: black;
+  padding: 10px 0;
+  background-color: #000;
+  color: #f1f1f1;
+  text-align: center;
 }
 #footer .box {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 10px;
+  padding: 10px;
 }
 @media screen and (max-width: 534px) {
   #footer .box {
@@ -245,8 +284,15 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   justify-content: center;
 }
 #footer .box .footer-list {
-  color: aliceblue;
+  font-size: 0.9rem;
+}
+#footer .box .footer-list p {
+  margin: 0;
 }
 #footer .box .footer-list a {
   text-decoration: none;
+  color: #f1f1f1;
+}
+#footer .box .footer-list a:hover {
+  color: #ddd;
 }/*# sourceMappingURL=landing_page.css.map */

@@ -6,10 +6,6 @@
 <link rel="stylesheet" href="{% static 'styles/landing_page/landing_page.css' %}">
 {% endblock style %}
 
-{% block title %}
-Hello world
-{% endblock title %}
-
 {% block navbar %}
 {% include 'logged_out_user_navbar.html' %}
 {% endblock navbar %}
@@ -17,137 +13,203 @@ Hello world
 {% block content %}
 
 <section id="hero">
-   <div class="container">
-    <div class="row">
-        <div class="column col-12 col-lg-6">
-            <div class="board-info">
-                <div class="text-wrap">
-                    <h1>Moving minds, delivering dreams</h1>
-                    <p>Transport made simple, experience, amplified</p>
-                    <a href="{% url 'core:register' %}" class="btn btn-secondary">Register now</a>
-                    <a href="{% url 'core:login' %}" class="btn text-light">Login</a>
+    <div class="container">
+        <div class="row">
+            <div class="column col-12 col-lg-6">
+                <div class="board-info">
+                    <div class="text-wrap">
+                        <h1>Moving minds, delivering dreams</h1>
+                        <p>Transport made simple, experience, amplified</p>
+                        <a href="{% url 'core:register' %}" class="btn btn-secondary">Register now</a>
+                        <a href="{% url 'core:login' %}" class="btn text-light">Login</a>
+                    </div>
+                </div>
+            </div>
+            <div class="column col-12 col-lg-6 mb-3">
+                <div class="landing-image">
+                    <img class="land" src="{% static 'images/hero-img.jpg' %}">
                 </div>
             </div>
         </div>
-        <div class="column col-12 col-lg-6 mb-3">
-            <div class="landing-image">
-                <img class="land" src="{% static 'images/landing.png' %}">
-            </div>
-        </div>
     </div>
-   </div>
 </section>
 
 <section id="question">
-  <div class="container">
-    <h2>Frequently asked questions</h2>
-    <!-- accordin -->
-     <div class="que">
-        <div class="accordion accordion-flush" id="accordionFlushExample">
-            <div class="accordion-item">
-              <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-                  Accordion Item #1
-                </button>
-              </h2>
-              <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-                <div class="accordion-body">Placeholder content for this accordion, which is intended to demonstrate the <code>.accordion-flush</code> class. This is the first item's accordion body.</div>
-              </div>
-            </div>
-            <div class="accordion-item">
-              <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
-                  Accordion Item #2
-                </button>
-              </h2>
-              <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-                <div class="accordion-body">Placeholder content for this accordion, which is intended to demonstrate the <code>.accordion-flush</code> class. This is the second item's accordion body. Let's imagine this being filled with some actual content.</div>
-              </div>
-            </div>
-            <div class="accordion-item">
-              <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
-                  Accordion Item #3
-                </button>
-              </h2>
-              <div id="flush-collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-                <div class="accordion-body">Placeholder content for this accordion, which is intended to demonstrate the <code>.accordion-flush</code> class. This is the third item's accordion body. Nothing more exciting happening here in terms of content, but just filling up the space to make it look, at least at first glance, a bit more representative of how this would look in a real-world application.</div>
-              </div>
-            </div>
-        </div>
-     </div>
-  </div>
-</section>
-<section id="feature">
     <div class="container">
-        <h2>Features</h2>
-        <div class="nest">
-            <div class="d-flex flex-box">
-                <div class="content d-flex">
-                    <div class="info">
-                        <div>
-                            <h5>Manage Bus</h5>
-                            <p>Manage all the buses in your organization effectively and efficiently</p>
+        <h2>Frequently asked questions</h2>
+        <!-- accordin -->
+        <div class="que">
+            <div class="accordion accordion-flush" id="accordionFlushExample">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                            What is the purpose of SFSBusNest?
+                        </button>
+                    </h2>
+                    <div id="flush-collapseOne" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body">
+                            The application aims to automate bus route management, student registration, and seat
+                            allocation for multiple educational institutions. It provides centralized control for
+                            admins, real-time seat availability, and seamless communication for students, parents, and
+                            school administrators.
                         </div>
-                    </div>
-                    <div class="pic">
-                        <img class="image1" src="https://i.pinimg.com/736x/f9/3d/8d/f93d8d25180f5784552a3683f9c67cda.jpg" alt="bus">
                     </div>
                 </div>
-            </div>
-            <div class="d-flex flex-box">
-                <div class="content d-flex">
-                    <div class="info">
-                        <div>
-                            <h5>Manage Bus</h5>
-                            <p>Manage all the buses in your organization effectively and efficiently</p>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                            Who are the intended users of this system?
+                        </button>
+                    </h2>
+                    <div id="flush-collapseTwo" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body">
+                            The system is intended for central admins, institutional admins and students/parents.
+                            Central admins manage all buses and routes, while institutional admins manage registrations
+                            and bookings for their specific institutions.
                         </div>
-                    </div>
-                    <div class="pic">
-                        <img class="image1" src="https://i.pinimg.com/736x/f9/3d/8d/f93d8d25180f5784552a3683f9c67cda.jpg" alt="bus">
                     </div>
                 </div>
-            </div>
-            <div class="d-flex flex-box">
-                <div class="content d-flex">
-                    <div class="info">
-                        <div>
-                            <h5>Manage Bus</h5>
-                            <p>Manage all the buses in your organization effectively and efficiently</p>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseSix" aria-expanded="false"
+                            aria-controls="flush-collapseSix">
+                            What are the core features of the system?
+                        </button>
+                    </h2>
+                    <div id="flush-collapseSix" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body">
+                            <ul>
+                                <li>Centralized bus management by central admins.</li>
+                                <li>Automated seat allocation.</li>
+                                <li>Real-time seat availability checking and advance booking.</li>
+                                <li>Dynamic route adjustments.</li>
+                                <li>Special scheduling options.</li>
+                            </ul>
                         </div>
-                    </div>
-                    <div class="pic">
-                        <img class="image1" src="https://i.pinimg.com/736x/f9/3d/8d/f93d8d25180f5784552a3683f9c67cda.jpg" alt="bus">
                     </div>
                 </div>
-            </div>
-            <div class="d-flex flex-box">
-                <div class="content d-flex">
-                    <div class="info">
-                        <div>
-                            <h5>Manage Bus</h5>
-                            <p>Manage all the buses in your organization effectively and efficiently</p>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseSeven" aria-expanded="false"
+                            aria-controls="flush-collapseSeven">
+                            Can students and parents create accounts in the system?
+                        </button>
+                    </h2>
+                    <div id="flush-collapseSeven" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body">
+                            No, account creation is not required. Students and parents can book buses using unique
+                            registration links provided by school admins.
                         </div>
                     </div>
-                    <div class="pic">
-                        <img class="image1" src="https://i.pinimg.com/736x/f9/3d/8d/f93d8d25180f5784552a3683f9c67cda.jpg" alt="bus">
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseFour" aria-expanded="false"
+                            aria-controls="flush-collapseFour">
+                            How does the booking system work?
+                        </button>
+                    </h2>
+                    <div id="flush-collapseFour" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body">
+                            Students or parents select routes, pickup/drop-off points, and timing options based on
+                            available buses. Successful bookings trigger confirmation emails sent to the registered
+                            email address.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseFive" aria-expanded="false"
+                            aria-controls="flush-collapseFive">
+                            What happens if there are no available seats?
+                        </button>
+                    </h2>
+                    <div id="flush-collapseFive" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body">
+                            The system only displays buses with available seats, preventing overbooking. Students can
+                            choose alternative routes or timings if their preferred options are full or request for a bus.
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
-<section id="footer">
+
+<section id="features">
+    <div class="container">
+        <h2>Core Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-content">
+                    <div class="feature-info">
+                        <h5>Centralized Bus Management</h5>
+                        <p>Manage all buses, routes, and driver details across institutions.</p>
+                    </div>
+                    <div class="feature-image">
+                        <img src="https://welpmagazine.com/wp-content/uploads/2020/09/blog_image_centralized-1-1122x589.png" alt="bus">
+                    </div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-content">
+                    <div class="feature-info">
+                        <h5>Automated Booking System</h5>
+                        <p>Real-time seat availability, automatic seat allocation, and instant booking confirmation.</p>
+                    </div>
+                    <div class="feature-image">
+                        <img src="https://static.vecteezy.com/system/resources/previews/000/131/163/non_2x/combine-electronic-booking-vector.jpg" alt="bus">
+                    </div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-content">
+                    <div class="feature-info">
+                        <h5>Dynamic Route Management</h5>
+                        <p>Modify routes for emergencies or special events.</p>
+                    </div>
+                    <div class="feature-image">
+                        <img src="https://cdn.wccftech.com/wp-content/uploads/2017/03/Google-Maps.jpg" alt="bus">
+                    </div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-content">
+                    <div class="feature-info">
+                        <h5>Custom Scheduling</h5>
+                        <p>Create custom schedules for various student groups with flexible timing options.</p>
+                    </div>
+                    <div class="feature-image">
+                        <img src="https://cdn.windowsreport.com/wp-content/uploads/2020/03/Scheduling-886x590.jpg" alt="bus">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<footer id="footer">
     <div class="box">
         <div class="pic">
-            <img src="{% static 'images/logo-light.svg' %}" style="padding: 15px; margin:2px;">
+            <img src="{% static 'images/logo-icon-light.svg' %}" alt="Logo">
         </div>
-        <!-- <div class="footer-list">
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Institution</a>
-            <a href="#">Term & Condition</a>
-        </div> -->
+        <div class="footer-list">
+            <p>&copy; 2025 SFSBusNest. All rights reserved.</p>
+        </div>
     </div>
-</section>
+</footer>
+
 {% endblock content %}
