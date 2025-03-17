@@ -108,28 +108,26 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   padding-bottom: 3rem;
 }
 
-.bg-light {
-  background: rgb(120, 112, 255) !important;
-  background: linear-gradient(0deg, rgb(103, 96, 242) 0%, rgb(103, 96, 242) 6%, rgb(79, 70, 229) 66%, rgb(79, 70, 229) 90%) !important;
-}
 .bg-light .container {
   margin-top: 0;
   padding-top: 0;
   padding-bottom: 0;
 }
-.bg-light #landing-page {
+
+#hero {
+  background: rgb(120, 112, 255) !important;
+  background: linear-gradient(0deg, rgb(103, 96, 242) 0%, rgb(103, 96, 242) 6%, rgb(79, 70, 229) 66%, rgb(79, 70, 229) 90%) !important;
   color: white;
-  margin-top: 6rem;
+  margin-top: 4rem;
 }
 @media screen and (min-width: 992px) {
-  .bg-light #landing-page {
-    height: 100vh;
+  #hero {
     display: flex;
     align-items: center;
     margin-top: 0;
   }
 }
-.bg-light #landing-page .board-info {
+#hero .board-info {
   display: flex;
   justify-content: center;
   height: 100%;
@@ -137,34 +135,118 @@ header .navbar .offcanvas-body .nav-item .nav-link {
   align-items: center;
 }
 @media screen and (max-width: 991px) {
-  .bg-light #landing-page .board-info .text-wrap {
+  #hero .board-info .text-wrap {
     max-width: 570px;
   }
 }
-.bg-light #landing-page .board-info h1 {
+#hero .board-info h1 {
   font-weight: 700;
   font-size: 56px;
 }
-.bg-light #landing-page .board-info p {
+#hero .board-info p {
   margin-top: 0;
   margin-bottom: 2rem;
   font-size: 24px;
 }
-.bg-light #landing-page .board-info .btn-secondary {
+#hero .board-info .btn-secondary {
   font-weight: 700;
 }
 @media screen and (max-width: 991px) {
-  .bg-light .landing-image {
+  #hero .landing-image {
     margin-top: 2rem;
     display: flex;
     justify-content: center;
   }
 }
-.bg-light .landing-image .land {
+#hero .landing-image .land {
   width: 100%;
   max-width: 570px;
   height: 520px;
   border-radius: 10px;
   -o-object-fit: cover;
      object-fit: cover;
+}
+
+#question {
+  padding: 3rem 0;
+}
+#question .que {
+  padding: 15px;
+  background-color: transparent;
+}
+#question .que button {
+  background-color: rgba(213, 210, 210, 0.1607843137);
+}
+#question .que .accordion-body {
+  background-color: rgba(213, 210, 210, 0.1607843137);
+}
+
+#feature .container {
+  padding: 2rem 0 1rem 0;
+}
+#feature .container .nest {
+  display: flex;
+  flex-wrap: wrap;
+}
+#feature .container .nest .flex-box {
+  padding: 23px;
+  width: 34rem;
+  flex-wrap: wrap;
+  margin: 5px;
+  background-color: #eef2ff;
+  border-radius: 5px;
+}
+@media screen and (max-width: 577px) {
+  #feature .container .nest .flex-box .content {
+    flex-direction: column-reverse;
+  }
+}
+#feature .container .nest .flex-box .content .pic .image1 {
+  width: 143px;
+  border-radius: 5px;
+}
+@media screen and (max-width: 523px) {
+  #feature .container .nest .flex-box .content .pic {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+  }
+}
+#feature .container .nest .flex-box .content .info {
+  display: flex;
+  align-items: center;
+  padding: 13px;
+}
+@media screen and (max-width: 523px) {
+  #feature .container .nest .flex-box .content .info {
+    text-align: center;
+  }
+}
+
+#footer {
+  margin-top: 23px;
+  width: 100%;
+  padding: 7px;
+  color: aliceblue;
+  background-color: black;
+}
+#footer .box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+@media screen and (max-width: 534px) {
+  #footer .box {
+    flex-direction: column-reverse;
+  }
+}
+#footer .box .pic {
+  display: flex;
+  justify-content: center;
+}
+#footer .box .footer-list {
+  color: aliceblue;
+}
+#footer .box .footer-list a {
+  text-decoration: none;
 }/*# sourceMappingURL=landing_page.css.map */
