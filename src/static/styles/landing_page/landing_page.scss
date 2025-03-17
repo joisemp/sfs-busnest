@@ -1,13 +1,13 @@
 @import "../logged_out_user_navbar";
 
 .bg-light {
- 
     .container {
         margin-top: 0;
         padding-top: 0;
         padding-bottom: 0;
     }
 }
+
 #hero {
     background: rgb(120, 112, 255) !important;
     background: linear-gradient(
@@ -69,82 +69,123 @@
     }
 }
 
-#question{
-    padding:3rem 0;
-    .que{
-        padding:15px;
+#question {
+    padding: 4rem 0 0 0;
+
+    h2 {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .que {
+        padding: 15px;
         background-color: transparent;
-        button{
+        button {
             background-color: #d5d2d229;
         }
-        .accordion-body{
+        .accordion-body {
             background-color: #d5d2d229;
         }
     }
 }
-#feature{
-    .container{
-        padding:2rem 0 1rem 0; 
-        .nest{
-            display: flex;
-            flex-wrap: wrap;
-        .flex-box{
-            padding:23px;
-            width: 34rem;
-            flex-wrap: wrap;
-            margin:5px;
-            background-color: $indigo-50;
-            border-radius: 5px;
-    
-            .content{
-                @media  screen and (max-width:577px) {
+
+#features {
+    background-color: #f8f9fa;
+    padding: 3rem 0;
+
+    .container {
+        padding: 2rem 0;
+
+        h2 {
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #343a40;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+
+            @media screen and (max-width: 991px) {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .feature-card {
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 10px;
+            transition:
+                transform 0.3s ease,
+                box-shadow 0.3s ease;
+
+            &:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+            }
+
+            .feature-content {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1.5rem;
+
+                @media screen and (max-width: 577px) {
                     flex-direction: column-reverse;
+                    text-align: center;
                 }
-                .pic{
-                    .image1{
-                        width:143px;
-                        border-radius: 5px;
+
+                .feature-image {
+                    img {
+                        width: 150px;
+                        height: 150px;
+                        border-radius: 10px;
+                        object-fit: cover;
                     }
-                    @media  screen and (max-width:523px) {
+
+                    @media screen and (max-width: 577px) {
+                        width: 100%;
+                        height: auto;
+                    }
+
+                    @media screen and (max-width: 523px) {
                         display: flex;
-                       align-content: center;
-                       justify-content: center;
+                        justify-content: center;
                     }
                 }
-               
-                .info{
+
+                .feature-info {
                     display: flex;
-                    align-items: center;
-                    padding:13px;
-                    @media  screen and (max-width:523px) {
-                      text-align: center;
-                    }
+                    flex-direction: column;
+                    justify-content: center;
+                    flex-grow: 1;
                 }
-            }
             }
         }
     }
 }
-#footer{
-    margin-top:23px;
-    width:100%;
+
+#footer {
+    margin-top: 23px;
+    width: 100%;
     padding: 7px;
-    color:aliceblue;
+    color: aliceblue;
     background-color: black;
-    .box{
+    .box {
         display: flex;
         justify-content: center;
         align-items: center;
-        @media  screen and (max-width:534px) {
+        @media screen and (max-width: 534px) {
             flex-direction: column-reverse;
         }
-        .pic{
-            display:flex;
+        .pic {
+            display: flex;
             justify-content: center;
         }
-        .footer-list{
-            color:aliceblue;
-            a{
+        .footer-list {
+            color: aliceblue;
+            a {
                 text-decoration: none;
             }
         }
