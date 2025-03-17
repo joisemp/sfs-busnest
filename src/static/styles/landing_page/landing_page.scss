@@ -93,7 +93,7 @@
     padding: 3rem 0;
 
     .container {
-        padding: 2rem 0;
+        padding: 2rem auto;
 
         h2 {
             margin-bottom: 2rem;
@@ -114,15 +114,16 @@
 
         .feature-card {
             padding: 2rem;
-            background-color: #ffffff;
+            background-color: #ffffff00;
             border-radius: 10px;
             transition:
                 transform 0.3s ease,
-                box-shadow 0.3s ease;
+                box-shadow 0.3s ease, background-color 0.3s ease;
 
             &:hover {
                 transform: translateY(-5px);
                 box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+                background-color: #ffff;
             }
 
             .feature-content {
@@ -169,25 +170,43 @@
 #footer {
     margin-top: 23px;
     width: 100%;
-    padding: 7px;
-    color: aliceblue;
-    background-color: black;
+    padding: 10px 0;
+    background-color: #000;
+    color: #f1f1f1;
+    text-align: center;
+
     .box {
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 10px;
+        padding: 10px;
+
         @media screen and (max-width: 534px) {
             flex-direction: column-reverse;
         }
+
         .pic {
             display: flex;
             justify-content: center;
         }
+
         .footer-list {
-            color: aliceblue;
+            font-size: 0.9rem;
+
+            p {
+                margin: 0;
+            }
+
             a {
                 text-decoration: none;
+                color: #f1f1f1;
+
+                &:hover {
+                    color: #ddd;
+                }
             }
         }
     }
 }
+

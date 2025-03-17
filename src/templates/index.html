@@ -6,10 +6,6 @@
 <link rel="stylesheet" href="{% static 'styles/landing_page/landing_page.css' %}">
 {% endblock style %}
 
-{% block title %}
-Hello world
-{% endblock title %}
-
 {% block navbar %}
 {% include 'logged_out_user_navbar.html' %}
 {% endblock navbar %}
@@ -31,7 +27,7 @@ Hello world
             </div>
             <div class="column col-12 col-lg-6 mb-3">
                 <div class="landing-image">
-                    <img class="land" src="{% static 'images/landing.png' %}">
+                    <img class="land" src="{% static 'images/hero-img.jpg' %}">
                 </div>
             </div>
         </div>
@@ -46,7 +42,7 @@ Hello world
             <div class="accordion accordion-flush" id="accordionFlushExample">
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
                             data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
                             What is the purpose of SFSBusNest?
                         </button>
@@ -63,7 +59,7 @@ Hello world
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
                             data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
                             Who are the intended users of this system?
                         </button>
@@ -79,7 +75,7 @@ Hello world
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
                             data-bs-target="#flush-collapseSix" aria-expanded="false"
                             aria-controls="flush-collapseSix">
                             What are the core features of the system?
@@ -100,7 +96,7 @@ Hello world
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
                             data-bs-target="#flush-collapseSeven" aria-expanded="false"
                             aria-controls="flush-collapseSeven">
                             Can students and parents create accounts in the system?
@@ -116,7 +112,7 @@ Hello world
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
                             data-bs-target="#flush-collapseFour" aria-expanded="false"
                             aria-controls="flush-collapseFour">
                             How does the booking system work?
@@ -133,7 +129,7 @@ Hello world
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
                             data-bs-target="#flush-collapseFive" aria-expanded="false"
                             aria-controls="flush-collapseFive">
                             What happens if there are no available seats?
@@ -205,17 +201,15 @@ Hello world
 </section>
 
 
-<section id="footer">
+<footer id="footer">
     <div class="box">
         <div class="pic">
-            <img src="{% static 'images/logo-light.svg' %}" style="padding: 15px; margin:2px;">
+            <img src="{% static 'images/logo-icon-light.svg' %}" alt="Logo">
         </div>
-        <!-- <div class="footer-list">
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Institution</a>
-            <a href="#">Term & Condition</a>
-        </div> -->
+        <div class="footer-list">
+            <p>&copy; 2025 SFSBusNest. All rights reserved.</p>
+        </div>
     </div>
-</section>
+</footer>
+
 {% endblock content %}
