@@ -404,7 +404,7 @@ class BusBookingSuccessView(TemplateView):
     
 
 class PickupStopSelectFormView(RegistrationOpenCheckMixin, FormView):
-    template_name = 'students/search_form.html'
+    template_name = 'students/pickup_stop_search_form.html'
     form_class = StopSelectForm
 
     def get_registration(self):
@@ -477,7 +477,7 @@ class PickupBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
     
     
 class DropStopSelectFormView(RegistrationOpenCheckMixin, FormView):
-    template_name = 'students/search_form.html'
+    template_name = 'students/drop_stop_search_form.html'
     form_class = StopSelectForm
 
     def get_registration(self):
