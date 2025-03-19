@@ -616,7 +616,13 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
         cell.font = Font(bold=True)
 
     for ticket in queryset:
-        std_class, section = str(ticket.student_group.name).split('-')
+        # Safely split student group name into class and section
+        student_group_name = str(ticket.student_group.name)
+        if '-' in student_group_name:
+            std_class, section = student_group_name.split('-', 1)  # Split into at most 2 parts
+        else:
+            std_class, section = student_group_name, ''  # Default section to an empty string if no hyphen
+
         ws.append([
             ticket.ticket_id,
             ticket.student_name.upper(),
