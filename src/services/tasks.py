@@ -1,4 +1,5 @@
 from celery import shared_task
+from click import File
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 import openpyxl
@@ -8,7 +9,8 @@ from django.conf import settings
 import logging, time, os
 from django.core.mail import send_mail
 from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification
-from django.db import transaction
+from django.db import transaction, models
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
@@ -16,6 +18,9 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from django.utils.text import slugify
+from uuid import uuid4
+from django.core.files.base import ContentFile
 
 User = get_user_model()
 
@@ -386,159 +391,6 @@ def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_
         notification.save()
         
 
-
-def send_export_email(user, exported_file):
-    download_url = reverse('central_admin:exported_file_download', kwargs={'file_id': exported_file.id})
-    email_subject = 'Your Ticket Export is Ready'
-    email_message = f"Hello {user.profile.first_name} {user.profile.last_name},\n\nYour ticket export is ready. You can download the file using the following link:\n{settings.SITE_URL}{download_url}\n\nBest regards,\nYour Team"
-    
-    send_mail(
-        email_subject,
-        email_message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email]
-    )
-
-
-# @shared_task(name='export_tickets_to_excel')
-# def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=None):
-#     user = User.objects.get(id=user_id)
-#     registration = get_object_or_404(Registration, slug=registration_slug)
-    
-#     # Base queryset filtered by registration and institution
-#     queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
-    
-    
-#     if filters:
-#         if filters.get('institution'):
-#             queryset = queryset.filter(institution_id=filters['institution'])
-#         if filters.get('pickup_points'):
-#             queryset = queryset.filter(pickup_point_id__in=filters['pickup_points'])
-#         if filters.get('drop_points'):
-#             queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
-#         if filters.get('schedule'):
-#             queryset = queryset.filter(schedule_id=filters['schedule'])
-#         if filters.get('pickup_buses'):
-#             queryset = queryset.filter(pickup_bus_record_id__in=filters['pickup_buses'])
-#         if filters.get('drop_buses'):
-#             queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
-#         if filters.get('student_group'):
-#             queryset = queryset.filter(student_group_id__in=filters['student_group'])
-
-#     # Creating Excel file
-#     wb = openpyxl.Workbook()
-#     ws = wb.active
-#     ws.title = "Tickets"
-
-#     # Set headers
-#     headers = ['Ticket ID', 'Student Name', 'Class', 'Section', 'Student Email', 'Contact No', 'Alternative No', 'Pickup Point', 'Drop Point', 'Pickup Bus', 'Drop Bus', 'Schedule', 'Status', 'Created At']
-#     ws.append(headers)
-#     for cell in ws[1]:
-#         cell.font = Font(bold=True)
-    
-#     # Add ticket data
-#     for ticket in queryset:
-#         std_class, section = str(ticket.student_group.name).split('-')
-#         ws.append([
-#             ticket.ticket_id,
-#             ticket.student_name,
-#             std_class.strip(),
-#             section.strip(),
-#             ticket.student_email,
-#             ticket.contact_no,
-#             ticket.alternative_contact_no,
-#             ticket.pickup_point.name if ticket.pickup_point else '',
-#             ticket.drop_point.name if ticket.drop_point else '',
-#             ticket.pickup_bus_record.label if ticket.pickup_bus_record else '',
-#             ticket.drop_bus_record.label if ticket.drop_bus_record else '',
-#             ticket.schedule.name if ticket.schedule else '',
-#             'Confirmed' if ticket.status else 'Pending',
-#             ticket.created_at.strftime('%Y-%m-%d %H:%M:%S')
-#         ])
-    
-#     # Save to BytesIO and create the exported file in one step
-#     file_stream = BytesIO()
-#     wb.save(file_stream)
-#     file_stream.seek(0)
-
-#     # Directly create and save the ExportedFile instance
-#     exported_file = ExportedFile.objects.create(user=user, file=File(file_stream, name=f"{registration_slug}_export.xlsx"))
-
-#     # Now that the file is saved, we can send the email
-#     send_export_email(user, exported_file)
-    
-#     return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} {user.email}"
-
-
-def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=None):
-    user = get_object_or_404(User, id=user_id)
-    registration = get_object_or_404(Registration, slug=registration_slug)
-    
-    queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
-    
-    if filters:
-        if filters.get('institution'):
-            queryset = queryset.filter(institution_id=filters['institution'])
-        if filters.get('pickup_points'):
-            queryset = queryset.filter(pickup_point_id__in=filters['pickup_points'])
-        if filters.get('drop_points'):
-            queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
-        if filters.get('schedule'):
-            queryset = queryset.filter(pickup_schedule_id=filters['schedule']) | queryset.filter(drop_schedule_id=filters['schedule'])
-        if filters.get('pickup_buses'):
-            queryset = queryset.filter(pickup_bus_record_id__in=filters['pickup_buses'])
-        if filters.get('drop_buses'):
-            queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
-        if filters.get('student_group'):
-            queryset = queryset.filter(student_group_id__in=filters['student_group'])
-    
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Tickets"
-    
-    headers = ['Ticket ID', 'Student ID', 'Student Name', 'Class', 'Section', 'Contact Email', 'Contact No', 'Alternative No', 
-               'Pickup Point', 'Drop Point', 'Pickup Bus', 'Drop Bus', 'Pickup Schedule', 'Drop Schedule', 'Ticket Type', 'Status', 'Created At']
-    ws.append(headers)
-    
-    for cell in ws[1]:
-        cell.font = Font(bold=True)
-    
-    for ticket in queryset:
-        try:
-            std_class, section = ticket.student_group.name.split('-')
-        except ValueError:
-            std_class, section = ticket.student_group.name, ''
-        
-        ws.append([
-            ticket.ticket_id,
-            ticket.student_id,
-            ticket.student_name,
-            std_class.strip(),
-            section.strip(),
-            ticket.student_email,
-            ticket.contact_no,
-            ticket.alternative_contact_no,
-            ticket.pickup_point.name if ticket.pickup_point else '----',
-            ticket.drop_point.name if ticket.drop_point else '----',
-            ticket.pickup_bus_record.label if ticket.pickup_bus_record else '----',
-            ticket.drop_bus_record.label if ticket.drop_bus_record else '----',
-            ticket.pickup_schedule.name if ticket.pickup_schedule else '----',
-            ticket.drop_schedule.name if ticket.drop_schedule else '----',
-            ticket.ticket_type,
-            'Confirmed' if ticket.status else 'Pending',
-            timezone.localtime(ticket.created_at).strftime('%Y-%m-%d %H:%M:%S')
-        ])
-    
-    file_stream = BytesIO()
-    wb.save(file_stream)
-    file_stream.seek(0)
-    
-    response = HttpResponse(file_stream.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="{registration_slug}_export.xlsx"'
-    
-    return response
-
-
 @shared_task(name='process_uploaded_bus_excel')
 def process_uploaded_bus_excel(user_id, file_path, org_id):
     try:
@@ -700,4 +552,101 @@ def mark_expired_receipts():
     log_message = f"Marked {updated_count} receipts as expired."
     logger.info(log_message)
     return log_message
+
+
+def send_export_email(user, exported_file):
+    download_url = reverse('central_admin:exported_file_download', kwargs={'slug': exported_file.slug})
+    email_subject = 'Your Ticket Export is Ready'
+    email_message = (
+        f"Hello {user.profile.first_name} {user.profile.last_name},\n\n"
+        f"Your ticket export is ready. You can download the file using the following link:\n"
+        f"{settings.SITE_URL}{download_url}\n\n"
+        f"Best regards,\nYour Team"
+    )
+    send_mail(
+        email_subject,
+        email_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email]
+    )
+
+@shared_task(name='export_tickets_to_excel')
+def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=None):
+    user = User.objects.get(id=user_id)
+    registration = get_object_or_404(Registration, slug=registration_slug)
+
+    queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
+
+    if search_term:
+        queryset = queryset.filter(
+            Q(student_name__icontains=search_term) |
+            Q(student_email__icontains=search_term) |
+            Q(student_id__icontains=search_term) |
+            Q(contact_no__icontains=search_term) |
+            Q(alternative_contact_no__icontains=search_term)
+        )
+
+    if filters:
+        if filters.get('institution'):
+            queryset = queryset.filter(institution_id=filters['institution'])
+        if filters.get('pickup_points'):
+            queryset = queryset.filter(pickup_point_id__in=filters['pickup_points'])
+        if filters.get('drop_points'):
+            queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
+        if filters.get('schedule'):
+            queryset = queryset.filter(schedule_id=filters['schedule'])
+        if filters.get('pickup_buses'):
+            queryset = queryset.filter(pickup_bus_record_id__in=filters['pickup_buses'])
+        if filters.get('drop_buses'):
+            queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
+        if filters.get('student_group'):
+            queryset = queryset.filter(student_group_id=filters['student_group'])
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tickets"
+
+    headers = [
+        'TICKET ID', 'STUDENT NAME', 'CLASS', 'SECTION', 'STUDENT EMAIL', 'CONTACT NO', 
+        'ALTERNATIVE NO', 'PICKUP POINT', 'DROP POINT', 'PICKUP BUS', 'DROP BUS', 
+        'PICKUP SCHEDULE', 'DROP SCHEDULE', 'INSTITUTION', 'STATUS', 'CREATED AT'
+    ]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    for ticket in queryset:
+        std_class, section = str(ticket.student_group.name).split('-')
+        ws.append([
+            ticket.ticket_id,
+            ticket.student_name.upper(),
+            std_class.strip().upper(),
+            section.strip().upper(),
+            ticket.student_email.upper(),
+            ticket.contact_no.upper(),
+            ticket.alternative_contact_no.upper(),
+            (ticket.pickup_point.name.upper() if ticket.pickup_point else '-----'),
+            (ticket.drop_point.name.upper() if ticket.drop_point else '-----'),
+            (ticket.pickup_bus_record.label.upper() if ticket.pickup_bus_record else '-----'),
+            (ticket.drop_bus_record.label.upper() if ticket.drop_bus_record else '-----'),
+            (ticket.pickup_schedule.name.upper() if ticket.pickup_schedule else '-----'),
+            (ticket.drop_schedule.name.upper() if ticket.drop_schedule else '-----'),
+            (ticket.institution.name.upper() if ticket.institution else '-----'),
+            'CONFIRMED' if ticket.status else 'PENDING',
+            ticket.created_at.strftime('%Y-%m-%d %H:%M:%S').upper()
+        ])
+
+    file_stream = BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+
+    unique_slug = slugify(f"{registration_slug}-{uuid4()}")
+    exported_file = ExportedFile.objects.create(
+        user=user,
+        file=ContentFile(file_stream.read(), f"{registration_slug}_export.xlsx"),
+        slug=unique_slug
+    )
+
+    send_export_email(user, exported_file)
+    return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
 
