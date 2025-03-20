@@ -6,8 +6,8 @@ from services.models import ExportedFile
 
 app_name = 'central_admin'
 
-def exported_file_download(request, file_id):
-    exported_file = get_object_or_404(ExportedFile, id=file_id)
+def exported_file_download(request, slug):
+    exported_file = get_object_or_404(ExportedFile, slug=slug)
     return FileResponse(exported_file.file, as_attachment=True, filename='ticket_export.xlsx')
 
 urlpatterns = [
@@ -50,6 +50,7 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),
      
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
+     path('registrations/<slug:registration_slug>/tickets/export/', central_admin.TicketExportView.as_view(), name='ticket_export'),
      
      path('registrations/<slug:registration_slug>/schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
@@ -79,7 +80,6 @@ urlpatterns = [
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
      
-     path('export/<slug:registration_slug>/', central_admin.TicketExportView.as_view(), name='ticket_export'),
-     path('exported-file/<int:file_id>/', exported_file_download, name='exported_file_download'),
+     path('exported-file/<slug:slug>/', exported_file_download, name='exported_file_download'),
 
 ]

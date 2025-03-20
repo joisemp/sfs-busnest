@@ -27,10 +27,7 @@
   <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
     {% if not search_term %}
     <div>
-      <!-- <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i
-          class="fa-solid fa-file-excel ms-2"></i></button> -->
-      <a href="{% url 'central_admin:ticket_export' registration_slug=registration.slug %}" type="button"
-        class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></a>
+      <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></button>
     </div>
     <div>
       {% if filters %}
@@ -464,21 +461,8 @@
 {% block scripts %}
 <script>
   function exportData() {
-    // Get the current URL
-    let currentUrl = window.location.href;
+    const fetchUrl = "{% url 'central_admin:ticket_export' registration_slug=registration.slug %}";
 
-    // Get the URL's query parameters
-    let urlParams = new URLSearchParams(window.location.search);
-
-    // Extract the registration_slug from the Django template context (already passed in the URL tag)
-    let fetchUrl = "{% url 'central_admin:ticket_export' registration_slug=registration.slug %}";
-
-    // Check if there are any query parameters and append them to the fetch URL
-    if (urlParams.toString()) {
-      fetchUrl += '?' + urlParams.toString();  // Append query parameters if present
-    }
-
-    // Perform the fetch request
     fetch(fetchUrl, {
       method: 'POST',
       headers: {
@@ -493,6 +477,5 @@
         console.error('Error exporting data:', error);
       });
   }
-
 </script>
 {% endblock scripts %}
