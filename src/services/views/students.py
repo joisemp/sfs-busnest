@@ -18,8 +18,10 @@ class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
             receipt_id = form.cleaned_data['receipt_id']
             student_id = form.cleaned_data['student_id']
             
+            registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+            
             # Validate receipt
-            receipt = Receipt.objects.get(receipt_id=receipt_id, student_id=student_id)
+            receipt = Receipt.objects.get(registration=registration, receipt_id=receipt_id, student_id=student_id)
 
             # Store details in the session
             self.request.session['receipt_id'] = receipt.pk
@@ -89,7 +91,8 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
     template_name = 'students/select_schedule_group.html'
 
     def get(self, request, registration_code):
-        schedule_groups = ScheduleGroup.objects.all()
+        registration = get_object_or_404(Registration, code=registration_code)
+        schedule_groups = ScheduleGroup.objects.filter(registration=registration)
         return render(request, self.template_name, {'schedule_groups': schedule_groups})
 
     def post(self, request, registration_code):
@@ -98,7 +101,9 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
         drop = request.POST.get(f"drop_{selected_id}")  # Checkbox value
 
         if not selected_id:
-            schedule_groups = ScheduleGroup.objects.all()
+            registration = get_object_or_404(Registration, code=registration_code)
+            
+            schedule_groups = ScheduleGroup.objects.filter(registration=registration)
             return render(
                 request,
                 self.template_name,
