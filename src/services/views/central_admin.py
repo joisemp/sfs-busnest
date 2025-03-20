@@ -1076,7 +1076,8 @@ class BusRequestListView(ListView):
     context_object_name = 'bus_requests'
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration)
         return queryset
     
     def get_context_data(self, **kwargs):
