@@ -230,7 +230,7 @@ def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_
         skipped_rows = []
 
         valid_classes = [
-            'LKG', 'UKG', 'PRE KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+            'LKG', 'UKG', 'PRE-KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
             'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'
         ]
         valid_sections = [chr(i).upper() for i in range(65, 91)] + ['teaching', 'non-teaching', 'Teaching', 'Non-Teaching']

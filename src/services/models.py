@@ -7,6 +7,8 @@ from django.core.validators import RegexValidator
 from config.validators import validate_excel_file
 from config.utils import generate_unique_slug, generate_unique_code
 from django.conf import settings
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 class Organisation(models.Model):
     name = models.CharField(max_length=200, db_index=True)
@@ -504,3 +506,20 @@ class Notification(models.Model):
 
     def __str__(self):
         return f'{self.user.email} - {self.action} - {self.timestamp}'
+
+@receiver(post_delete, sender=Ticket)
+def update_trip_booking_count_on_ticket_delete(sender, instance, **kwargs):
+    """
+    Signal to update the booking count of trips associated with a ticket when the ticket is deleted.
+    """
+    if instance.pickup_bus_record:
+        trip = instance.pickup_bus_record.trips.filter(schedule=instance.pickup_schedule).first()
+        if trip:
+            trip.booking_count = max(0, trip.booking_count - 1)
+            trip.save()
+
+    if instance.drop_bus_record:
+        trip = instance.drop_bus_record.trips.filter(schedule=instance.drop_schedule).first()
+        if trip:
+            trip.booking_count = max(0, trip.booking_count - 1)
+            trip.save()

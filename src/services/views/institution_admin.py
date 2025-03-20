@@ -494,7 +494,8 @@ class SelectScheduleGroupView(View):
     template_name = 'institution_admin/select_schedule_group.html'
 
     def get(self, request, registration_code, ticket_id):
-        schedules = Schedule.objects.all()
+        registration = get_object_or_404(Registration, code=registration_code)
+        schedules = Schedule.objects.filter(org=registration.org, registration=registration)
         query_string = self.request.GET.get('type', '')
         type = query_string if query_string else 'pickup and drop'
         return render(request, self.template_name, {'schedules': schedules, 'type': type})
@@ -503,7 +504,8 @@ class SelectScheduleGroupView(View):
         selected_id = request.POST.get("schedule_group")
 
         if not selected_id:
-            schedules = Schedule.objects.all()
+            registration = get_object_or_404(Registration, code=registration_code)
+            schedules = Schedule.objects.filter(org=registration.org, registration=registration)
             query_string = self.request.GET.get('type', '')
             type = query_string if query_string else 'pickup and drop'
             return render(
