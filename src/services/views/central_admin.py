@@ -522,6 +522,13 @@ class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
     template_name = 'central_admin/trip_create.html'
     form_class = TripCreateForm
     
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        form.fields['schedule'].queryset = Schedule.objects.filter(registration=registration)
+        form.fields['route'].queryset = Route.objects.filter(registration=registration)
+        return form
+    
     @transaction.atomic
     def form_valid(self, form):
         try:
