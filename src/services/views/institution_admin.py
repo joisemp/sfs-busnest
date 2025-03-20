@@ -633,7 +633,9 @@ class BusRequestListView(ListView):
     context_object_name = 'bus_requests'
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
+        registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
+        institution = self.request.user.profile.institution
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration)
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -647,7 +649,9 @@ class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
     context_object_name = 'bus_requests'
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='open')
+        registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
+        institution = self.request.user.profile.institution
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration, status='open')
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -661,7 +665,9 @@ class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixi
     context_object_name = 'bus_requests'
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='closed')
+        registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
+        institution = self.request.user.profile.institution
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration, status='closed')
         return queryset
     
     def get_context_data(self, **kwargs):

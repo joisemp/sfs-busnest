@@ -1091,7 +1091,8 @@ class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Li
     context_object_name = 'bus_requests'
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='open')
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration, status='open')
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -1105,7 +1106,8 @@ class BusRequestClosedListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, 
     context_object_name = 'bus_requests'
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='closed')
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration, status='closed')
         return queryset
     
     def get_context_data(self, **kwargs):
