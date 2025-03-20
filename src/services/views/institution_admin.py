@@ -436,29 +436,26 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
 #         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
     
 
-class TicketExportView(View):
-    def get(self, request, *args, **kwargs):
+class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
-        institution = request.GET.get('institution')
-        pickup_points = request.GET.getlist('pickup_point')
-        drop_points = request.GET.getlist('drop_point')
-        schedule = request.GET.get('schedule')
-        pickup_buses = request.GET.getlist('pickup_bus')
-        drop_buses = request.GET.getlist('drop_bus')
-        student_group = request.GET.getlist('student_group')
-
         filters = {
-            'institution': institution,
-            'pickup_points': pickup_points,
-            'drop_points': drop_points,
-            'schedule': schedule,
-            'pickup_buses': pickup_buses,
-            'drop_buses': drop_buses,
-            'student_group': student_group,
+            'institution': request.GET.get('institution'),
+            'pickup_points': request.GET.getlist('pickup_point'),
+            'drop_points': request.GET.getlist('drop_point'),
+            'schedule': request.GET.get('schedule'),
+            'pickup_buses': request.GET.getlist('pickup_bus'),
+            'drop_buses': request.GET.getlist('drop_bus'),
+            'student_group': request.GET.get('student_group'),
         }
 
-        return export_tickets_to_excel(request.user.id, registration_slug, search_term, filters)
+        # Trigger the Celery task
+        export_tickets_to_excel.apply_async(
+            args=[request.user.id, registration_slug, search_term, filters]
+        )
+
+        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
     
     
 class StopSelectFormView(FormView):
