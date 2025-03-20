@@ -30,6 +30,7 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
     model = Ticket
     template_name = 'institution_admin/ticket_list.html'
     context_object_name = 'tickets'
+    paginate_by = 15
     
     def get_queryset(self):
         # Get registration based on slug
