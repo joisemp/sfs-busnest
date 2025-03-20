@@ -555,12 +555,15 @@ def mark_expired_receipts():
 
 
 def send_export_email(user, exported_file):
+    from urllib.parse import urljoin
+
     download_url = reverse('central_admin:exported_file_download', kwargs={'slug': exported_file.slug})
+    full_url = urljoin(settings.SITE_URL, download_url)
     email_subject = 'Your Ticket Export is Ready'
     email_message = (
         f"Hello {user.profile.first_name} {user.profile.last_name},\n\n"
         f"Your ticket export is ready. You can download the file using the following link:\n"
-        f"{settings.SITE_URL}{download_url}\n\n"
+        f"{full_url}\n\n"
         f"Best regards,\nYour Team"
     )
     send_mail(
@@ -628,7 +631,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             ticket.student_name.upper(),
             std_class.strip().upper(),
             section.strip().upper(),
-            ticket.student_email.upper(),
+            ticket.student_email,
             ticket.contact_no.upper(),
             ticket.alternative_contact_no.upper(),
             (ticket.pickup_point.name.upper() if ticket.pickup_point else '-----'),
