@@ -202,13 +202,16 @@ class BusRecord(models.Model):
         if self.bus:
             if self.min_required_capacity > self.bus.capacity:
                 raise ValidationError(
-                    f"The bus cpacity ({self.bus.capacity}) is less than the minimum capacity of ({self.min_required_capacity})."
+                    f"The bus capacity ({self.bus.capacity}) is less than the minimum capacity of ({self.min_required_capacity})."
                 )
 
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(f"record-{self.bus.registration_no}-{self.registration.name}")
             self.slug = generate_unique_slug(self, base_slug)
+        
+        # Ensure label is saved in title case
+        self.label = self.label.title()
         
         super().save(*args, **kwargs)  # Save the instance to ensure it has a primary key
         
