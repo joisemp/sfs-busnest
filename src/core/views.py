@@ -12,6 +12,8 @@ from django.views.generic import CreateView
 from core.models import UserProfile
 from django.contrib.auth import get_user_model
 from services.models import Organisation
+from django.conf import settings
+from django.core.exceptions import PermissionDenied
 
 User = get_user_model()
 
@@ -58,6 +60,11 @@ class UserRegisterView(CreateView):
         login(self.request, user)
         return redirect('landing_page')
     
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, 'ALLOW_USER_REGISTRATION', True):
+            raise PermissionDenied("User registration is disabled.")
+        return super().dispatch(request, *args, **kwargs)
+
 
 class LogoutView(LogoutView):
     template_name = 'core/logout.html'
