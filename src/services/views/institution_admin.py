@@ -46,6 +46,17 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         schedule = self.request.GET.get('schedule')
         student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
+        
+        self.search_term = self.request.GET.get('search', '')
+        
+        if self.search_term:
+            queryset = Ticket.objects.filter(
+                Q(student_name__icontains=self.search_term) |
+                Q(student_email__icontains=self.search_term) |
+                Q(student_id__icontains=self.search_term) |
+                Q(contact_no__icontains=self.search_term) |
+                Q(alternative_contact_no__icontains=self.search_term)
+            )
 
         # Apply filters based on GET parameters and update the filters flag
         if pickup_points and not pickup_points == ['']:
