@@ -322,6 +322,9 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
 
         if self.schedule_group.allow_one_way:
             if self.pickup_id and not self.drop_id:  # One-way pickup only
+                if not form.cleaned_data.get('pickup_point'):
+                    form.add_error('pickup_point', "Pickup point must be selected.")
+                    return self.form_invalid(form)
                 ticket.pickup_bus_record = self.bus_record
                 ticket.pickup_schedule = self.schedule_group.pick_up_schedule
                 if pickup_trip:
@@ -329,6 +332,9 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                 ticket.ticket_type = 'one_way'
 
             elif self.drop_id and not self.pickup_id:  # One-way drop only
+                if not form.cleaned_data.get('drop_point'):
+                    form.add_error('drop_point', "Drop point must be selected.")
+                    return self.form_invalid(form)
                 ticket.drop_bus_record = self.bus_record
                 ticket.drop_schedule = self.schedule_group.drop_schedule
                 if drop_trip:
@@ -336,6 +342,10 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                 ticket.ticket_type = 'one_way'
 
             else:  # Both pickup and drop (two-way)
+                if not form.cleaned_data.get('pickup_point') or not form.cleaned_data.get('drop_point'):
+                    form.add_error(None, "Both pickup and drop points must be selected.")
+                    return self.form_invalid(form)
+
                 ticket.pickup_bus_record = self.pickup_bus_record
                 ticket.drop_bus_record = self.drop_bus_record
                 ticket.pickup_schedule = self.schedule_group.pick_up_schedule
@@ -346,6 +356,10 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                     drop_trip.booking_count += 1
                 ticket.ticket_type = 'two_way'
         else:
+            if not form.cleaned_data.get('pickup_point') or not form.cleaned_data.get('drop_point'):
+                    form.add_error(None, "Both pickup and drop points must be selected.")
+                    return self.form_invalid(form)
+            
             ticket.pickup_bus_record = self.bus_record
             ticket.drop_bus_record = self.bus_record
             ticket.pickup_schedule = self.schedule_group.pick_up_schedule
