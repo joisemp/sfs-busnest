@@ -51,6 +51,7 @@ urlpatterns = [
      
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
      path('registrations/<slug:registration_slug>/tickets/export/', central_admin.TicketExportView.as_view(), name='ticket_export'),
+     path('registrations/<slug:registration_slug>/tickets/filter/', central_admin.TicketFilterView.as_view(), name='ticket_filter'),
      
      path('registrations/<slug:registration_slug>/schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
@@ -77,6 +78,8 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/delete/', central_admin.BusRequestDeleteView.as_view(), name='bus_request_delete'),
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/status/', central_admin.BusRequestStatusUpdateView.as_view(), name='bus_request_status_update'),
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/comment/', central_admin.BusRequestCommentView.as_view(), name='bus_request_comment'),
+     
+     path('registrations/student-groups/filter/', central_admin.StudentGroupFilterView.as_view(), name='student_group_filter'),
      
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
      

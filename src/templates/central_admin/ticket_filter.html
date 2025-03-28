@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/ticket_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
+            class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+    </div>
+    <div class="gear d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h3>Filter Tickets</h3>
+        </div>
+        <div>
+            <a href="#" class="btn btn-primary">Generate ID</a>
+        </div>
+    </div>
+    <form method="get" class="d-flex align-items-end gap-3">
+        <div>
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+        </div>
+        <div>
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+        </div>
+        <div>
+            <label for="institution" class="form-label">Institution</label>
+            <select id="institution" name="institution" class="form-select" hx-get="{% url 'central_admin:student_group_filter' %}?institution={{ institution.slug }}" hx-target="#student-group-container" hx-trigger="change">
+                <option value="">All Institutions</option>
+                {% for institution in institutions %}
+                <option value="{{ institution.slug }}" {% if institution.slug == selected_institution %}selected{% endif %}>
+                    {{ institution.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div id="student-group-container">
+            <label for="student_group" class="form-label">Student Group</label>
+            <select id="student_group" name="student_group" class="form-select">
+                <option value="">All Groups</option>
+                {% for group in student_groups %}
+                <option value="{{ group.id }}" {% if group.id|stringformat:"s" == selected_student_group %}selected{% endif %}>
+                    {{ group.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="ticket_type" class="form-label">Ticket Type</label>
+            <select id="ticket_type" name="ticket_type" class="form-select">
+                <option value="">All Types</option>
+                {% for type, label in ticket_types %}
+                <option value="{{ type }}" {% if type == selected_ticket_type %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-dark">Filter</button>
+            {% if start_date or end_date or selected_institution or selected_ticket_type %}
+            <a href="{% url 'central_admin:ticket_filter' registration_slug=registration.slug %}" class="btn btn-outline-secondary ms-2">Clear Filters</a>
+            {% endif %}
+        </div>
+    </form>
+    <hr>
+</div>
+
+<section id="ticket-list">
+    {% if tickets %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col" class="font">Type</th>
+                    <th scope="col" class="font">Student ID</th>
+                    <th scope="col" class="font">Name</th>
+                    <th scope="col" class="font">School</th>
+                    <th scope="col" class="font">Pickup bus</th>
+                    <th scope="col" class="font">Drop bus</th>
+                    <th scope="col" class="font">Pickup stop</th>
+                    <th scope="col" class="font">Drop stop</th>
+                    <th scope="col" class="font">Pickup time</th>
+                    <th scope="col" class="font">Drop time</th>
+                    <th scope="col" class="font">Ticket ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>
+                        <span class="badge rounded-pill 
+            {% if ticket.ticket_type == 'one_way' %}text-bg-primary
+            {% elif ticket.ticket_type == 'two_way' %}text-bg-dark
+            {% endif %} px-3" style="padding-bottom: 6px;">
+                            {{ ticket.get_ticket_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ticket.student_id}}</td>
+                    <td>{{ticket.student_name}}</td>
+                    <td>{{ticket.institution.name}}</td>
+                    <td>
+                        {{ ticket.pickup_bus_record.label|default:"-----" }}
+                    </td>
+                    <td>
+                        {{ ticket.drop_bus_record.label|default:"-----" }}
+                    </td>
+                    <td>
+                        {{ ticket.pickup_point.name|default:"-----" }}
+                    </td>
+                    <td>
+                        {{ ticket.drop_point|default:"-----" }}
+                    </td>
+                    <td>
+                        {{ ticket.pickup_schedule.name|default:"-----" }}
+                    </td>
+                    <td>
+                        {{ ticket.drop_schedule.name|default:"-----" }}
+                    </td>
+                    <td>{{ticket.ticket_id}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination-container d-md-flex justify-content-md-between align-items-center mt-3">
+        <div class="text-muted mb-3 mb-md-0">
+            {% if is_paginated %}
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} tickets
+            {% endif %}
+        </div>
+        <div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-md-end">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link">{{ num }}</a>
+                    </li>
+                    {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %} <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item disabled">
+                            <a class="page-link" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center p-5">
+        <p class="fw-semibold text-muted">No tickets are found</p>
+    </div>
+    {% endif %}
+
+</section>
+
+{% endblock content %}
