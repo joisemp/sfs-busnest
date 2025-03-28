@@ -18,8 +18,10 @@ class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
             receipt_id = form.cleaned_data['receipt_id']
             student_id = form.cleaned_data['student_id']
             
+            registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
+            
             # Validate receipt
-            receipt = Receipt.objects.get(receipt_id=receipt_id, student_id=student_id)
+            receipt = Receipt.objects.get(registration=registration, receipt_id=receipt_id, student_id=student_id)
 
             # Store details in the session
             self.request.session['receipt_id'] = receipt.pk
@@ -89,7 +91,8 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
     template_name = 'students/select_schedule_group.html'
 
     def get(self, request, registration_code):
-        schedule_groups = ScheduleGroup.objects.all()
+        registration = get_object_or_404(Registration, code=registration_code)
+        schedule_groups = ScheduleGroup.objects.filter(registration=registration)
         return render(request, self.template_name, {'schedule_groups': schedule_groups})
 
     def post(self, request, registration_code):
@@ -98,7 +101,9 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
         drop = request.POST.get(f"drop_{selected_id}")  # Checkbox value
 
         if not selected_id:
-            schedule_groups = ScheduleGroup.objects.all()
+            registration = get_object_or_404(Registration, code=registration_code)
+            
+            schedule_groups = ScheduleGroup.objects.filter(registration=registration)
             return render(
                 request,
                 self.template_name,
@@ -317,6 +322,9 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
 
         if self.schedule_group.allow_one_way:
             if self.pickup_id and not self.drop_id:  # One-way pickup only
+                if not form.cleaned_data.get('pickup_point'):
+                    form.add_error('pickup_point', "Pickup point must be selected.")
+                    return self.form_invalid(form)
                 ticket.pickup_bus_record = self.bus_record
                 ticket.pickup_schedule = self.schedule_group.pick_up_schedule
                 if pickup_trip:
@@ -324,6 +332,9 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                 ticket.ticket_type = 'one_way'
 
             elif self.drop_id and not self.pickup_id:  # One-way drop only
+                if not form.cleaned_data.get('drop_point'):
+                    form.add_error('drop_point', "Drop point must be selected.")
+                    return self.form_invalid(form)
                 ticket.drop_bus_record = self.bus_record
                 ticket.drop_schedule = self.schedule_group.drop_schedule
                 if drop_trip:
@@ -331,6 +342,10 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                 ticket.ticket_type = 'one_way'
 
             else:  # Both pickup and drop (two-way)
+                if not form.cleaned_data.get('pickup_point') or not form.cleaned_data.get('drop_point'):
+                    form.add_error(None, "Both pickup and drop points must be selected.")
+                    return self.form_invalid(form)
+
                 ticket.pickup_bus_record = self.pickup_bus_record
                 ticket.drop_bus_record = self.drop_bus_record
                 ticket.pickup_schedule = self.schedule_group.pick_up_schedule
@@ -341,6 +356,10 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
                     drop_trip.booking_count += 1
                 ticket.ticket_type = 'two_way'
         else:
+            if not form.cleaned_data.get('pickup_point') or not form.cleaned_data.get('drop_point'):
+                    form.add_error(None, "Both pickup and drop points must be selected.")
+                    return self.form_invalid(form)
+            
             ticket.pickup_bus_record = self.bus_record
             ticket.drop_bus_record = self.bus_record
             ticket.pickup_schedule = self.schedule_group.pick_up_schedule

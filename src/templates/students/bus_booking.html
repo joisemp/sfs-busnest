@@ -10,12 +10,14 @@
 {% endblock navbar %}
 
 {% block content %}
-
 <h4>Book Bus</h4>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p|safe }}
     <button type="submit" class="btn btn-primary">Book</button>
 </form>
-
 {% endblock content %}
+
+{% block scripts %}
+
+{% endblock scripts %}

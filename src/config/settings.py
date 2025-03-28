@@ -63,6 +63,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+ALLOW_USER_REGISTRATION = False
+
+MAINTENANCE_MODE = False
+
+MIDDLEWARE += [
+    'config.middleware.maintenance_mode.MaintenanceModeMiddleware',
+]
+
+
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [

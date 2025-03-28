@@ -1074,43 +1074,93 @@ class BusRequestListView(ListView):
     model = BusRequest
     template_name = 'central_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
+    paginate_by = 20
     
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration)
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration).order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["registration"] = registration
+        context["total_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration
+        ).count()
+        context["open_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration, 
+            status='open'
+        ).count()
+        context["closed_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration, 
+            status='closed'
+        ).count()
         return context
 
 class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = BusRequest
     template_name = 'central_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
+    paginate_by = 20
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='open')
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration, status='open').order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["registration"] = registration
+        context["total_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration
+        ).count()
+        context["open_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org,  
+            registration=registration, 
+            status='open'
+        ).count()
+        context["closed_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org,  
+            registration=registration, 
+            status='closed'
+        ).count()
         return context
 
 class BusRequestClosedListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     model = BusRequest
     template_name = 'central_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
+    paginate_by = 20
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='closed')
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration, status='closed').order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["registration"] = registration
+        context["total_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration
+        ).count()
+        context["open_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration, 
+            status='open'
+        ).count()
+        context["closed_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=registration, 
+            status='closed'
+        ).count()
         return context
 
 class BusRequestDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):

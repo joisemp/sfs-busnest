@@ -30,6 +30,7 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
     model = Ticket
     template_name = 'institution_admin/ticket_list.html'
     context_object_name = 'tickets'
+    paginate_by = 15
     
     def get_queryset(self):
         # Get registration based on slug
@@ -45,6 +46,17 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         schedule = self.request.GET.get('schedule')
         student_group = self.request.GET.get('student_group')
         filters = False  # Default no filters applied
+        
+        self.search_term = self.request.GET.get('search', '')
+        
+        if self.search_term:
+            queryset = Ticket.objects.filter(
+                Q(student_name__icontains=self.search_term) |
+                Q(student_email__icontains=self.search_term) |
+                Q(student_id__icontains=self.search_term) |
+                Q(contact_no__icontains=self.search_term) |
+                Q(alternative_contact_no__icontains=self.search_term)
+            )
 
         # Apply filters based on GET parameters and update the filters flag
         if pickup_points and not pickup_points == ['']:
@@ -436,29 +448,26 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
 #         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
     
 
-class TicketExportView(View):
-    def get(self, request, *args, **kwargs):
+class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
-        institution = request.GET.get('institution')
-        pickup_points = request.GET.getlist('pickup_point')
-        drop_points = request.GET.getlist('drop_point')
-        schedule = request.GET.get('schedule')
-        pickup_buses = request.GET.getlist('pickup_bus')
-        drop_buses = request.GET.getlist('drop_bus')
-        student_group = request.GET.getlist('student_group')
-
         filters = {
-            'institution': institution,
-            'pickup_points': pickup_points,
-            'drop_points': drop_points,
-            'schedule': schedule,
-            'pickup_buses': pickup_buses,
-            'drop_buses': drop_buses,
-            'student_group': student_group,
+            'institution': request.GET.get('institution'),
+            'pickup_points': request.GET.getlist('pickup_point'),
+            'drop_points': request.GET.getlist('drop_point'),
+            'schedule': request.GET.get('schedule'),
+            'pickup_buses': request.GET.getlist('pickup_bus'),
+            'drop_buses': request.GET.getlist('drop_bus'),
+            'student_group': request.GET.get('student_group'),
         }
 
-        return export_tickets_to_excel(request.user.id, registration_slug, search_term, filters)
+        # Trigger the Celery task
+        export_tickets_to_excel.apply_async(
+            args=[request.user.id, registration_slug, search_term, filters]
+        )
+
+        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
     
     
 class StopSelectFormView(FormView):
@@ -496,7 +505,8 @@ class SelectScheduleGroupView(View):
     template_name = 'institution_admin/select_schedule_group.html'
 
     def get(self, request, registration_code, ticket_id):
-        schedules = Schedule.objects.all()
+        registration = get_object_or_404(Registration, code=registration_code)
+        schedules = Schedule.objects.filter(org=registration.org, registration=registration)
         query_string = self.request.GET.get('type', '')
         type = query_string if query_string else 'pickup and drop'
         return render(request, self.template_name, {'schedules': schedules, 'type': type})
@@ -505,7 +515,8 @@ class SelectScheduleGroupView(View):
         selected_id = request.POST.get("schedule_group")
 
         if not selected_id:
-            schedules = Schedule.objects.all()
+            registration = get_object_or_404(Registration, code=registration_code)
+            schedules = Schedule.objects.filter(org=registration.org, registration=registration)
             query_string = self.request.GET.get('type', '')
             type = query_string if query_string else 'pickup and drop'
             return render(
@@ -631,42 +642,105 @@ class BusRequestListView(ListView):
     model = BusRequest
     template_name = 'institution_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
+    paginate_by = 20
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org)
+        registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
+        institution = self.request.user.profile.institution
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration).order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["registration"] = registration
+        context["total_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration
+        ).count()
+        context["open_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration, 
+            status='open'
+        ).count()
+        context["closed_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration, 
+            status='closed'
+        ).count()
         return context
 
 class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = BusRequest
     template_name = 'institution_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
+    paginate_by = 20
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='open')
+        registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
+        institution = self.request.user.profile.institution
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration, status='open').order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["registration"] = registration
+        context["total_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration
+        ).count()
+        context["open_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration, 
+            status='open'
+        ).count()
+        context["closed_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration, 
+            status='closed'
+        ).count()
         return context
 
 class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = BusRequest
     template_name = 'institution_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
+    paginate_by = 20
     
     def get_queryset(self):
-        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, status='closed')
+        registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
+        institution = self.request.user.profile.institution
+        queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration, status='closed').order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        context["registration"] = registration
+        context["total_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration
+        ).count()
+        context["open_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration, 
+            status='open'
+        ).count()
+        context["closed_requests"] = BusRequest.objects.filter(
+            org=self.request.user.profile.org, 
+            institution=self.request.user.profile.institution, 
+            registration=registration, 
+            status='closed'
+        ).count()
         return context
 
 class BusRequestDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
