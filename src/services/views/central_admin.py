@@ -1,5 +1,5 @@
 import threading
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from core.models import UserProfile
 from django.db import transaction, IntegrityError
@@ -13,6 +13,7 @@ from django.utils.encoding import force_bytes
 from django.contrib import messages
 from urllib.parse import urlencode
 from django.template.loader import render_to_string
+from django.utils.dateparse import parse_date
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -950,6 +951,52 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         return context
     
 
+class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View to filter tickets by a date range, institution, and ticket type.
+    """
+    model = Ticket
+    template_name = 'central_admin/ticket_filter.html'
+    context_object_name = 'tickets'
+    paginate_by = 10
+
+    def get_queryset(self):
+        registration_slug = self.kwargs.get('registration_slug')
+        self.registration = get_object_or_404(Registration, slug=registration_slug)
+
+        queryset = Ticket.objects.filter(org=self.request.user.profile.org, registration=self.registration)
+
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        institution_slug = self.request.GET.get('institution')  # Changed to slug
+        ticket_type = self.request.GET.get('ticket_type')
+        student_group_id = self.request.GET.get('student_group')
+
+        if start_date:
+            queryset = queryset.filter(created_at__date__gte=parse_date(start_date))
+        if end_date:
+            queryset = queryset.filter(created_at__date__lte=parse_date(end_date))
+        if institution_slug:
+            queryset = queryset.filter(institution__slug=institution_slug)  # Filter by slug
+        if ticket_type:
+            queryset = queryset.filter(ticket_type=ticket_type)
+        if student_group_id:
+            queryset = queryset.filter(student_group_id=student_group_id)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.registration
+        context['start_date'] = self.request.GET.get('start_date', '')
+        context['end_date'] = self.request.GET.get('end_date', '')
+        context['institutions'] = Institution.objects.filter(org=self.request.user.profile.org)
+        context['selected_institution'] = self.request.GET.get('institution', '')
+        context['ticket_types'] = Ticket.TICKET_TYPES
+        context['selected_ticket_type'] = self.request.GET.get('ticket_type', '')
+        return context
+
+
 class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
     template_name = 'central_admin/registration_create.html'
     model = FAQ
@@ -1387,4 +1434,14 @@ class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
         )
 
         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
+
+
+class StudentGroupFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to filter student groups based on the selected institution.
+    """
+    def get(self, request, *args, **kwargs):
+        institution_slug = request.GET.get('institution')
+        student_groups = StudentGroup.objects.filter(institution__slug=institution_slug).order_by('name') if institution_slug else []
+        return render(request, 'central_admin/partials/student_group_options.html', {'student_groups': student_groups})
 

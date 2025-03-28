@@ -256,12 +256,13 @@ class Trip(models.Model):
     def __str__(self):
         return f"{self.schedule} | {self.route}"
 
-TICKET_TYPES = ( 
-    ("one_way", "One way"), 
-    ("two_way", "Two way"),  
-)
 
 class Ticket(models.Model):
+    TICKET_TYPES = ( 
+        ("one_way", "One way"), 
+        ("two_way", "Two way"),  
+    )
+    
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='tickets')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='tickets')
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='tickets')

@@ -1,0 +1,7 @@
+<label for="student_group" class="form-label">Student Group</label>
+<select id="student_group" name="student_group" class="form-select">
+    <option value="">All Groups</option>
+    {% for group in student_groups %}
+    <option value="{{ group.id }}">{{ group.name }}</option>
+    {% endfor %}
+</select>
