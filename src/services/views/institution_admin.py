@@ -671,6 +671,11 @@ class BusRequestListView(ListView):
             registration=registration, 
             status='closed'
         ).count()
+        for request in context["bus_requests"]:
+            request.has_ticket = Ticket.objects.filter(
+                registration=registration, 
+                recipt=request.receipt
+            ).exists()
         return context
 
 class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -706,6 +711,11 @@ class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
             registration=registration, 
             status='closed'
         ).count()
+        for request in context["bus_requests"]:
+            request.has_ticket = Ticket.objects.filter(
+                registration=registration, 
+                recipt=request.receipt
+            ).exists()
         return context
 
 class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -741,6 +751,11 @@ class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixi
             registration=registration, 
             status='closed'
         ).count()
+        for request in context["bus_requests"]:
+            request.has_ticket = Ticket.objects.filter(
+                registration=registration, 
+                recipt=request.receipt
+            ).exists()
         return context
 
 class BusRequestDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):

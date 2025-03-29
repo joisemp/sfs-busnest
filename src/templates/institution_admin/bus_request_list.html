@@ -77,6 +77,9 @@
                 <div class="card-body d-flex" style="justify-content: space-between;">
                     <div class="info" data-bs-toggle="modal" data-bs-target="#Modal{{bus_request.id}}">
                         Bus request for {{bus_request.student_name}}
+                        {% if bus_request.has_ticket %}
+                        <i class="fa-solid fa-circle-check ms-1 text-success"></i>
+                        {% endif %}
                     </div>
                     <div class="date">
                         <span class="text-muted">{{bus_request.created_at}}</span>
@@ -89,8 +92,12 @@
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="ModalLabel{{bus_request.id}}">Bus request for
-                                    {{bus_request.student_name}}</h1>
+                                <h1 class="modal-title fs-5" id="ModalLabel{{bus_request.id}}">
+                                    Bus request for {{bus_request.student_name}}
+                                    {% if bus_request.has_ticket %}
+                                    <i class="fa-solid fa-circle-check ms-1 text-success"></i> (Ticket Booked)
+                                    {% endif %}
+                                </h1>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="Close"></button>
                             </div>
