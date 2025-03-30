@@ -8,7 +8,7 @@ from io import BytesIO
 from django.conf import settings
 import logging, time, os
 from django.core.mail import send_mail
-from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification
+from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification, StudentPassFile
 from django.db import transaction, models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -21,6 +21,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from uuid import uuid4
 from django.core.files.base import ContentFile
+from services.utils import generate_ids_pdf  # Import from utils instead of views
 
 User = get_user_model()
 
@@ -658,4 +659,43 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
     send_export_email(user, exported_file)
     return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
+
+
+@shared_task(name='generate_student_pass')
+def generate_student_pass(user_id, registration_slug, filters=None):
+    user = User.objects.get(id=user_id)
+    registration = get_object_or_404(Registration, slug=registration_slug)
+
+    queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
+
+    if filters:
+        if filters.get('start_date') and filters.get('end_date'):
+            queryset = queryset.filter(
+                created_at__range=[filters['start_date'], filters['end_date']]
+            )
+        if filters.get('institution_slug'):
+            queryset = queryset.filter(institution__slug__in=filters['institution_slug'])
+        if filters.get('ticket_type'):
+            queryset = queryset.filter(ticket_type=filters['ticket_type'])
+        if filters.get('student_group_id'):
+            queryset = queryset.filter(student_group_id__in=filters['student_group_id'])
+
+    # Generate the PDF using the generate_ids_pdf function
+    students = queryset.values(
+        'student_name', 'pickup_bus_record__label', 'pickup_point__name',
+        'drop_bus_record__label', 'drop_point__name', 'institution__name',
+        'student_id', 'ticket_id', 'pickup_schedule__name', 'drop_schedule__name',
+        'student_group__name'
+    )
+    buffer = generate_ids_pdf(students)
+
+    # Create a StudentPassFile instance
+    unique_slug = slugify(f"{registration_slug}-{uuid4()}")
+    student_pass_file = StudentPassFile.objects.create(
+        user=user,
+        file=ContentFile(buffer.getvalue(), f"{registration_slug}_student_passes.pdf"),
+        slug=unique_slug
+    )
+
+    return f"Student pass generation completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
 

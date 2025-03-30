@@ -69,7 +69,7 @@ from services.forms.central_admin import (
     BusRequestCommentForm
 )
 
-from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel
+from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
 
 
 User = get_user_model()
@@ -1459,4 +1459,23 @@ class StudentGroupFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
         institution_slug = request.GET.get('institution')
         student_groups = StudentGroup.objects.filter(institution__slug=institution_slug).order_by('name') if institution_slug else []
         return render(request, 'central_admin/partials/student_group_options.html', {'student_groups': student_groups})
+
+
+class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
+        filters = {
+            'start_date': request.POST.get('start_date'),
+            'end_date': request.POST.get('end_date'),
+            'institution_slug': request.POST.getlist('institution'),
+            'ticket_type': request.POST.get('ticket_type'),
+            'student_group_id': request.POST.getlist('student_group'),
+        }
+
+        # Trigger the Celery task
+        generate_student_pass.apply_async(
+            args=[request.user.id, registration_slug, filters]
+        )
+
+        return JsonResponse({"message": "Student pass generation request received. You will be notified once the passes are ready."})
 
