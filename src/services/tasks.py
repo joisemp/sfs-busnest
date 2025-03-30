@@ -22,6 +22,7 @@ from django.utils.text import slugify
 from uuid import uuid4
 from django.core.files.base import ContentFile
 from services.utils import generate_ids_pdf  # Import from utils instead of views
+from urllib.parse import urljoin
 
 User = get_user_model()
 
@@ -685,18 +686,13 @@ def generate_student_pass(user_id, registration_slug, filters=None):
             except ValueError:
                 logger.error("Invalid date format in filters. Ensure dates are in 'YYYY-MM-DD' format.")
                 raise ValueError("Invalid date format in filters. Ensure dates are in 'YYYY-MM-DD' format.")
-        
-        
-        print("FILTERS : ", filters)
-        
+
         if filters.get('institution'):
             queryset = queryset.filter(institution__slug=filters['institution'])
         if filters.get('ticket_type'):
             queryset = queryset.filter(ticket_type=filters['ticket_type'])
         if filters.get('student_group'):
             queryset = queryset.filter(student_group_id=filters['student_group'])
-            
-    print(queryset)  # Debugging line to check the generated SQL query
 
     # Generate the PDF using the filtered queryset
     students = queryset.values(
@@ -713,6 +709,23 @@ def generate_student_pass(user_id, registration_slug, filters=None):
         user=user,
         file=ContentFile(buffer.getvalue(), f"{registration_slug}_student_passes.pdf"),
         slug=unique_slug
+    )
+
+    
+    download_url = reverse('central_admin:student_pass_file_download', kwargs={'slug': student_pass_file.slug})
+    full_url = urljoin(settings.SITE_URL, download_url)
+    email_subject = 'Your Student Pass is Ready'
+    email_message = (
+        f"Hello {user.profile.first_name} {user.profile.last_name},\n\n"
+        f"Your student pass is ready. You can download the file using the following link:\n"
+        f"{full_url}\n\n"
+        f"Best regards,\nSFS BusNest Team"
+    )
+    send_mail(
+        email_subject,
+        email_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email]
     )
 
     return f"Student pass generation completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"

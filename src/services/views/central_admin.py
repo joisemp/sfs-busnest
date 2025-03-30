@@ -5,7 +5,7 @@ from core.models import UserProfile
 from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, FileResponse
 from django.db.models import Q, Count, F
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
@@ -47,6 +47,7 @@ from services.models import (
     BusRequestComment, 
     UserActivity, 
     Notification,
+    StudentPassFile,
     log_user_activity
 )
 
@@ -1478,4 +1479,10 @@ class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
         )
 
         return JsonResponse({"message": "Student pass generation request received. You will be notified once the passes are ready."})
+
+
+class StudentPassFileDownloadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, *args, **kwargs):
+        student_pass_file = get_object_or_404(StudentPassFile, slug=self.kwargs['slug'])
+        return FileResponse(student_pass_file.file, as_attachment=True, filename=student_pass_file.file.name)
 
