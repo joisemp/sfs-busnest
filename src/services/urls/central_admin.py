@@ -3,6 +3,7 @@ from services.views import central_admin
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from services.models import ExportedFile
+from services.views.central_admin import GenerateStudentPassView, StudentPassFileDownloadView
 
 app_name = 'central_admin'
 
@@ -84,5 +85,8 @@ urlpatterns = [
      path('more/', central_admin.MoreMenuView.as_view(), name='more_menu'),
      
      path('exported-file/<slug:slug>/', exported_file_download, name='exported_file_download'),
-
+     
+     path('registrations/<slug:registration_slug>/generate-student-pass/', GenerateStudentPassView.as_view(), name='generate_student_pass'),
+     
+     path('student-pass/download/<slug:slug>/', StudentPassFileDownloadView.as_view(), name='student_pass_file_download'),
 ]

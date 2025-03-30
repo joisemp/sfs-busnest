@@ -8,19 +8,21 @@ from io import BytesIO
 from django.conf import settings
 import logging, time, os
 from django.core.mail import send_mail
-from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification
+from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification, StudentPassFile
 from django.db import transaction, models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.utils.text import slugify
 from uuid import uuid4
 from django.core.files.base import ContentFile
+from services.utils import generate_ids_pdf  # Import from utils instead of views
+from urllib.parse import urljoin
 
 User = get_user_model()
 
@@ -658,4 +660,73 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
     send_export_email(user, exported_file)
     return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
+
+
+@shared_task(name='generate_student_pass')
+def generate_student_pass(user_id, registration_slug, filters=None):
+    user = User.objects.get(id=user_id)
+    registration = get_object_or_404(Registration, slug=registration_slug)
+
+    # Base queryset
+    queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
+
+    # Apply filters
+    if filters:
+        if filters.get('start_date') or filters.get('end_date'):
+            try:
+                end_date_str = filters.get('end_date') or now().date().isoformat()
+                start_date_str = filters.get('start_date') or end_date_str
+
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+
+                queryset = queryset.filter(
+                    created_at__date__range=[start_date, end_date]
+                )
+            except ValueError:
+                logger.error("Invalid date format in filters. Ensure dates are in 'YYYY-MM-DD' format.")
+                raise ValueError("Invalid date format in filters. Ensure dates are in 'YYYY-MM-DD' format.")
+
+        if filters.get('institution'):
+            queryset = queryset.filter(institution__slug=filters['institution'])
+        if filters.get('ticket_type'):
+            queryset = queryset.filter(ticket_type=filters['ticket_type'])
+        if filters.get('student_group'):
+            queryset = queryset.filter(student_group_id=filters['student_group'])
+
+    # Generate the PDF using the filtered queryset
+    students = queryset.values(
+        'student_name', 'pickup_bus_record__label', 'pickup_point__name',
+        'drop_bus_record__label', 'drop_point__name', 'institution__name',
+        'student_id', 'ticket_id', 'pickup_schedule__name', 'drop_schedule__name',
+        'student_group__name'
+    )
+    buffer = generate_ids_pdf(students)
+
+    # Create a StudentPassFile instance
+    unique_slug = slugify(f"{registration_slug}-{uuid4()}")
+    student_pass_file = StudentPassFile.objects.create(
+        user=user,
+        file=ContentFile(buffer.getvalue(), f"{registration_slug}_student_passes.pdf"),
+        slug=unique_slug
+    )
+
+    
+    download_url = reverse('central_admin:student_pass_file_download', kwargs={'slug': student_pass_file.slug})
+    full_url = urljoin(settings.SITE_URL, download_url)
+    email_subject = 'Your Student Pass is Ready'
+    email_message = (
+        f"Hello {user.profile.first_name} {user.profile.last_name},\n\n"
+        f"Your student pass is ready. You can download the file using the following link:\n"
+        f"{full_url}\n\n"
+        f"Best regards,\nSFS BusNest Team"
+    )
+    send_mail(
+        email_subject,
+        email_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email]
+    )
+
+    return f"Student pass generation completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
 

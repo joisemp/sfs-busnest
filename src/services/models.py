@@ -106,6 +106,11 @@ def rename_exported_file(instance, filename):
     ext = os.path.splitext(filename)[1]
     return f"{instance.user.profile.org.slug}/exported_files/{slugify(base_name)}-{uuid4()}{ext}"
 
+def rename_student_pass_file(instance, filename):
+    base_name = os.path.splitext(filename)[0]
+    ext = os.path.splitext(filename)[1]
+    return f"{instance.user.profile.org.slug}/student_pass/{slugify(base_name)}-{uuid4()}{ext}"
+
 class RouteFile(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='route_files')
     name = models.CharField(max_length=200)
@@ -527,3 +532,19 @@ def update_trip_booking_count_on_ticket_delete(sender, instance, **kwargs):
         if trip:
             trip.booking_count = max(0, trip.booking_count - 1)
             trip.save()
+
+
+class StudentPassFile(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # User who requested the file
+    file = models.FileField(upload_to=rename_student_pass_file)  # Use custom upload_to function
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(f"{self.user}-{self.created_at}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Generated student pass by {self.user} - {self.created_at}"
