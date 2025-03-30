@@ -14,7 +14,7 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
@@ -666,21 +666,39 @@ def generate_student_pass(user_id, registration_slug, filters=None):
     user = User.objects.get(id=user_id)
     registration = get_object_or_404(Registration, slug=registration_slug)
 
+    # Base queryset
     queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
 
+    # Apply filters
     if filters:
-        if filters.get('start_date') and filters.get('end_date'):
-            queryset = queryset.filter(
-                created_at__range=[filters['start_date'], filters['end_date']]
-            )
-        if filters.get('institution_slug'):
-            queryset = queryset.filter(institution__slug__in=filters['institution_slug'])
+        if filters.get('start_date') or filters.get('end_date'):
+            try:
+                end_date_str = filters.get('end_date') or now().date().isoformat()
+                start_date_str = filters.get('start_date') or end_date_str
+
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+
+                queryset = queryset.filter(
+                    created_at__date__range=[start_date, end_date]
+                )
+            except ValueError:
+                logger.error("Invalid date format in filters. Ensure dates are in 'YYYY-MM-DD' format.")
+                raise ValueError("Invalid date format in filters. Ensure dates are in 'YYYY-MM-DD' format.")
+        
+        
+        print("FILTERS : ", filters)
+        
+        if filters.get('institution'):
+            queryset = queryset.filter(institution__slug=filters['institution'])
         if filters.get('ticket_type'):
             queryset = queryset.filter(ticket_type=filters['ticket_type'])
-        if filters.get('student_group_id'):
-            queryset = queryset.filter(student_group_id__in=filters['student_group_id'])
+        if filters.get('student_group'):
+            queryset = queryset.filter(student_group_id=filters['student_group'])
+            
+    print(queryset)  # Debugging line to check the generated SQL query
 
-    # Generate the PDF using the generate_ids_pdf function
+    # Generate the PDF using the filtered queryset
     students = queryset.values(
         'student_name', 'pickup_bus_record__label', 'pickup_point__name',
         'drop_bus_record__label', 'drop_point__name', 'institution__name',

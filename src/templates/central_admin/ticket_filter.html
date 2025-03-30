@@ -216,7 +216,9 @@
 {% block scripts %}
 <script>
 function generateStudentPass() {
-    const fetchUrl = "{% url 'central_admin:generate_student_pass' registration_slug=registration.slug %}";
+    const params = new URLSearchParams(window.location.search);
+    
+    const fetchUrl = "{% url 'central_admin:generate_student_pass' registration_slug=registration.slug %}?" + params.toString();
 
     fetch(fetchUrl, {
         method: 'POST',

@@ -1465,11 +1465,11 @@ class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
     def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
         filters = {
-            'start_date': request.POST.get('start_date'),
-            'end_date': request.POST.get('end_date'),
-            'institution_slug': request.POST.getlist('institution'),
-            'ticket_type': request.POST.get('ticket_type'),
-            'student_group_id': request.POST.getlist('student_group'),
+            'start_date': request.GET.get('start_date'),
+            'end_date': request.GET.get('end_date'),
+            'institution_slug': request.GET.get('institution'),
+            'ticket_type': request.GET.get('ticket_type'),
+            'student_group': request.GET.get('student_group'),
         }
 
         # Trigger the Celery task
