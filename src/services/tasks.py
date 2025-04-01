@@ -696,8 +696,8 @@ def generate_student_pass(user_id, registration_slug, filters=None):
 
     # Generate the PDF using the filtered queryset
     students = queryset.values(
-        'student_name', 'pickup_bus_record__label', 'pickup_point__name',
-        'drop_bus_record__label', 'drop_point__name', 'institution__name',
+        'student_name', 'pickup_bus_record__label',
+        'drop_bus_record__label', 'institution__name',
         'student_id', 'ticket_id', 'pickup_schedule__name', 'drop_schedule__name',
         'student_group__name'
     )
