@@ -1468,7 +1468,7 @@ class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
         filters = {
             'start_date': request.GET.get('start_date'),
             'end_date': request.GET.get('end_date'),
-            'institution_slug': request.GET.get('institution'),
+            'institution': request.GET.get('institution'),
             'ticket_type': request.GET.get('ticket_type'),
             'student_group': request.GET.get('student_group'),
         }

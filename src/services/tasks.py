@@ -9,7 +9,7 @@ from django.conf import settings
 import logging, time, os
 from django.core.mail import send_mail
 from services.models import Organisation, Receipt, Stop, Route, Institution, Registration, StudentGroup, Ticket, ExportedFile, BusFile, Bus, Notification, StudentPassFile
-from django.db import transaction, models
+from django.db import transaction, models, IntegrityError
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -23,6 +23,7 @@ from uuid import uuid4
 from django.core.files.base import ContentFile
 from services.utils import generate_ids_pdf  # Import from utils instead of views
 from urllib.parse import urljoin
+from django.db.utils import IntegrityError
 
 User = get_user_model()
 
@@ -236,63 +237,65 @@ def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_
             'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'
         ]
         valid_sections = [chr(i).upper() for i in range(65, 91)] + ['teaching', 'non-teaching', 'Teaching', 'Non-Teaching']
+        
+        # Fetch Organisation
+        try:
+            org = Organisation.objects.get(id=org_id)
+            logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
+        except Organisation.DoesNotExist:
+            error_message = "Organisation does not exist."
+            logger.error(error_message)
+            notification.action = error_message
+            notification.description = f"<p>Organisation with ID {org_id} does not exist.</p>"
+            notification.type = "danger"
+            notification.save()
+            return
+
+        # Fetch Institution
+        try:
+            institution = Institution.objects.get(id=institution_id)
+            logger.info(f"Institution fetched successfully: {institution.name} (ID: {institution_id})")
+        except Institution.DoesNotExist:
+            error_message = "Institution does not exist."
+            logger.error(error_message)
+            notification.action = error_message
+            notification.description = f"<p>Institution with ID {institution_id} does not exist.</p>"
+            notification.type = "danger"
+            notification.save()
+            return
+
+        # Fetch Registration
+        try:
+            registration = Registration.objects.get(id=reg_id)
+            logger.info(f"Registration fetched successfully: {registration.name} (ID: {reg_id})")
+        except Registration.DoesNotExist:
+            error_message = "Registration does not exist."
+            logger.error(error_message)
+            notification.action = error_message
+            notification.description = f"<p>Registration with ID {reg_id} does not exist.</p>"
+            notification.type = "danger"
+            notification.save()
+            return
+        
+        # Open Excel file
+        try:
+            workbook = openpyxl.load_workbook(file)
+            sheet = workbook.active
+            logger.info(f"Excel file opened successfully: {file_path}")
+        except Exception as e:
+            error_message = "Failed to open the Excel file."
+            logger.error(error_message)
+            notification.action = error_message
+            notification.description = f"<p>Failed to open the Excel file: {e}</p>"
+            notification.type = "danger"
+            notification.save()
+            raise
+        finally:
+            file.close()  # Ensure the file is closed after processing
+        
+        #-----------------------------
 
         with transaction.atomic():
-            # Fetch Organisation
-            try:
-                org = Organisation.objects.get(id=org_id)
-                logger.info(f"Organisation fetched successfully: {org.name} (ID: {org_id})")
-            except Organisation.DoesNotExist:
-                error_message = "Organisation does not exist."
-                logger.error(error_message)
-                notification.action = error_message
-                notification.description = f"<p>Organisation with ID {org_id} does not exist.</p>"
-                notification.type = "danger"
-                notification.save()
-                return
-
-            # Fetch Institution
-            try:
-                institution = Institution.objects.get(id=institution_id)
-                logger.info(f"Institution fetched successfully: {institution.name} (ID: {institution_id})")
-            except Institution.DoesNotExist:
-                error_message = "Institution does not exist."
-                logger.error(error_message)
-                notification.action = error_message
-                notification.description = f"<p>Institution with ID {institution_id} does not exist.</p>"
-                notification.type = "danger"
-                notification.save()
-                return
-
-            # Fetch Registration
-            try:
-                registration = Registration.objects.get(id=reg_id)
-                logger.info(f"Registration fetched successfully: {registration.name} (ID: {reg_id})")
-            except Registration.DoesNotExist:
-                error_message = "Registration does not exist."
-                logger.error(error_message)
-                notification.action = error_message
-                notification.description = f"<p>Registration with ID {reg_id} does not exist.</p>"
-                notification.type = "danger"
-                notification.save()
-                return
-
-            # Open Excel file
-            try:
-                workbook = openpyxl.load_workbook(file)
-                sheet = workbook.active
-                logger.info(f"Excel file opened successfully: {file_path}")
-            except Exception as e:
-                error_message = "Failed to open the Excel file."
-                logger.error(error_message)
-                notification.action = error_message
-                notification.description = f"<p>Failed to open the Excel file: {e}</p>"
-                notification.type = "danger"
-                notification.save()
-                raise
-            finally:
-                file.close()  # Ensure the file is closed after processing
-
             # Validate headers
             headers = [str(cell.value).strip().lower() for cell in sheet[1]]
             expected_headers = ['receipt id', 'student id', 'class', 'section']
@@ -322,42 +325,52 @@ def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_
                 group_name = f"{class_name} - {class_section}"
 
                 try:
-                    # Create or Get StudentGroup
-                    student_group, created = StudentGroup.objects.get_or_create(
-                        org=org,
-                        institution=institution,
-                        name=group_name.upper(),
-                    )
+                    with transaction.atomic():
+                        # Create or Get StudentGroup
+                        try:
+                            student_group, created = StudentGroup.objects.get_or_create(
+                                org=org,
+                                institution=institution,
+                                name=group_name.upper(),
+                            )
+                            if created:
+                                logger.info(f"Student Group created: {student_group.name} (ID: {student_group.id})")
+                            else:
+                                logger.info(f"Student Group already exists: {student_group.name} (ID: {student_group.id})")
+                        except IntegrityError:
+                            logger.warning(f"Race condition detected while creating Student Group: {group_name.upper()}. Retrying...")
+                            student_group = StudentGroup.objects.get(
+                                org=org,
+                                institution=institution,
+                                name=group_name.upper(),
+                            )
 
-                    if created:
-                        logger.info(f"Row {row_number}: Student Group created - {student_group.name} (ID: {student_group.id})")
-                    else:
-                        logger.info(f"Row {row_number}: Student Group already exists - {student_group.name} (ID: {student_group.id})")
+                        try:
+                            # Create Receipt
+                            Receipt.objects.create(
+                                org=org,
+                                institution=institution,
+                                registration=registration,
+                                receipt_id=receipt_id.strip(),
+                                student_id=student_id.strip().upper(),
+                                student_group=student_group,
+                            )
+                            logger.info(f"Row {row_number}: Receipt created - Receipt ID: {receipt_id}, Student ID: {student_id}")
+                            processed_count += 1
 
-                    # Ensure Receipt is unique
-                    if Receipt.objects.filter(
-                        org=org,
-                        institution=institution,
-                        registration=registration,
-                        receipt_id=receipt_id.strip(),
-                        student_id=student_id.strip().upper()
-                    ).exists():
-                        warning_message = f"Row {row_number}: Duplicate Receipt found - Receipt ID: {receipt_id}, Student ID: {student_id}"
-                        logger.warning(warning_message)
-                        skipped_rows.append((row_number, row, "Duplicate receipt"))
-                        continue
+                        except IntegrityError as e:
+                            # Handle duplicate receipts
+                            error_message = f"Row {row_number}: Duplicate Receipt - Receipt ID: {receipt_id}, Student ID: {student_id}"
+                            logger.warning(error_message)
+                            skipped_rows.append((row_number, row, "Duplicate receipt"))
+                            continue
 
-                    # Create Receipt
-                    Receipt.objects.create(
-                        org=org,
-                        institution=institution,
-                        registration=registration,
-                        receipt_id=receipt_id.strip(),
-                        student_id=student_id.strip().upper(),
-                        student_group=student_group,
-                    )
-                    logger.info(f"Row {row_number}: Receipt created - Receipt ID: {receipt_id}, Student ID: {student_id}")
-                    processed_count += 1
+                        except Exception as e:
+                            # Handle unexpected errors
+                            error_message = f"Row {row_number}: Unexpected error while creating Receipt - {e}"
+                            logger.error(error_message)
+                            skipped_rows.append((row_number, row, str(e)))
+                            continue
 
                 except Exception as e:
                     error_message = f"Row {row_number}: Error processing receipt - {e}"
@@ -380,6 +393,8 @@ def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_
             notification.type = "success"
             notification.save()
 
+        #----------------------------
+        
     except Exception as e:
         error_message = "Error while processing Receipt Data Excel file."
         logger.error(error_message)
@@ -695,7 +710,7 @@ def generate_student_pass(user_id, registration_slug, filters=None):
             queryset = queryset.filter(student_group_id=filters['student_group'])
 
     # Generate the PDF using the filtered queryset
-    students = queryset.values(
+    students = queryset.order_by('institution__name', 'student_group__name').values(
         'student_name', 'pickup_bus_record__label',
         'drop_bus_record__label', 'institution__name',
         'student_id', 'ticket_id', 'pickup_schedule__name', 'drop_schedule__name',
