@@ -24,7 +24,27 @@
       display: flex;
       justify-content: space-between;
       padding: 1rem;
+
+      // notification
+      .notification{
+        .dropdown{
+          ul{
+            padding-bottom: 0px;
+            li{
+              .color{
+                background-color: $indigo-100;
+                padding: 10px; 
+                span{
+                  font-size: 14px;
+                  font-weight: 500;
+                }
+            }
+            }
+          }
+        }
+      }
     }
+   
   }
 
   // Sidebar

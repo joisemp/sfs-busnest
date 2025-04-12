@@ -23,24 +23,61 @@
                 <a href="{% url 'landing_page' %}" class="logo">
                     <img src="{% static 'images/logo.svg' %}" style="max-width: 130px;" alt="">
                 </a>
-                
+
                 <div class="d-flex">
                     <div class="notification">
                         <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle mt-1 me-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                               <i class="fa-solid fa-bell"></i>
+                            <button class="btn btn-secondary dropdown-toggle mt-1 me-2" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-bell"></i>
                             </button>
                             <ul class="dropdown-menu">
-                              <li><a class="dropdown-item" href="#">Action</a></li>
-                              <li><a class="dropdown-item" href="#">Another action</a></li>
-                              <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                <li><a class="dropdown-item" href="#">
+                                        <div class="details d-flex">
+                                            <div class="info">
+                                                <h6>File Processing</h6>
+                                                <p>Excel file processing started. Routes are getting added</p>
+                                            </div>
+                                            <div class="d-flex icon align-items-center justify-content-center">
+                                                <i class="fa-regular fa-circle-check ms-2" style="font-size: 22px;"></i>
+                                            </div>
+                                        </div>
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                        <div class="details d-flex">
+                                            <div class="info">
+                                                <h6>File Processing</h6>
+                                                <p>Excel file processing started. Routes are getting added</p>
+                                            </div>
+                                            <div class="d-flex icon align-items-center justify-content-center">
+                                                <i class="fa-regular fa-circle-check ms-2" style="font-size: 22px;"></i>
+                                            </div>
+                                        </div>
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                        <div class="details d-flex">
+                                            <div class="info">
+                                                <h6>File Processing</h6>
+                                                <p>Excel file processing started. Routes are getting added</p>
+                                            </div>
+                                            <div class="d-flex icon align-items-center justify-content-center">
+                                                <i class="fa-regular fa-circle-check ms-2" style="font-size: 22px;"></i>
+                                            </div>
+                                        </div>
+                                    </a></li>
+                                <li><a class="dropdown-item color">
+                                        <div class="info-content d-flex justify-content-between">
+                                            <span>Show more </span>
+                                            <i class="fa-solid fa-arrow-right ms-2"></i>
+                                        </div>
+                                    </a></li>
                             </ul>
-                          </div>
+                        </div>
                     </div>
                     <div class="profile">
                         <div class="dropdown">
-                            <div class="dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">
+                            <div class="dropdown-toggle d-flex align-items-center" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <div
                                     style="border-radius: 50%; object-fit: cover; overflow: hidden; border: 3px solid #4f46e5;">
                                     <img src="{% static 'images/profile-default-icon.jpg' %}" height="35px" width="35px"
@@ -67,7 +104,8 @@
         <section class="main-content">
             <div class="container">
                 <!-- HTMX element to load priority notifications -->
-                <div hx-get="{% url 'core:priority_notifications' %}" hx-trigger="load" hx-target="#priority-notifications" hx-swap="innerHTML">
+                <div hx-get="{% url 'core:priority_notifications' %}" hx-trigger="load"
+                    hx-target="#priority-notifications" hx-swap="innerHTML">
                     <div id="priority-notifications">
                         <!-- Priority notifications will be loaded here -->
                     </div>
@@ -78,6 +116,21 @@
     </div>
     {% block scripts %}{% endblock scripts %}
     <script src="{% static 'utils/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+       <script>
+  function truncateString(str, num) {
+    return str.length > num ? str.slice(0, num) + "..." : str;
+  }
+
+  // Select all paragraph elements inside .info
+  document.addEventListener("DOMContentLoaded", () => {
+    const descriptions = document.querySelectorAll(".info p");
+
+    descriptions.forEach(p => {
+      const originalText = p.textContent;
+      p.textContent = truncateString(originalText, 30); // Change '40' to any limit you want
+    });
+  });
+</script>
 </body>
 
 </html>
