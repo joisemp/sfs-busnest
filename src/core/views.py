@@ -121,7 +121,7 @@ def mark_notification_as_read(request, notification_id):
 
 class NotificationListView(LoginRequiredMixin, ListView):
     model = Notification
-    template_name = 'central_admin/notification_list.html'
+    template_name = 'core/notification_list.html'
     context_object_name = 'notifications'
     paginate_by = 20
 
