@@ -8,7 +8,7 @@ from PIL import Image
 from datetime import datetime
 from django.contrib.staticfiles import finders
 
-TEMPLATE_PATH = finders.find("images/id_img.png")  # Use finders to locate the static file
+TEMPLATE_PATH = finders.find("images/id_img_nobg.png")  # Use finders to locate the static file
 
 def generate_ids_pdf(students):
     """
