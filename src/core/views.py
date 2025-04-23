@@ -14,6 +14,8 @@ from django.contrib.auth import get_user_model
 from services.models import Organisation
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
 
 User = get_user_model()
 
@@ -116,3 +118,16 @@ def mark_notification_as_read(request, notification_id):
     # Fetch updated priority notifications
     notifications = Notification.objects.filter(user=request.user, priority=True, status="unread")
     return render(request, 'core/priority_notifications.html', {'priority_notifications': notifications})
+
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = 'core/notification_list.html'
+    context_object_name = 'notifications'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context

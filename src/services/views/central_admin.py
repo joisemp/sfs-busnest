@@ -1486,3 +1486,4 @@ class StudentPassFileDownloadView(LoginRequiredMixin, CentralAdminOnlyAccessMixi
         student_pass_file = get_object_or_404(StudentPassFile, slug=self.kwargs['slug'])
         return FileResponse(student_pass_file.file, as_attachment=True, filename=student_pass_file.file.name)
 
+

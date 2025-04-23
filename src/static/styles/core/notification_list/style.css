@@ -250,26 +250,6 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
-#registration-list .wrap {
-  display: flex;
-  flex-wrap: wrap;
-}
-@media screen and (max-width: 805px) {
-  #registration-list .wrap {
-    justify-content: center;
-  }
-}
-#registration-list .wrap .card-wrap {
-  max-width: 20rem;
-  width: 100%;
-  margin: 5px;
-}
-@media screen and (max-width: 805px) {
-  #registration-list .wrap .card-wrap {
-    max-width: 26rem;
-  }
-}
-#registration-list .wrap .card-wrap .card {
-  width: 100%;
-  padding: 30px 20px;
+.pointer {
+  cursor: pointer;
 }/*# sourceMappingURL=style.css.map */

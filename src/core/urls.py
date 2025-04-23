@@ -18,4 +18,5 @@ urlpatterns = [
           name='complete_password_reset'),
      path('priority-notifications/', priority_notifications_view, name='priority_notifications'),
      path('notifications/<int:notification_id>/read/', mark_notification_as_read, name='mark_notification_as_read'),
+     path('notifications/', views.NotificationListView.as_view(), name='notification_list'),
 ]
