@@ -7,7 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusNest {% block title %}{% endblock title %}</title>
     <link rel="icon" type="image/x-icon" href="{% static 'images/logo-icon.svg' %}">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=info" />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=info" />
     <script src="{% static 'utils/htmx/htmx.min.js' %}"></script>
     <script src="https://kit.fontawesome.com/0e000e9e5c.js" crossorigin="anonymous"></script>
     <link href="{% static 'utils/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -26,13 +27,19 @@
                 </a>
 
                 <div class="d-flex">
+                    <!-- Notification -->
                     <div class="notification">
                         <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle mt-1 me-2" type="button"
+                            <button class="btn btn-sm text-muted dropdown-toggle me-2" type="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fa-solid fa-bell"></i>
+                                <span class="ms-2 d-none d-md-block">Notifications</span>
                             </button>
+
                             <ul class="dropdown-menu">
+                                <li class="dropdown-header">No nofications at the moment</li>
+
+<!--                                 
                                 <li><a class="dropdown-item" href="#">
                                         <div class="details d-flex">
                                             <div class="info">
@@ -66,13 +73,17 @@
                                             </div>
                                         </div>
                                     </a></li>
-                                <li><a class="dropdown-item color">
-                                        <div class="info-content d-flex justify-content-between">
-                                            <a href="{% url 'core:notification_list' %}"><span>Show more </span></a>
+                                <li>
+                                    <a href="{% url 'core:notification_list' %}">
+                                        <div class="info-content d-flex justify-content-between dropdown-item color">
+                                            <span>Show more </span>
                                             <i class="fa-solid fa-arrow-right ms-2"></i>
                                         </div>
-                                    </a></li>
+                                    </a>
+                                </li>
+                                 -->
                             </ul>
+
                         </div>
                     </div>
                     <div class="profile">
@@ -117,21 +128,21 @@
     </div>
     {% block scripts %}{% endblock scripts %}
     <script src="{% static 'utils/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-       <script>
-  function truncateString(str, num) {
-    return str.length > num ? str.slice(0, num) + "..." : str;
-  }
+    <script>
+        function truncateString(str, num) {
+            return str.length > num ? str.slice(0, num) + "..." : str;
+        }
 
-  // Select all paragraph elements inside .info
-  document.addEventListener("DOMContentLoaded", () => {
-    const descriptions = document.querySelectorAll(".info p");
+        // Select all paragraph elements inside .info
+        document.addEventListener("DOMContentLoaded", () => {
+            const descriptions = document.querySelectorAll(".info p");
 
-    descriptions.forEach(p => {
-      const originalText = p.textContent;
-      p.textContent = truncateString(originalText, 30); // Change '40' to any limit you want
-    });
-  });
-</script>
+            descriptions.forEach(p => {
+                const originalText = p.textContent;
+                p.textContent = truncateString(originalText, 30); // Change '40' to any limit you want
+            });
+        });
+    </script>
 </body>
 
 </html>

@@ -2,6 +2,59 @@ import os
 from pathlib import Path
 from environ import Env
 
+"""
+Django settings for the project.
+This module contains the configuration for the Django project, including
+settings for development and production environments. It uses environment
+variables for sensitive information and supports features like Celery, 
+DigitalOcean Spaces, and email configuration.
+Attributes:
+    ENVIRONMENT (str): The current environment ('development' or 'production').
+    TIME_ZONE (str): The timezone for the project, set to 'Asia/Kolkata'.
+    USE_TZ (bool): Whether to use timezone-aware datetimes.
+    BASE_DIR (Path): The base directory of the project.
+    LOGIN_URL (str): The URL for the login page.
+    AUTH_USER_MODEL (str): The custom user model for the project.
+    DEBUG (bool): Debug mode status, determined by the environment.
+    SECRET_KEY (str): The secret key for the project.
+    ALLOWED_HOSTS (list): List of allowed hosts for the project.
+    SITE_URL (str): The base URL of the site.
+    SESSION_COOKIE_AGE (int): The age of session cookies in seconds.
+    INSTALLED_APPS (list): List of installed Django apps.
+    MIDDLEWARE (list): List of middleware for the project.
+    ALLOW_USER_REGISTRATION (bool): Whether user registration is allowed.
+    MAINTENANCE_MODE (bool): Whether the site is in maintenance mode.
+    ROOT_URLCONF (str): The root URL configuration module.
+    TEMPLATES (list): Configuration for Django templates.
+    WSGI_APPLICATION (str): The WSGI application module.
+    DATABASES (dict): Database configuration based on the environment.
+    CELERY_BROKER_URL (str): The URL for the Celery broker.
+    CELERY_RESULT_BACKEND (str): The backend for storing Celery task results.
+    CELERY_RESULT_EXTENDED (bool): Whether to use extended Celery results.
+    CSRF_TRUSTED_ORIGINS (list): List of trusted origins for CSRF protection.
+    AUTH_PASSWORD_VALIDATORS (list): List of password validation rules.
+    LANGUAGE_CODE (str): The default language code.
+    STATIC_URL (str): The URL for serving static files.
+    STATICFILES_DIRS (list): List of directories for static files.
+    STATIC_ROOT (str): The directory for collecting static files.
+    MEDIA_URL (str): The URL for serving media files.
+    MEDIA_ROOT (str): The directory for storing media files.
+    AWS_ACCESS_KEY_ID (str): AWS access key ID for DigitalOcean Spaces.
+    AWS_SECRET_ACCESS_KEY (str): AWS secret access key for DigitalOcean Spaces.
+    AWS_STORAGE_BUCKET_NAME (str): AWS storage bucket name.
+    AWS_S3_ENDPOINT_URL (str): AWS S3 endpoint URL.
+    AWS_S3_CUSTOM_DOMAIN (str): Custom domain for AWS S3.
+    AWS_S3_OBJECT_PARAMETERS (dict): Parameters for AWS S3 objects.
+    EMAIL_BACKEND (str): Email backend configuration.
+    EMAIL_HOST (str): Email host for SMTP.
+    EMAIL_PORT (int): Email port for SMTP.
+    EMAIL_USE_TLS (bool): Whether to use TLS for email.
+    EMAIL_HOST_USER (str): Email host username.
+    EMAIL_HOST_PASSWORD (str): Email host password.
+    DEFAULT_FROM_EMAIL (str): Default email address for outgoing emails.
+    LOGGING (dict): Logging configuration for the project.
+"""
+
 env = Env()
 Env.read_env()
 
@@ -19,8 +72,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOGIN_URL = '/core/login'
 
 AUTH_USER_MODEL = 'core.User'
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 if ENVIRONMENT == 'development':
     DEBUG = True
