@@ -627,7 +627,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     ws.title = "Tickets"
 
     headers = [
-        'TICKET ID', 'STUDENT NAME', 'CLASS', 'SECTION', 'STUDENT EMAIL', 'CONTACT NO', 
+        'TICKET ID', 'STUDENT ID', 'STUDENT NAME', 'CLASS', 'SECTION', 'STUDENT EMAIL', 'CONTACT NO', 
         'ALTERNATIVE NO', 'PICKUP POINT', 'DROP POINT', 'PICKUP BUS', 'DROP BUS', 
         'PICKUP SCHEDULE', 'DROP SCHEDULE', 'INSTITUTION', 'STATUS', 'CREATED AT'
     ]
@@ -645,6 +645,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
         ws.append([
             ticket.ticket_id,
+            ticket.student_id,
             ticket.student_name.upper(),
             std_class.strip().upper(),
             section.strip().upper(),

@@ -452,8 +452,9 @@ class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View)
     def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
+        # Always filter by the current user's institution for institution admin
         filters = {
-            'institution': request.GET.get('institution'),
+            'institution': request.user.profile.institution.id,
             'pickup_points': request.GET.getlist('pickup_point'),
             'drop_points': request.GET.getlist('drop_point'),
             'schedule': request.GET.get('schedule'),
