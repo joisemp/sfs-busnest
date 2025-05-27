@@ -39,7 +39,7 @@
                             <ul class="dropdown-menu">
                                 <li class="dropdown-header">No nofications at the moment</li>
 
-<!--                                 
+                                <!--                                 
                                 <li><a class="dropdown-item" href="#">
                                         <div class="details d-flex">
                                             <div class="info">
@@ -122,6 +122,20 @@
                         <!-- Priority notifications will be loaded here -->
                     </div>
                 </div>
+                {% if messages %}
+                <div class="container mt-3">
+                    {% for message in messages %}
+                    <div class="alert
+                    {% if message.tags == 'error' %}alert-danger
+                    {% elif message.tags == 'success' %}alert-success
+                    {% elif message.tags == 'warning' %}alert-warning
+                    {% elif message.tags == 'info' %}alert-info
+                    {% else %}alert-secondary{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 {% block content %}{% endblock %}
             </div>
         </section>

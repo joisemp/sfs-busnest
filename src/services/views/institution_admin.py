@@ -16,6 +16,7 @@ from django.template.loader import render_to_string
 from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel, bulk_update_student_groups_task
 from services.utils import get_filtered_bus_records
 import openpyxl
+from django.contrib import messages
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
@@ -787,4 +788,6 @@ class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyA
         user_id = request.user.id
         bulk_update_student_groups_task.delay(user_id, institution.id, preview_data)
         request.session.pop('bulk_update_preview', None)
-        return JsonResponse({"message": "Bulk update started. You will be notified when complete."})
+        return HttpResponseRedirect(
+            reverse('institution_admin:ticket_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+        )

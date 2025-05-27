@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
+
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/ticket_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
 {% block content %}
-<h2>Confirm Bulk Student Group Update</h2>
+<h4 class="mb-4">Confirm Bulk Student Group Update</h4>
 {% if errors %}
   <div class="alert alert-danger">
     <ul>

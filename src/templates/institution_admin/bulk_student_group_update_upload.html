@@ -1,4 +1,15 @@
 {% extends 'base.html' %}
+
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/ticket_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
 {% block content %}
 <h2>Bulk Update Student Groups</h2>
 <form method="post" enctype="multipart/form-data">
