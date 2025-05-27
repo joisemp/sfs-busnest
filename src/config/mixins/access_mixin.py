@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import AccessMixin
 from django.http import HttpResponsePermanentRedirect
 from django.urls import reverse
 from django.http import Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from services.models import Registration
 
 
@@ -107,7 +107,7 @@ class RegistrationOpenCheckMixin(AccessMixin):
         registration_code = kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
         if not registration.status:
-            raise Http404("Registration is not open.")
+            # Render a template instead of raising 404
+            return render(request, "registration_closed.html", {"registration": registration})
         return super().dispatch(request, *args, **kwargs)
-        
-        
+

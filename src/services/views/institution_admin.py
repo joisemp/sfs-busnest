@@ -802,6 +802,13 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
             "errors": errors,
         })
 
+    def dispatch(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        if registration.status:
+            raise Http404("Bulk update is only allowed when registration is closed.")
+        return super().dispatch(request, *args, **kwargs)
+
 class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
     def post(self, request, *args, **kwargs):
         preview_data = request.session.get('bulk_update_preview', [])
@@ -813,3 +820,10 @@ class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyA
         return HttpResponseRedirect(
             reverse('institution_admin:ticket_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
         )
+    
+    def dispatch(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        if registration.status:
+            raise Http404("Bulk update is only allowed when registration is closed.")
+        return super().dispatch(request, *args, **kwargs)
