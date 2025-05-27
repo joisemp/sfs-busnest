@@ -11,18 +11,26 @@
 {% endblock sidebar %}
 
 {% block content %}
-<h4 class="mb-4">Confirm Bulk Student Group Update</h4>
-{% if errors %}
+<form method="post" class="mx-3"
+  action="{% url 'institution_admin:bulk_update_student_group_confirm' registration_slug=request.resolver_match.kwargs.registration_slug %}">
+  {% csrf_token %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Confirm Bulk Student Group Update</h4>
+    <div>
+      <a href="{% url 'institution_admin:bulk_update_student_group' registration_slug=request.resolver_match.kwargs.registration_slug %}"
+        class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Confirm Update</button>
+    </div>
+  </div>
+  {% if errors %}
   <div class="alert alert-danger">
     <ul>
       {% for error in errors %}
-        <li>{{ error }}</li>
+      <li>{{ error }}</li>
       {% endfor %}
     </ul>
   </div>
-{% endif %}
-<form method="post" action="{% url 'institution_admin:bulk_update_student_group_confirm' registration_slug=request.resolver_match.kwargs.registration_slug %}">
-  {% csrf_token %}
+  {% endif %}
   <table class="table">
     <thead>
       <tr>
@@ -43,6 +51,5 @@
       {% endfor %}
     </tbody>
   </table>
-  <button type="submit" class="btn btn-success">Confirm and Start Update</button>
 </form>
 {% endblock %}

@@ -754,9 +754,22 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
         errors = []
         institution = self.request.user.profile.institution
 
+        # Validate header row
+        header = [str(cell).strip().upper() if cell else "" for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+        expected_header = ["STUDENT ID", "CLASS", "SECTION"]
+        if header != expected_header:
+            messages.error(self.request, "Excel file must have only these columns in order: STUDENT ID, CLASS, SECTION (no extra columns or data).")
+            return render(self.request, self.template_name, {
+                "form": form,
+                "errors": errors,
+            })
+
         # Collect all student_ids from the file for bulk query
         student_id_rows = []
         for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if row is None or len(row) != 3:
+                errors.append(f"Row {idx}: Must have exactly 3 columns (STUDENT ID, CLASS, SECTION).")
+                continue
             student_id, class_name, section = row
             if not student_id or not class_name or not section:
                 errors.append(f"Row {idx}: Missing data")
@@ -764,13 +777,13 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
             student_id_rows.append((idx, student_id, class_name, section))
 
         # Bulk fetch all tickets for student_ids
-        student_ids = [student_id.strip() for _, student_id, _, _ in student_id_rows]
+        student_ids = [str(student_id).strip() for _, student_id, _, _ in student_id_rows]
         tickets = Ticket.objects.filter(student_id__in=student_ids, institution=institution).select_related('student_group')
         ticket_map = {t.student_id: t for t in tickets}
 
         for idx, student_id, class_name, section in student_id_rows:
             group_name = f"{str(class_name).strip().upper()} - {str(section).strip().upper()}"
-            ticket = ticket_map.get(student_id.strip())
+            ticket = ticket_map.get(str(student_id).strip())
             if ticket:
                 current_group = ticket.student_group.name if ticket.student_group else ""
                 preview_data.append({
