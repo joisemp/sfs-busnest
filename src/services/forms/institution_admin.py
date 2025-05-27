@@ -42,4 +42,7 @@ class BusSearchForm(form_mixin.BootstrapFormMixin, forms.Form):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label='Select timing'
-    )    
+    )
+
+class BulkStudentGroupUpdateForm(forms.Form):
+    file = forms.FileField(label="Upload Excel file", required=True)

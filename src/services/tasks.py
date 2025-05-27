@@ -746,3 +746,24 @@ def generate_student_pass(user_id, registration_slug, filters=None):
 
     return f"Student pass generation completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
 
+
+@shared_task
+def bulk_update_student_groups_task(user_id, institution_id, preview_data):
+    from services.models import Ticket, StudentGroup, Institution
+    user = User.objects.get(id=user_id)
+    institution = Institution.objects.get(id=institution_id)
+    org = institution.org
+    for entry in preview_data:
+        student_id = entry['student_id']
+        new_group_name = entry['new_group']
+        try:
+            ticket = Ticket.objects.get(student_id=student_id, institution=institution)
+            student_group, _ = StudentGroup.objects.get_or_create(
+                org=org, institution=institution, name=new_group_name
+            )
+            ticket.student_group = student_group
+            ticket.save()
+        except Ticket.DoesNotExist:
+            continue
+    # Optionally: create a Notification for the user
+

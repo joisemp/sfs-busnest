@@ -39,5 +39,8 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/student-groups/<slug:student_group_slug>/update/', institution_admin.StudentGroupUpdateView.as_view(), name='student_group_update'),
      path('registrations/<slug:registration_slug>/student-groups/<slug:student_group_slug>/delete/', institution_admin.StudentGroupDeleteView.as_view(), name='student_group_delete'),
      
+     path('registrations/<slug:registration_slug>/bulk-update-student-group/', institution_admin.BulkStudentGroupUpdateView.as_view(), name='bulk_update_student_group'),
+     path('registrations/<slug:registration_slug>/bulk-update-student-group/confirm/', institution_admin.BulkStudentGroupUpdateConfirmView.as_view(), name='bulk_update_student_group_confirm'),
+     
      path('export/<slug:registration_slug>/', institution_admin.TicketExportView.as_view(), name='ticket_export'),
 ]

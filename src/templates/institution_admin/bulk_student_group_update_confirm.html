@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Confirm Bulk Student Group Update</h2>
+{% if errors %}
+  <div class="alert alert-danger">
+    <ul>
+      {% for error in errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+<form method="post" action="{% url 'institution_admin:bulk_update_student_group_confirm' registration_slug=request.resolver_match.kwargs.registration_slug %}">
+  {% csrf_token %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student ID</th>
+        <th>Name</th>
+        <th>Current Group</th>
+        <th>New Group</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in preview_data %}
+      <tr>
+        <td>{{ row.student_id }}</td>
+        <td>{{ row.student_name }}</td>
+        <td>{{ row.current_group }}</td>
+        <td>{{ row.new_group }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit" class="btn btn-success">Confirm and Start Update</button>
+</form>
+{% endblock %}
