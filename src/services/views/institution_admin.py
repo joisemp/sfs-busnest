@@ -741,28 +741,37 @@ class BusRequestCommentView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
 class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
     template_name = 'institution_admin/bulk_student_group_update_upload.html'
     form_class = BulkStudentGroupUpdateForm
-    
+
     def get(self, request, *args, **kwargs):
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
 
     def form_valid(self, form):
         file = form.cleaned_data['file']
-        wb = openpyxl.load_workbook(file)
+        wb = openpyxl.load_workbook(file, read_only=True)
         ws = wb.active
         preview_data = []
         errors = []
         institution = self.request.user.profile.institution
-        org = self.request.user.profile.org
 
+        # Collect all student_ids from the file for bulk query
+        student_id_rows = []
         for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             student_id, class_name, section = row
             if not student_id or not class_name or not section:
                 errors.append(f"Row {idx}: Missing data")
                 continue
+            student_id_rows.append((idx, student_id, class_name, section))
+
+        # Bulk fetch all tickets for student_ids
+        student_ids = [student_id.strip() for _, student_id, _, _ in student_id_rows]
+        tickets = Ticket.objects.filter(student_id__in=student_ids, institution=institution).select_related('student_group')
+        ticket_map = {t.student_id: t for t in tickets}
+
+        for idx, student_id, class_name, section in student_id_rows:
             group_name = f"{str(class_name).strip().upper()} - {str(section).strip().upper()}"
-            try:
-                ticket = Ticket.objects.get(student_id=student_id.strip(), institution=institution)
+            ticket = ticket_map.get(student_id.strip())
+            if ticket:
                 current_group = ticket.student_group.name if ticket.student_group else ""
                 preview_data.append({
                     "student_id": student_id,
@@ -770,7 +779,7 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
                     "current_group": current_group,
                     "new_group": group_name,
                 })
-            except Ticket.DoesNotExist:
+            else:
                 errors.append(f"Row {idx}: Ticket not found for student_id {student_id}")
 
         self.request.session['bulk_update_preview'] = preview_data
@@ -784,8 +793,8 @@ class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyA
     def post(self, request, *args, **kwargs):
         preview_data = request.session.get('bulk_update_preview', [])
         institution = request.user.profile.institution
-        org = request.user.profile.org
         user_id = request.user.id
+        # Use Celery for background processing to avoid blocking the request
         bulk_update_student_groups_task.delay(user_id, institution.id, preview_data)
         request.session.pop('bulk_update_preview', None)
         return HttpResponseRedirect(
