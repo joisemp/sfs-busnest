@@ -370,7 +370,8 @@
 {% block scripts %}
 <script>
   function exportData() {
-    const fetchUrl = "{% url 'institution_admin:ticket_export' registration_slug=registration.slug %}";
+    const queryString = window.location.search;
+    const fetchUrl = "{% url 'institution_admin:ticket_export' registration_slug=registration.slug %}" + queryString;
 
     fetch(fetchUrl, {
       method: 'POST',
