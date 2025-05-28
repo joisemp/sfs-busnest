@@ -1,3 +1,25 @@
+"""
+central_admin.py - Forms for central admin operations in the services app
+
+This module defines Django forms for central admin operations, including creation and update forms for
+people, institutions, buses, routes, stops, registrations, FAQs, schedules, schedule groups, bus records,
+trips, and bus requests. All forms use Bootstrap styling via a mixin for consistent UI.
+
+Forms:
+- PeopleCreateForm, PeopleUpdateForm: For creating and updating user profiles.
+- InstitutionForm: For managing institutions.
+- BusForm: For managing bus details.
+- RouteForm: For managing routes.
+- StopForm: For managing stops.
+- RegistrationForm: For managing registrations.
+- FAQForm: For managing FAQs.
+- ScheduleForm, ScheduleGroupForm: For managing schedules and schedule groups.
+- BusRecordCreateForm, BusRecordUpdateForm: For managing bus records.
+- TripCreateForm: For creating trips.
+- BusSearchForm: For searching buses by stop and schedule.
+- BusRequestStatusForm, BusRequestCommentForm: For managing bus request statuses and comments.
+"""
+
 from django import forms
 from core.models import UserProfile, User
 from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment

@@ -1,3 +1,16 @@
+"""
+students.py - Forms for student operations in the services app
+
+This module defines Django forms for student-related operations, including selecting stops, validating students,
+creating tickets, and submitting bus requests. All forms use Bootstrap styling via a mixin for a consistent UI.
+
+Forms:
+- StopSelectForm: For selecting a stop from available options.
+- ValidateStudentForm: For validating student identity using receipt and student IDs.
+- TicketForm: For creating or updating student ticket information.
+- BusRequestForm: For submitting bus requests by students.
+"""
+
 from django import forms
 from services.models import ScheduleGroup, Stop, Schedule, Ticket, BusRequest, Trip
 from config.mixins import form_mixin

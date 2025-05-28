@@ -1,3 +1,74 @@
+"""
+central_admin.py - URL configuration for central admin operations in the services app
+
+This module defines URL patterns for central admin views, including dashboards, institution management,
+bus management, people management, registrations, routes, stops, FAQs, tickets, schedules, schedule groups,
+bus records, trips, bus searches, bus requests, student group filtering, file exports, and student pass generation.
+
+Functions:
+- exported_file_download: Handles file download for exported files by slug.
+
+URL Patterns (detailed):
+- dashboard/: Central admin dashboard view.
+- institutions/: List all institutions.
+- institutions/create/: Create a new institution.
+- institutions/<slug:slug>/update/: Update an institution.
+- institutions/<slug:slug>/delete/: Delete an institution.
+- buses/: List all buses.
+- buses/upload/: Upload buses in bulk via file.
+- buses/create/: Create a new bus.
+- buses/<slug:slug>/update/: Update a bus.
+- buses/<slug:slug>/delete/: Delete a bus.
+- people/: List all people (users).
+- people/add/: Add a new person.
+- people/<slug:slug>/update/: Update a person.
+- people/<slug:slug>/delete/: Delete a person.
+- registrations/: List all registrations.
+- registrations/create/: Create a new registration.
+- registrations/<slug:registration_slug>/: Registration details view.
+- registrations/<slug:registration_slug>/update/: Update a registration.
+- registrations/<slug:registration_slug>/delete/: Delete a registration.
+- registrations/<slug:registration_slug>/routes/: List all routes for a registration.
+- registrations/<slug:registration_slug>/routes/upload/: Upload routes in bulk via file.
+- registrations/<slug:registration_slug>/routes/create/: Create a new route.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/update/: Update a route.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/delete/: Delete a route.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/add/: Add a stop to a route.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/: List all stops for a route.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/update/: Update a stop.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/: Delete a stop.
+- registrations/<slug:registration_slug>/faq/create/: Create a new FAQ for a registration.
+- registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/: Delete an FAQ.
+- registrations/<slug:registration_slug>/tickets/: List all tickets for a registration.
+- registrations/<slug:registration_slug>/tickets/export/: Export tickets for a registration.
+- registrations/<slug:registration_slug>/tickets/filter/: Filter tickets for a registration.
+- registrations/<slug:registration_slug>/schedules/: List all schedules for a registration.
+- registrations/<slug:registration_slug>/schedules/create/: Create a new schedule.
+- registrations/<slug:registration_slug>/schedules/<slug:schedule_slug>/update/: Update a schedule.
+- registrations/<slug:registration_slug>/schedule-groups/: List all schedule groups for a registration.
+- registrations/<slug:registration_slug>/schedule-groups/create/: Create a new schedule group.
+- registrations/<slug:registration_slug>/bus-records/: List all bus records for a registration.
+- registrations/<slug:registration_slug>/bus-records/create/: Create a new bus record.
+- registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/update/: Update a bus record.
+- registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/: List all trips for a bus record.
+- registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/create/: Create a new trip.
+- registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/trips/<slug:trip_slug>/delete/: Delete a trip.
+- registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/: Search for available buses for a ticket.
+- registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/available-buses/: Show available buses for a ticket.
+- registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/select-bus/<slug:bus_record_slug>/update-ticket/: Update a ticket with the selected bus.
+- registrations/<slug:registration_slug>/bus-requests/: List all bus requests for a registration.
+- registrations/<slug:registration_slug>/bus-requests/open/: List open bus requests.
+- registrations/<slug:registration_slug>/bus-requests/closed/: List closed bus requests.
+- registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/delete/: Delete a bus request.
+- registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/status/: Update the status of a bus request.
+- registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/comment/: Add a comment to a bus request.
+- registrations/student-groups/filter/: Filter student groups.
+- more/: Show the "more" menu for central admin.
+- exported-file/<slug:slug>/: Download an exported file.
+- registrations/<slug:registration_slug>/generate-student-pass/: Generate student passes for a registration.
+- student-pass/download/<slug:slug>/: Download a generated student pass file.
+"""
+
 from django.urls import path
 from services.views import central_admin
 from django.shortcuts import get_object_or_404

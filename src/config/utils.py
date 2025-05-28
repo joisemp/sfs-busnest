@@ -29,6 +29,19 @@ def generate_unique_slug(instance, base_slug):
 
 
 def generate_unique_code(model, no_of_char=6, unique_field='id'):
+    """
+    Generates a unique alphanumeric code for a given model by checking for uniqueness in the specified field.
+    Args:
+        model: An instance of the Django model for which the unique code is to be generated.
+        no_of_char (int, optional): The length of the generated code. Defaults to 6.
+        unique_field (str, optional): The name of the model field that should be unique. Defaults to 'id'.
+    Returns:
+        str: A unique alphanumeric code of the specified length.
+    Notes:
+        - The function generates random codes consisting of lowercase letters and digits.
+        - It checks the database to ensure the generated code does not already exist in the specified field.
+        - The function assumes the model has a manager named 'objects' and supports the 'filter' and 'exists' methods.
+    """
     def generate_code():
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=no_of_char))
     
