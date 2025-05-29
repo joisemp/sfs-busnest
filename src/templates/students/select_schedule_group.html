@@ -21,11 +21,12 @@
     <h6 class="text-muted mb-3">Select the schedule according to preferences</h6>
     </div>
 
-    {% if error_message %}
+    {% if error_message|default_if_none:'' %}
     <div class="alert alert-danger" role="alert">
         {{error_message}}
       </div>
     {% endif %}
+
 
     {% for group in schedule_groups %}
     <div class="card mb-3" style="width: 100%; border: none; padding: 1rem;">
@@ -61,6 +62,7 @@
     </div>
     {% endfor %}
 
+    
     <button type="submit" class="btn btn-primary">Continue<i class="fa-solid fa-angle-right ms-2"></i></button>
 </form>
 

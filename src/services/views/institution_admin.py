@@ -152,7 +152,7 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
             org=self.request.user.profile.org,
             institution=self.request.user.profile.institution,
             registration=self.registration
-        )
+        ).order_by('-created_at')
         return queryset
 
     def get_context_data(self, **kwargs):
