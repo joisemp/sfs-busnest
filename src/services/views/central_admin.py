@@ -548,8 +548,8 @@ class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         CentralAdminOnlyAccessMixin: Restricts access to central admin users.
         ListView: Provides list display functionality.
     Attributes:
-        model (Trip): The model to list.
-        template_name (str): The template used to render the list.
+        model (Trip): The Trip model to be listed.
+        template_name (str): Template used for rendering the trip list.
         context_object_name (str): The context variable name for the list of trips.
     Methods:
         get_queryset(self):
@@ -1073,7 +1073,8 @@ class StopUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView
         slug_url_kwarg (str): The URL keyword argument for the stop slug.
     Methods:
         get_context_data(self, **kwargs): Adds the related Registration object to the context using the 'registration_slug' from the URL.
-        get_success_url(self): Returns the URL to redirect to after a successful update, using 'registration_slug' and 'route_slug' from the URL kwargs.
+        get_success_url(self):
+            Returns the URL to redirect to after a successful update, using 'registration_slug' and 'route_slug' from the URL kwargs.
     """
     model = Stop
     form_class = StopForm
@@ -1523,7 +1524,7 @@ class ScheduleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         ListView: Provides list display functionality for Schedule objects.
     Attributes:
         model (Schedule): The model to list.
-        template_name (str): The template used for rendering the schedule list.
+        template_name (str): The template used to render the schedule list.
         context_object_name (str): The context variable name for the list of schedules.
     Methods:
         get_queryset(self):
@@ -1596,7 +1597,7 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
         - UpdateView: Provides update functionality for a model instance.
     Attributes:
         model (Schedule): The model to be updated.
-        template_name (str): Path to the template used for rendering the update form.
+        template_name (str): Path to the template used to render the update form.
         form_class (ScheduleForm): The form class used for updating the Schedule.
         slug_url_kwarg (str): The keyword argument for the schedule's slug in the URL.
     Methods:
@@ -1721,6 +1722,14 @@ class BusRequestListView(ListView):
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration).order_by('-created_at')
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(student_name__icontains=search_query) |
+                Q(contact_no__icontains=search_query) |
+                Q(contact_email__icontains=search_query) |
+                Q(receipt__receipt_id__icontains=search_query)
+            )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -1746,6 +1755,7 @@ class BusRequestListView(ListView):
                 registration=registration, 
                 recipt=request.receipt
             ).exists()
+        context["search_query"] = self.request.GET.get('search', '').strip()
         return context
 
 class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
@@ -1758,7 +1768,7 @@ class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Li
     Attributes:
         model (BusRequest): The model to list.
         template_name (str): Template used for rendering the list.
-        context_object_name (str): Name of the context variable for the queryset.
+        context_object_name (str): Name of the context variable for the
         paginate_by (int): Number of items per page.
     Methods:
         get_queryset(self):
