@@ -187,3 +187,19 @@ class BusRequestCommentForm(forms.ModelForm):
         widgets = {
             'comment': forms.Textarea(attrs={'class': 'form-control'}),
         }
+
+from services.models import Route
+
+class StopTransferForm(forms.Form):
+    new_route = forms.ModelChoiceField(
+        queryset=Route.objects.none(),
+        label="Select New Route",
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        org = kwargs.pop('org', None)
+        registration = kwargs.pop('registration', None)
+        super().__init__(*args, **kwargs)
+        if org and registration:
+            self.fields['new_route'].queryset = Route.objects.filter(org=org, registration=registration)

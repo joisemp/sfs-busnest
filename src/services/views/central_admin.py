@@ -28,7 +28,7 @@ from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
 
-from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
+from config.mixins.access_mixin import CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.views.generic import (
@@ -80,11 +80,12 @@ from services.forms.central_admin import (
     TripCreateForm, 
     ScheduleGroupForm, 
     BusRequestStatusForm, 
-    BusRequestCommentForm
+    BusRequestCommentForm,
+    StopTransferForm
 )
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
-
+from services.utils.transfer_stop import move_stop_and_update_tickets
 
 User = get_user_model()
 
@@ -1217,7 +1218,7 @@ class RegistrationUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Up
         - UpdateView: Provides update functionality for a model instance.
     Attributes:
         model (Registration): The model to update.
-        form_class (RegistrationForm): The form used for updating the model.
+        form_class (RegistrationForm): The form used to update the model.
         template_name (str): The template used to render the update form.
         slug_field (str): The model field used for lookup via slug.
         slug_url_kwarg (str): The URL keyword argument for the slug.
@@ -2186,15 +2187,6 @@ class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
     It extracts filtering parameters from the request, triggers an asynchronous Celery task
     (`export_tickets_to_excel`) to perform the export, and returns a JSON response indicating
     that the export request has been received.
-    Attributes:
-        Inherits from LoginRequiredMixin, CentralAdminOnlyAccessMixin, and View.
-    Methods:
-        post(request, *args, **kwargs):
-            Handles POST requests to trigger the ticket export process.
-            - Extracts 'registration_slug' from URL kwargs.
-            - Retrieves search and filter parameters from the request.
-            - Initiates the export task asynchronously.
-            - Returns a JSON response confirming receipt of the export request.
     """
     def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
@@ -2289,5 +2281,40 @@ class StudentPassFileDownloadView(LoginRequiredMixin, CentralAdminOnlyAccessMixi
     def get(self, request, *args, **kwargs):
         student_pass_file = get_object_or_404(StudentPassFile, slug=self.kwargs['slug'])
         return FileResponse(student_pass_file.file, as_attachment=True, filename=student_pass_file.file.name)
+
+
+class StopTransferView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin, View):
+    """
+    View to transfer a stop to a new route and update all related tickets.
+    """
+    template_name = 'central_admin/stop_transfer.html'
+
+    def get(self, request, registration_slug, route_slug, stop_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        stop = get_object_or_404(Stop, slug=stop_slug, registration=registration)
+        form = StopTransferForm(org=request.user.profile.org, registration=registration)
+        return render(request, self.template_name, {
+            'form': form,
+            'stop': stop,
+            'registration': registration,
+        })
+
+    def post(self, request, registration_slug, route_slug, stop_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        stop = get_object_or_404(Stop, slug=stop_slug, registration=registration)
+        form = StopTransferForm(request.POST, org=request.user.profile.org, registration=registration)
+        if form.is_valid():
+            new_route = form.cleaned_data['new_route']
+            try:
+                move_stop_and_update_tickets(stop, new_route)
+                messages.success(request, f"Stop '{stop.name}' transferred to route '{new_route.name}' and tickets updated.")
+                return redirect('central_admin:stop_list', registration_slug=registration.slug, route_slug=new_route.slug)
+            except Exception as e:
+                messages.error(request, f"Error: {str(e)}")
+        return render(request, self.template_name, {
+            'form': form,
+            'stop': stop,
+            'registration': registration,
+        })
 
 

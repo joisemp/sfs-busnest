@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-info">
+        <h4>Registration is Open</h4>
+        <p>The registration <strong>{{ registration }}</strong> is currently open. This page is only accessible when the registration is closed.</p>
+        <a href="/" class="btn btn-primary mt-2">Go Home</a>
+    </div>
+</div>
+{% endblock %}

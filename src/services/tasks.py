@@ -21,7 +21,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from uuid import uuid4
 from django.core.files.base import ContentFile
-from services.utils import generate_ids_pdf  # Import from utils instead of views
+from services.utils.utils import generate_ids_pdf  # Import from utils instead of views
 from urllib.parse import urljoin
 from django.db.utils import IntegrityError
 

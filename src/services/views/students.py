@@ -7,7 +7,7 @@ from services.forms.students import StopSelectForm, ValidateStudentForm, TicketF
 from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
 from config.mixins.access_mixin import RegistrationOpenCheckMixin
 from services.tasks import send_email_task
-from services.utils import get_filtered_bus_records
+from services.utils.utils import get_filtered_bus_records
 
 class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
     template_name = 'students/validate_student_form.html'

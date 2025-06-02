@@ -14,7 +14,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.template.loader import render_to_string
 from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel, bulk_update_student_groups_task
-from services.utils import get_filtered_bus_records
+from services.utils.utils import get_filtered_bus_records
 import openpyxl
 from django.contrib import messages
 

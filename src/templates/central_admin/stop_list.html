@@ -36,7 +36,8 @@
                 </div>
                 <div class="buttons">
                    <a class="btn btn-sm text-danger" href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Delete<i class="fa-solid fa-trash-can ms-2"></i></a>
-                   <a class="btn btn-sm  btn-secondary" href="{% url 'central_admin:stop_update' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
+                   <a class="btn btn-sm  btn-dark" href="{% url 'central_admin:stop_update' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
+                   <a class="btn btn-sm btn-warning" href="{% url 'central_admin:stop_transfer' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Transfer<i class="fa-solid fa-arrow-right-arrow-left ms-2"></i></a>
                 </div>
                 </div>
             </div>

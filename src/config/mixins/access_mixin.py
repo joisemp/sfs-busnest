@@ -110,4 +110,24 @@ class RegistrationOpenCheckMixin(AccessMixin):
             # Render a template instead of raising 404
             return render(request, "registration_closed.html", {"registration": registration})
         return super().dispatch(request, *args, **kwargs)
+    
+
+class RegistrationClosedOnlyAccessMixin(AccessMixin):
+    """
+    Mixin to allow access to a view only if the registration is closed.
+    If the registration is open, renders a template or raises 404.
+    Usage: Add this mixin to your view before other mixins.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        registration_code = kwargs.get('registration_code')
+        registration_slug = kwargs.get('registration_slug')
+        registration = None
+        if registration_code:
+            registration = get_object_or_404(Registration, code=registration_code)
+        elif registration_slug:
+            registration = get_object_or_404(Registration, slug=registration_slug)
+        if registration and registration.status:
+            # Registration is open, deny access
+            return render(request, "registration_open.html", {"registration": registration})
+        return super().dispatch(request, *args, **kwargs)
 
