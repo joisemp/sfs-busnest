@@ -194,7 +194,8 @@ class StopTransferForm(forms.Form):
     new_route = forms.ModelChoiceField(
         queryset=Route.objects.none(),
         label="Select New Route",
-        required=True
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
 
     def __init__(self, *args, **kwargs):
