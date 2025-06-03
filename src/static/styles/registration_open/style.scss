@@ -1,0 +1,18 @@
+@import '../sidebar_navbar_base';
+
+
+.initial-wrap .main-content {
+    margin-left: 0;
+
+    .card{
+        margin: 4rem auto;
+        width: fit-content;
+        
+        h4{
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+    }
+}
+

@@ -1,14 +1,24 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/registration_open/style.css' %}">
+{% endblock style %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Transfer Stop: {{ stop.name }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Transfer</button>
-        <a href="{% url 'central_admin:stop_list' registration_slug=registration.slug route_slug=stop.route.slug %}" class="btn btn-secondary">Cancel</a>
-    </form>
+<div class="d-flex justify-content-center mt-5 vh-100">
+    <div style="max-width: 450px;">
+        <button onclick="javascript:history.back()" class="btn btn-sm btn-outline-dark mb-3">
+            <i class="fa fa-arrow-left me-2"></i> Go back
+        </button>
+        <h5 class="mb-3">Transfer Stop {{ stop.name }}</h5>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Transfer</button>
+            <a href="{% url 'central_admin:stop_list' registration_slug=registration.slug route_slug=stop.route.slug %}"
+                class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
 </div>
 {% endblock %}
