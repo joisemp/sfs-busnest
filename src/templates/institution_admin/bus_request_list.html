@@ -59,6 +59,14 @@
                 <div>
                     <h2>Requests</h2>
                 </div>
+                <form method="get" class="mb-3 mt-3 d-flex" style="max-width: 400px;">
+                    {% if search_query %}
+                        <a href="?" class="btn btn-secondary ms-2">Reset Search</a>
+                    {% else %}
+                    <input type="search" name="search" class="form-control me-2" placeholder="Search by name, contact, or email" value="{{ search_query|default_if_none:'' }}">
+                    <button type="submit" class="btn btn-primary">Search<i class="fa-solid fa-magnifying-glass ms-2"></i></button>
+                    {% endif %}
+                </form>
             </div>
             <hr>
             <div class="filter-links">

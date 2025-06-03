@@ -580,6 +580,14 @@ class BusRequestListView(ListView):
         registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
         institution = self.request.user.profile.institution
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration).order_by('-created_at')
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(student_name__icontains=search_query) |
+                Q(contact_no__icontains=search_query) |
+                Q(contact_email__icontains=search_query) |
+                Q(receipt__receipt_id__icontains=search_query)
+            )
         return queryset
     
     def get_context_data(self, **kwargs):
