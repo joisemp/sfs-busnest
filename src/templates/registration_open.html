@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/registration_open/style.css' %}">
+{% endblock style %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="alert alert-info">
-        <h4>Registration is Open</h4>
-        <p>The registration <strong>{{ registration }}</strong> is currently open. This page is only accessible when the registration is closed.</p>
-        <a href="/" class="btn btn-primary mt-2">Go Home</a>
+
+    <div class="card p-3 bg-light text-center">
+        <h4>Open Registration</h4>
+        <p>The registration for <strong style="text-transform: uppercase;">{{ registration.name }}</strong> is currently open. This page is only accessible when the registration is closed.</p>
+        <a href="javascript:history.back()" class="btn btn-dark btn-sm">Return to Previous Page</a>
     </div>
-</div>
+
 {% endblock %}
