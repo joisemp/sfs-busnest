@@ -7,7 +7,7 @@ from services.forms.students import StopSelectForm, ValidateStudentForm, TicketF
 from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
 from config.mixins.access_mixin import RegistrationOpenCheckMixin
 from services.tasks import send_email_task
-from services.utils import get_filtered_bus_records
+from services.utils.utils import get_filtered_bus_records
 
 class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
     template_name = 'students/validate_student_form.html'
@@ -93,7 +93,14 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
     def get(self, request, registration_code):
         registration = get_object_or_404(Registration, code=registration_code)
         schedule_groups = ScheduleGroup.objects.filter(registration=registration)
-        return render(request, self.template_name, {'schedule_groups': schedule_groups})
+        return render(
+            request,
+            self.template_name,
+            {
+                'schedule_groups': schedule_groups,
+                'error_message': '',  # Always include this
+            }
+        )
 
     def post(self, request, registration_code):
         selected_id = request.POST.get("schedule_group")

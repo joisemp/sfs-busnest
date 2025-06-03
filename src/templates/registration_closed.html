@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 Not Found</title>
+    <title>Registration Closed</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         html, body {
@@ -18,28 +18,31 @@
             justify-content: center;
             background: #f8f9fa;
         }
-        .notfound-container {
-            max-width: 340px;
+        .closed-container {
             width: 100%;
+            max-width: 350px;
             padding: 32px 18px 24px 18px;
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(44,62,80,0.06);
             text-align: center;
         }
-        .notfound-title {
-            color: #d32f2f;
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .notfound-msg {
-            font-size: 1.05rem;
-            color: #444;
+        .closed-icon {
             margin-bottom: 18px;
         }
+        .closed-title {
+            color: #d32f2f;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .closed-desc {
+            font-size: 1rem;
+            color: #444;
+            margin-bottom: 16px;
+        }
         .btn-home {
-            margin-top: 10px;
+            margin-top: 12px;
             padding: 8px 20px;
             font-size: 1rem;
             border-radius: 6px;
@@ -47,10 +50,16 @@
     </style>
 </head>
 <body>
-    <div class="notfound-container">
-        <div class="notfound-title">404</div>
-        <div class="notfound-msg">{{ exception|default:'Page not found' }}</div>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-home">Go Back</a>
+    <div class="closed-container">
+        <svg class="closed-icon" width="48" height="48" fill="none" viewBox="0 0 48 48">
+            <circle cx="24" cy="24" r="22" fill="#f8d7da" stroke="#d32f2f" stroke-width="1.5"/>
+            <path d="M16 32L32 16M32 32L16 16" stroke="#d32f2f" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="closed-title">Registration Closed</div>
+        <div class="closed-desc">
+            {{ registration.name|default:registration.code }} is not accepting registrations at this time.
+        </div>
+        <a href="/" class="btn btn-outline-primary btn-home">Home</a>
     </div>
 </body>
 </html>

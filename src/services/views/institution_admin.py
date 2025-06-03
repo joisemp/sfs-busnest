@@ -8,13 +8,15 @@ from django.urls import reverse, reverse_lazy
 from services.forms.central_admin import BusRequestCommentForm
 from services.forms.students import StopSelectForm
 from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip
-from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm
+from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm, BulkStudentGroupUpdateForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.template.loader import render_to_string
-from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel
-from services.utils import get_filtered_bus_records
+from services.tasks import process_uploaded_receipt_data_excel, export_tickets_to_excel, bulk_update_student_groups_task
+from services.utils.utils import get_filtered_bus_records
+import openpyxl
+from django.contrib import messages
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     model = Registration
@@ -150,7 +152,7 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
             org=self.request.user.profile.org,
             institution=self.request.user.profile.institution,
             registration=self.registration
-        )
+        ).order_by('-created_at')
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -377,77 +379,6 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         return context
     
 
-# class TicketExportView(View):
-#     def post(self, request, *args, **kwargs):
-#         registration_slug = self.kwargs.get('registration_slug')
-#         registration = get_object_or_404(Registration, slug=registration_slug)
-        
-#         search_term = request.GET.get('search', '')
-#         institution = request.GET.get('institution')
-#         pickup_points = request.GET.getlist('pickup_point')
-#         drop_points = request.GET.getlist('drop_point')
-#         schedule = request.GET.get('schedule')
-#         pickup_buses = self.request.GET.getlist('pickup_bus')
-#         drop_buses = self.request.GET.getlist('drop_bus')
-#         student_group = self.request.GET.getlist('student_group')
-        
-#         # Base queryset filtered by registration and institution
-#         queryset = Ticket.objects.filter(org=request.user.profile.org, registration=registration).order_by('-created_at')
-        
-#         # Apply search term filters
-#         if search_term:
-#             queryset = queryset.filter(
-#                 Q(student_name__icontains=search_term) |
-#                 Q(student_email__icontains=search_term) |
-#                 Q(student_id__icontains=search_term) |
-#                 Q(contact_no__icontains=search_term) |
-#                 Q(alternative_contact_no__icontains=search_term)
-#             )
-        
-#         # Apply other filters
-#         if institution:
-#             queryset = queryset.filter(institution_id=institution)
-#         if pickup_points and pickup_points != ['']:
-#             queryset = queryset.filter(pickup_point_id__in=pickup_points)
-#         if drop_points and drop_points != ['']:
-#             queryset = queryset.filter(drop_point_id__in=drop_points)
-#         if schedule:
-#             queryset = queryset.filter(schedule_id=schedule)
-#         if pickup_buses and not pickup_buses == ['']:
-#             queryset = queryset.filter(pickup_bus_record_id__in=pickup_buses)
-#         if drop_buses and not drop_buses == ['']:
-#             queryset = queryset.filter(drop_bus_record_id__in=drop_buses)
-#         if student_group and not student_group == ['']:
-#             queryset = queryset.filter(student_group_id__in=student_group)
-        
-#         # Send the filtered queryset to the Celery task for export
-#         # export_tickets_to_excel.apply_async(
-#         #     args=[request.user.id, registration_slug, search_term, {
-#         #         'institution': institution,
-#         #         'pickup_points': pickup_points,
-#         #         'drop_points': drop_points,
-#         #         'schedule': schedule,
-#         #         'pickup_buses': pickup_buses,
-#         #         'drop_buses': drop_buses,
-#         #         'student_group': student_group,
-#         #     }]
-#         # )
-        
-#         thread = threading.Thread(target=export_tickets_to_excel, args=[
-#             request.user.id, registration_slug, search_term, {
-#                 'institution': institution,
-#                 'pickup_points': pickup_points,
-#                 'drop_points': drop_points,
-#                 'schedule': schedule,
-#                 'pickup_buses': pickup_buses,
-#                 'drop_buses': drop_buses,
-#             }
-#         ])
-#         thread.start()
-        
-#         return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
-    
-
 class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
     def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
@@ -649,6 +580,14 @@ class BusRequestListView(ListView):
         registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
         institution = self.request.user.profile.institution
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration).order_by('-created_at')
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(student_name__icontains=search_query) |
+                Q(contact_no__icontains=search_query) |
+                Q(contact_email__icontains=search_query) |
+                Q(receipt__receipt_id__icontains=search_query)
+            )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -805,3 +744,94 @@ class BusRequestCommentView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
             comment_html = render_to_string('institution_admin/comment.html', {'comment': comment}).strip()
             return HttpResponse(comment_html)
         return HttpResponse('Invalid form submission', status=400)
+
+
+class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
+    template_name = 'institution_admin/bulk_student_group_update_upload.html'
+    form_class = BulkStudentGroupUpdateForm
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+
+    def form_valid(self, form):
+        file = form.cleaned_data['file']
+        wb = openpyxl.load_workbook(file, read_only=True)
+        ws = wb.active
+        preview_data = []
+        errors = []
+        institution = self.request.user.profile.institution
+
+        # Validate header row
+        header = [str(cell).strip().upper() if cell else "" for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+        expected_header = ["STUDENT ID", "CLASS", "SECTION"]
+        if header != expected_header:
+            messages.error(self.request, "Excel file must have only these columns in order: STUDENT ID, CLASS, SECTION (no extra columns or data).")
+            return render(self.request, self.template_name, {
+                "form": form,
+                "errors": errors,
+            })
+
+        # Collect all student_ids from the file for bulk query
+        student_id_rows = []
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if row is None or len(row) != 3:
+                errors.append(f"Row {idx}: Must have exactly 3 columns (STUDENT ID, CLASS, SECTION).")
+                continue
+            student_id, class_name, section = row
+            if not student_id or not class_name or not section:
+                errors.append(f"Row {idx}: Missing data")
+                continue
+            student_id_rows.append((idx, student_id, class_name, section))
+
+        # Bulk fetch all tickets for student_ids
+        student_ids = [str(student_id).strip() for _, student_id, _, _ in student_id_rows]
+        tickets = Ticket.objects.filter(student_id__in=student_ids, institution=institution).select_related('student_group')
+        ticket_map = {t.student_id: t for t in tickets}
+
+        for idx, student_id, class_name, section in student_id_rows:
+            group_name = f"{str(class_name).strip().upper()} - {str(section).strip().upper()}"
+            ticket = ticket_map.get(str(student_id).strip())
+            if ticket:
+                current_group = ticket.student_group.name if ticket.student_group else ""
+                preview_data.append({
+                    "student_id": student_id,
+                    "student_name": ticket.student_name,
+                    "current_group": current_group,
+                    "new_group": group_name,
+                })
+            else:
+                errors.append(f"Row {idx}: Ticket not found for student_id {student_id}")
+
+        self.request.session['bulk_update_preview'] = preview_data
+        self.request.session['bulk_update_errors'] = errors
+        return render(self.request, 'institution_admin/bulk_student_group_update_confirm.html', {
+            "preview_data": preview_data,
+            "errors": errors,
+        })
+
+    def dispatch(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        if registration.status:
+            raise Http404("Bulk update is only allowed when registration is closed.")
+        return super().dispatch(request, *args, **kwargs)
+
+class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    def post(self, request, *args, **kwargs):
+        preview_data = request.session.get('bulk_update_preview', [])
+        institution = request.user.profile.institution
+        user_id = request.user.id
+        # Use Celery for background processing to avoid blocking the request
+        bulk_update_student_groups_task.delay(user_id, institution.id, preview_data)
+        request.session.pop('bulk_update_preview', None)
+        return HttpResponseRedirect(
+            reverse('institution_admin:ticket_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+        )
+    
+    def dispatch(self, request, *args, **kwargs):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        if registration.status:
+            raise Http404("Bulk update is only allowed when registration is closed.")
+        return super().dispatch(request, *args, **kwargs)

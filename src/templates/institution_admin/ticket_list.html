@@ -16,7 +16,19 @@
     <div>
       <a href="{% url 'institution_admin:registration_list' %}" class="btn btn-dark"><i
           class="fa-solid fa-arrow-left me-2"></i>Back</a>
-      <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></button>
+      <div class="btn-group">
+        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          Bulk Actions
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end bulk-update-menu">
+          <li>
+            <button class="dropdown-item" onclick="exportData()" type="button">
+              <i class="fa-solid fa-file-excel me-2"></i>Export data
+            </button>
+          </li>
+          <li><a href="{% url 'institution_admin:bulk_update_student_group' registration_slug=registration.slug %}" class="dropdown-item" type="button"><i class="fa-solid fa-people-group me-2"></i>Update groups</a></li>
+        </ul>
+      </div>
     </div>
     <div>
       {% if filters %}
@@ -258,8 +270,8 @@
                             href="{% url 'institution_admin:stop_select' registration_code=ticket.registration.code ticket_id=ticket.ticket_id  %}?type=pickup">
                             <i class="fa-solid fa-map-location-dot me-2"></i>Change pickup</a></li>
                         <li class="p-3"><a class="dropdown-item"
-                          href="{% url 'institution_admin:stop_select' registration_code=ticket.registration.code ticket_id=ticket.ticket_id  %}?type=drop">
-                          <i class="fa-solid fa-map-pin me-2"></i>Change drop</a></li>
+                            href="{% url 'institution_admin:stop_select' registration_code=ticket.registration.code ticket_id=ticket.ticket_id  %}?type=drop">
+                            <i class="fa-solid fa-map-pin me-2"></i>Change drop</a></li>
                         <li class="p-3"><a class="dropdown-item text-danger"
                             href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
                               class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
@@ -357,7 +369,7 @@
 
 {% block scripts %}
 <script>
- function exportData() {
+  function exportData() {
     const fetchUrl = "{% url 'institution_admin:ticket_export' registration_slug=registration.slug %}";
 
     fetch(fetchUrl, {

@@ -344,6 +344,7 @@
                       <p><span class="text-muted">Receipt id :</span> {{ticket.recipt.receipt_id}}</p>
                       <p><span class="text-muted">Pickup point :</span> {{ticket.pickup_point}}</p>
                       <p class="mb-0"><span class="text-muted">Drop point :</span> {{ticket.drop_point}}</p>
+                      <small>Registered on: {{ticket.created_at}}</small>
                     </div>
                   </div>
                   <!--
@@ -461,7 +462,10 @@
 {% block scripts %}
 <script>
   function exportData() {
-    const fetchUrl = "{% url 'central_admin:ticket_export' registration_slug=registration.slug %}";
+    // Get current query string (for filters/search)
+    const queryString = window.location.search;
+    // Build fetch URL with query string if present
+    const fetchUrl = "{% url 'central_admin:ticket_export' registration_slug=registration.slug %}" + queryString;
 
     fetch(fetchUrl, {
       method: 'POST',

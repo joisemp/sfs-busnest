@@ -1,8 +1,34 @@
+"""
+user_manager.py - Custom user manager for the core app
+
+This module defines a custom UserManager for the User model, using email as the unique identifier
+instead of username. It provides methods for creating regular users and superusers, ensuring proper
+field validation and normalization.
+
+Classes:
+- UserManager: Custom manager for user creation and management.
+"""
+
 from django.contrib.auth.models import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
 
 class UserManager(BaseUserManager):
+    """
+    UserManager is a custom manager for the User model that uses email as the unique identifier instead of a username.
+    Methods:
+        _create_user(email, password, **extra_fields):
+            Internal method to create and save a User with the given email and password.
+            Raises a ValueError if the email is not provided.
+            Normalizes the email, sets the password, and saves the user instance.
+        create_user(email, password=None, **extra_fields):
+            Creates and saves a regular user with the given email and password.
+            Ensures 'is_staff' and 'is_superuser' are set to False by default.
+        create_superuser(email, password, **extra_fields):
+            Creates and saves a superuser with the given email and password.
+            Ensures 'is_staff' and 'is_superuser' are set to True.
+            Raises a ValueError if these fields are not set to True.
+    """
     """Define a model manager for User model with no username field."""
 
     use_in_migrations = True

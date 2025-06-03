@@ -21,7 +21,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from uuid import uuid4
 from django.core.files.base import ContentFile
-from services.utils import generate_ids_pdf  # Import from utils instead of views
+from services.utils.utils import generate_ids_pdf  # Import from utils instead of views
 from urllib.parse import urljoin
 from django.db.utils import IntegrityError
 
@@ -745,4 +745,40 @@ def generate_student_pass(user_id, registration_slug, filters=None):
     )
 
     return f"Student pass generation completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
+
+
+@shared_task
+def bulk_update_student_groups_task(user_id, institution_id, preview_data):
+    from services.models import Ticket, StudentGroup, Institution
+    user = User.objects.get(id=user_id)
+    institution = Institution.objects.get(id=institution_id)
+    org = institution.org
+    message = "The Student Group update process has been initiated. You will be notified once the process is complete."
+    notification = Notification.objects.create(
+        user=user,
+        action="Bulk Student Group Update",
+        description=f"<p>{message}</p>",
+        type="info",
+        file_processing_task=True
+    )
+    logger.info(f"Bulk Student Group Update Task started for user: {user.email} in institution: {institution.name}")
+    for entry in preview_data:
+        student_id = entry['student_id']
+        new_group_name = entry['new_group']
+        try:
+            ticket = Ticket.objects.get(student_id=student_id, institution=institution)
+            student_group, _ = StudentGroup.objects.get_or_create(
+                org=org, institution=institution, name=new_group_name
+            )
+            ticket.student_group = student_group
+            ticket.save()
+            logger.info(f"Updated Student Group for Ticket ID: {ticket.ticket_id}, Student ID: {student_id} to {new_group_name}")
+        except Ticket.DoesNotExist:
+            logger.warning(f"Ticket not found for Student ID: {student_id} in institution: {institution.name}")
+            continue
+    # Optionally: create a Notification for the user
+    notification.action = "Bulk Student Group Update Completed"
+    notification.description = "<p>The Student Group update process has been completed successfully.</p>"
+    notification.type = "success"
+    notification.save()
 

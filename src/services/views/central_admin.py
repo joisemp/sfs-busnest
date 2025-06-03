@@ -1,3 +1,16 @@
+"""
+central_admin.py - Views for central admin operations in the services app
+
+This module contains Django class-based and function-based views for central admin operations, including:
+- Dashboard, institution, bus, and people management
+- Registration, route, stop, schedule, schedule group, and ticket management
+- Bus records, trips, FAQs, and bus requests
+- File uploads and exports
+- User activity logging and notifications
+
+Each view is documented with its purpose, attributes, and methods. The views leverage Django's generic class-based views and custom mixins for access control and business logic.
+"""
+
 import threading
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -15,7 +28,7 @@ from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
 
-from config.mixins.access_mixin import CentralAdminOnlyAccessMixin
+from config.mixins.access_mixin import CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.views.generic import (
@@ -67,11 +80,12 @@ from services.forms.central_admin import (
     TripCreateForm, 
     ScheduleGroupForm, 
     BusRequestStatusForm, 
-    BusRequestCommentForm
+    BusRequestCommentForm,
+    StopTransferForm
 )
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
-
+from services.utils.transfer_stop import move_stop_and_update_tickets
 
 User = get_user_model()
 
@@ -462,9 +476,28 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
     
 
 class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View for updating an existing BusRecord instance for the central admin.
+    Ensures that the user is logged in and has central admin access.
+    Attributes:
+        model (BusRecord): The model to update.
+        template_name (str): Template for the update form.
+        form_class (BusRecordUpdateForm): The form class for updating a BusRecord.
+        slug_field (str): The field used to look up the BusRecord.
+        slug_url_kwarg (str): The URL kwarg for the BusRecord slug.
+    Methods:
+        form_valid(form):
+            Updates the BusRecord, ensuring no duplicate records for the same bus and registration.
+            If a duplicate exists, it is unassigned from its bus before saving the new assignment.
+            Shows a success message and redirects to the bus record list.
+        get_context_data(**kwargs):
+            Adds the registration object to the context for use in the template.
+        get_success_url():
+            Returns the URL to redirect to after a successful update.
+    """
     model = BusRecord
-    template_name = 'central_admin/bus_record_update.html'
     form_class = BusRecordUpdateForm
+    template_name = 'central_admin/bus_record_update.html'
     slug_field = 'slug'
     slug_url_kwarg = 'bus_record_slug'
 
@@ -494,15 +527,39 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
         return redirect(self.get_success_url())
     
     def get_context_data(self, **kwargs):
+        """
+        Adds the registration object to the context for use in the template.
+        """
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         return context
 
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful update.
+        """
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
 
 class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for displaying a list of Trip objects associated with a specific BusRecord for central admin users.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (Trip): The Trip model to be listed.
+        template_name (str): Template used for rendering the trip list.
+        context_object_name (str): The context variable name for the list of trips.
+    Methods:
+        get_queryset(self):
+            Retrieves the queryset of Trip objects filtered by the BusRecord identified by 'bus_record_slug' in the URL kwargs.
+        get_context_data(self, **kwargs):
+            Extends context data with:
+                - 'registration': The Registration object identified by 'registration_slug' in the URL kwargs.
+                - 'bus_record': The BusRecord object identified by 'bus_record_slug' in the URL kwargs.
+    """
     model = Trip
     template_name = 'central_admin/trip_list.html'
     context_object_name = 'trips'
@@ -520,6 +577,26 @@ class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
 
 class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new Trip instance in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides the standard Django create view functionality.
+    Attributes:
+        model (Trip): The Trip model to be created.
+        template_name (str): Template used for rendering the trip creation form.
+        form_class (TripCreateForm): The form class used for trip creation.
+    Methods:
+        get_form(self, form_class=None):
+            Customizes the form's queryset for 'schedule' and 'route' fields based on the registration slug in the URL.
+        form_valid(self, form):
+            Handles the creation of a Trip instance within an atomic transaction.
+            Associates the trip with the correct Registration and BusRecord.
+            Handles IntegrityError if a trip with the same schedule already exists.
+        get_context_data(self, **kwargs):
+            Adds the current Registration object to the template context for use in rendering.
+    """
     model = Trip
     template_name = 'central_admin/trip_create.html'
     form_class = TripCreateForm
@@ -552,6 +629,23 @@ class TripCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
     
 
 class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for deleting a Trip instance in the Central Admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        DeleteView: Provides the delete functionality for a model instance.
+    Attributes:
+        model (Trip): The model to be deleted.
+        template_name (str): The template used to confirm deletion.
+        slug_field (str): The model field used for lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds 'registration' and 'bus_record' objects to the context based on URL parameters.
+        get_success_url(self):
+            Returns the URL to redirect to after successful deletion, using 'registration_slug' and 'bus_record_slug' from the URL.
+    """
     model = Trip
     template_name = 'central_admin/trip_confirm_delete.html'
     slug_field = 'id'
@@ -568,6 +662,19 @@ class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
 
     
 class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for listing user profiles within the same organization as the currently logged-in user.
+    Inherits:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (UserProfile): The model representing user profiles.
+        template_name (str): The template used to render the list.
+        context_object_name (str): The context variable name for the list of people.
+    Methods:
+        get_queryset(): Returns a queryset of UserProfile objects filtered by the organization of the current user.
+    """
     model = UserProfile
     template_name = 'central_admin/people_list.html'
     context_object_name = 'people'
@@ -578,6 +685,28 @@ class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
 
 class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new user profile within the central admin interface.
+    Inherits:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides object creation functionality.
+    Attributes:
+        model (UserProfile): The model associated with this view.
+        template_name (str): The template used for rendering the view.
+        form_class (PeopleCreateForm): The form used for user profile creation.
+        success_url (str): URL to redirect to upon successful creation.
+    Methods:
+        form_valid(form):
+            Handles the creation of a new user and associated user profile.
+            - Generates a random password for the new user.
+            - Creates a User instance and associates it with the UserProfile.
+            - Sets the organization of the new profile to match the current user's organization.
+            - Generates a password reset link for the new user.
+            - Sends a welcome email with the password reset link.
+            - Redirects to the success URL upon success.
+            - Handles exceptions and returns form_invalid on error.
+    """
     model = UserProfile
     template_name = 'central_admin/people_create.html'
     form_class = PeopleCreateForm
@@ -630,6 +759,20 @@ class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVi
         
         
 class PeopleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View for updating a user's profile in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        UpdateView: Provides update functionality for a single object.
+    Attributes:
+        model (UserProfile): The model to update.
+        form_class (PeopleUpdateForm): The form used for updating the user profile.
+        template_name (str): The template used to render the update form.
+        success_url (str): The URL to redirect to upon successful update.
+    Methods:
+        form_valid(form): Handles valid form submissions by calling the parent implementation.
+    """
     model = UserProfile
     form_class = PeopleUpdateForm
     template_name = 'central_admin/people_update.html'
@@ -640,12 +783,49 @@ class PeopleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVi
     
 
 class PeopleDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for deleting a UserProfile instance in the central admin interface.
+
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users only.
+        - DeleteView: Provides the ability to delete a model instance.
+
+    Attributes:
+        model (UserProfile): The model to be deleted.
+        template_name (str): The template used to confirm deletion.
+        success_url (str): The URL to redirect to upon successful deletion.
+
+    Template:
+        central_admin/people_confirm_delete.html
+
+    Redirects:
+        On successful deletion, redirects to the people list page in the central admin section.
+    """
     model = UserProfile
     template_name = 'central_admin/people_confirm_delete.html'
     success_url = reverse_lazy('central_admin:people_list')
 
 
 class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for displaying a paginated list of Route objects for a specific registration in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (Route): The model to list.
+        template_name (str): Template used to render the list.
+        context_object_name (str): Name of the context variable for the list of routes.
+        paginate_by (int): Number of routes per page.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of Route objects filtered by the user's organization and the specified registration.
+            Supports optional search by route name via the 'search' GET parameter.
+        get_context_data(self, **kwargs):
+            Adds the current registration and search term to the context for template rendering.
+    """
     model = Route
     template_name = 'central_admin/route_list.html'
     context_object_name = 'routes'
@@ -667,6 +847,25 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
 
 class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for handling the upload of route files by central admin users.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides functionality for creating new RouteFile instances.
+    Attributes:
+        template_name (str): Path to the template used for rendering the upload form.
+        model (Model): The RouteFile model associated with this view.
+        fields (list): List of fields to include in the form ('name', 'file').
+    Methods:
+        form_valid(form):
+            Handles the logic after a valid form submission:
+                - Associates the uploaded file with the user's organization.
+                - Saves the RouteFile instance.
+                - Retrieves the related Registration object using the 'registration_slug' URL parameter.
+                - Triggers an asynchronous task to process the uploaded Excel file.
+                - Redirects to the route list view for the given registration.
+    """
     template_name = 'central_admin/route_file_upload.html'
     model = RouteFile
     fields = ['name', 'file']
@@ -682,6 +881,23 @@ class RouteFileUploadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         
 
 class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new Route instance within the Central Admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides the standard Django create view functionality.
+    Attributes:
+        template_name (str): Path to the template used for rendering the view.
+        model (Model): The Route model associated with this view.
+        form_class (Form): The form class used to create a Route.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the related Registration object to the template context based on the 'registration_slug' URL parameter.
+        form_valid(self, form):
+            Associates the new Route with the current user's organization and the specified Registration.
+            Saves the Route and redirects to the route list view for the current registration.
+    """
     template_name = 'central_admin/route_create.html'
     model = Route
     form_class = RouteForm
@@ -702,6 +918,24 @@ class RouteCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVie
     
     
 class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View for updating a Route instance within the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        UpdateView: Provides update functionality for a model instance.
+    Attributes:
+        model (Route): The model to update.
+        form_class (RouteForm): The form used for updating the Route.
+        template_name (str): The template used to render the update form.
+        slug_field (str): The model field used for lookup via slug.
+        slug_url_kwarg (str): The URL keyword argument for the route's slug.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the related Registration object to the context using the 'registration_slug' from the URL.
+        get_success_url(self):
+            Returns the URL to redirect to after a successful update, specifically the route list for the given registration.
+    """
     model = Route
     form_class = RouteForm
     template_name = 'central_admin/route_update.html'
@@ -718,6 +952,23 @@ class RouteUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateVie
     
     
 class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for deleting a Route instance within the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        DeleteView: Provides the delete object functionality.
+    Attributes:
+        model (Route): The model to be deleted.
+        template_name (str): Template used to confirm deletion.
+        slug_field (str): The field used to look up the Route instance.
+        slug_url_kwarg (str): The URL keyword argument for the Route slug.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the related Registration object to the context using the 'registration_slug' from the URL.
+        get_success_url(self):
+            Returns the URL to redirect to after successful deletion, specifically the route list for the given registration.
+    """
     model = Route
     template_name = 'central_admin/route_confirm_delete.html'
     slug_field = 'slug'
@@ -733,6 +984,24 @@ class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVie
     
 
 class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for displaying a list of Stop objects filtered by a specific Route and Registration.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Generic Django view for displaying a list of objects.
+    Attributes:
+        model (Stop): The model associated with this view.
+        template_name (str): The template used to render the stop list.
+        context_object_name (str): The context variable name for the list of stops.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of Stop objects filtered by the route and registration
+            specified in the URL parameters ('route_slug' and 'registration_slug').
+        get_context_data(self, **kwargs):
+            Adds the current Route and Registration objects to the context, based on
+            the URL parameters.
+    """
     model = Stop
     template_name = 'central_admin/stop_list.html'
     context_object_name = 'stops'
@@ -751,6 +1020,24 @@ class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
 
 class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new Stop instance within the Central Admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides object creation functionality.
+    Attributes:
+        template_name (str): Path to the template used for rendering the view.
+        model (Model): The Stop model associated with this view.
+        form_class (Form): The form class used for Stop creation.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the Registration object (based on 'registration_slug' from URL kwargs) to the context.
+        form_valid(self, form):
+            Handles the logic for saving a new Stop instance, associating it with the current user's organization,
+            the specified Registration, and Route (all determined by URL kwargs). Redirects to the stop list view
+            upon successful creation.
+    """
     template_name = 'central_admin/stop_create.html'
     model = Stop
     form_class = StopForm
@@ -773,6 +1060,23 @@ class StopCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView
     
 
 class StopUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View for updating a Stop instance in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        UpdateView: Provides update functionality for a model instance.
+    Attributes:
+        model (Stop): The model associated with this view.
+        form_class (StopForm): The form used for updating the Stop instance.
+        template_name (str): The template used to render the update form.
+        slug_field (str): The model field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the stop slug.
+    Methods:
+        get_context_data(self, **kwargs): Adds the related Registration object to the context using the 'registration_slug' from the URL.
+        get_success_url(self):
+            Returns the URL to redirect to after a successful update, using 'registration_slug' and 'route_slug' from the URL kwargs.
+    """
     model = Stop
     form_class = StopForm
     template_name = 'central_admin/stop_update.html'
@@ -789,6 +1093,23 @@ class StopUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView
     
 
 class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for deleting a Stop instance within the Central Admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        DeleteView: Provides the delete object functionality.
+    Attributes:
+        model (Stop): The model to be deleted.
+        template_name (str): Template used to confirm deletion.
+        slug_field (str): The field used to identify the Stop instance.
+        slug_url_kwarg (str): The URL keyword argument for the Stop slug.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the related Registration object to the context using the 'registration_slug' from the URL.
+        get_success_url(self):
+            Returns the URL to redirect to after successful deletion, using 'registration_slug' and 'route_slug' from the URL kwargs.
+    """
     model = Stop
     template_name = 'central_admin/stop_confirm_delete.html'
     slug_field = 'slug'
@@ -804,6 +1125,21 @@ class StopDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
 
 
 class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for listing Registration objects associated with the current user's organization.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (Registration): The model to list.
+        template_name (str): Template used for rendering the registration list.
+        context_object_name (str): Context variable name for the registrations list.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of Registration objects filtered by the organization
+            of the currently logged-in user's profile.
+    """
     model = Registration
     template_name = 'central_admin/registration_list.html'
     context_object_name = 'registrations'
@@ -814,6 +1150,21 @@ class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     
     
 class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new Registration instance in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides the logic for creating model instances.
+    Attributes:
+        template_name (str): Path to the template used for rendering the registration creation form.
+        model (Model): The Registration model to be created.
+        form_class (Form): The form class used for registration creation.
+    Methods:
+        form_valid(form):
+            Handles valid form submissions. Associates the new Registration with the current user's organization,
+            saves the instance, and redirects to the registration list view.
+    """
     template_name = 'central_admin/registration_create.html'
     model = Registration
     form_class = RegistrationForm
@@ -828,6 +1179,23 @@ class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cr
     
     
 class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView):
+    """
+    View for displaying the details of a Registration instance for central admin users.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        DetailView: Provides detail view functionality for a single object.
+    Attributes:
+        template_name (str): Path to the template used for rendering the view.
+        model (Model): The Django model associated with this view (Registration).
+        context_object_name (str): The context variable name for the Registration object.
+        slug_field (str): The model field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    Methods:
+        get_context_data(self, **kwargs):
+            Extends the context data with the 10 most recent tickets related to the registration,
+            filtered by the current user's organization.
+    """
     template_name = 'central_admin/registration_detail.html'
     model = Registration
     context_object_name = 'registration'
@@ -842,6 +1210,29 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
 
 
 class RegistrationUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View for updating a Registration instance in the central admin interface.
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        - UpdateView: Provides update functionality for a model instance.
+    Attributes:
+        model (Registration): The model to update.
+        form_class (RegistrationForm): The form used to update the model.
+        template_name (str): The template used to render the update form.
+        slug_field (str): The model field used for lookup via slug.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    Methods:
+        form_valid(form):
+            Called when a valid form is submitted. Proceeds with the default update behavior.
+        get_context_data(**kwargs):
+            Adds additional context to the template, including:
+                - 'faq_form': The FAQForm class.
+                - 'protocol': The request scheme (http/https).
+                - 'domain': The current host/domain.
+        get_success_url():
+            Returns the URL to redirect to after a successful update, pointing to the registration detail view.
+    """
     model = Registration
     form_class = RegistrationForm
     template_name = 'central_admin/registration_update.html'
@@ -863,6 +1254,26 @@ class RegistrationUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Up
     
 
 class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for deleting a Registration instance in the central admin interface.
+
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        - DeleteView: Provides the ability to delete a model instance.
+
+    Attributes:
+        model (Registration): The model to be deleted.
+        template_name (str): Template used to confirm deletion.
+        slug_field (str): The field used to identify the object in the URL.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+        success_url (str): URL to redirect to after successful deletion.
+
+    Template:
+        central_admin/registration_confirm_delete.html
+
+    URL pattern should include 'registration_slug' as a keyword argument.
+    """
     model = Registration
     template_name = 'central_admin/registration_confirm_delete.html'
     slug_field = 'slug'
@@ -871,6 +1282,27 @@ class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     
     
 class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    TicketListView displays a paginated list of Ticket objects for a specific Registration, 
+    restricted to users with central admin access. The view supports filtering and searching 
+    tickets based on various GET parameters, including institution, pickup/drop points, 
+    schedule, buses, student group, and a general search term. The filtered status and 
+    filter options are provided in the context for use in the template.
+    Attributes:
+        model (Ticket): The model associated with this view.
+        template_name (str): The template used to render the ticket list.
+        context_object_name (str): The context variable name for the ticket queryset.
+        paginate_by (int): Number of tickets to display per page.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of Ticket objects filtered by registration, institution, 
+            pickup/drop points, schedule, buses, student group, and search term as specified 
+            in the GET parameters. Sets a flag indicating if any filters are applied.
+        get_context_data(self, **kwargs):
+            Extends the context with filter status, filter options (pickup/drop points, 
+            schedules, institutions, bus records, student groups), the current registration, 
+            and the search term.
+    """
     model = Ticket
     template_name = 'central_admin/ticket_list.html'
     context_object_name = 'tickets'
@@ -954,7 +1386,35 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
 
 class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """
-    View to filter tickets by a date range, institution, and ticket type.
+    TicketFilterView displays a paginated list of Ticket objects filtered by various criteria for central admin users.
+    Inherits:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (Ticket): The model to list.
+        template_name (str): The template used for rendering the view.
+        context_object_name (str): The context variable name for the tickets.
+        paginate_by (int): Number of tickets per page.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of Ticket objects filtered by:
+                - Registration (from URL kwargs)
+                - Organization (from user's profile)
+                - Optional GET parameters:
+                    - start_date: Filters tickets created on or after this date.
+                    - end_date: Filters tickets created on or before this date.
+                    - institution: Filters by institution slug.
+                    - ticket_type: Filters by ticket type.
+                    - student_group: Filters by student group ID.
+        get_context_data(self, **kwargs):
+            Adds additional context to the template, including:
+                - registration: The current Registration object.
+                - start_date, end_date: The selected date filters.
+                - institutions: List of institutions for the user's organization.
+                - selected_institution: The selected institution slug.
+                - ticket_types: Available ticket types.
+                - selected_ticket_type: The selected ticket type.
     """
     model = Ticket
     template_name = 'central_admin/ticket_filter.html'
@@ -999,6 +1459,23 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
 
 
 class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new FAQ entry associated with a specific registration.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides the view logic for creating a new object.
+    Attributes:
+        template_name (str): Path to the template used for rendering the form.
+        model (FAQ): The model class to create an instance of.
+        form_class (FAQForm): The form class used for input validation and rendering.
+    Methods:
+        form_valid(form):
+            Handles valid form submission. Associates the new FAQ with the current user's organization
+            and the specified registration, then saves the FAQ instance.
+        get_success_url():
+            Returns the URL to redirect to after successful creation, pointing to the registration update view.
+    """
     template_name = 'central_admin/registration_create.html'
     model = FAQ
     form_class = FAQForm
@@ -1016,6 +1493,21 @@ class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView)
     
     
 class FAQDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for deleting an FAQ entry in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        DeleteView: Provides the delete object functionality.
+    Attributes:
+        model (FAQ): The FAQ model to be deleted.
+        template_name (str): Template used to confirm deletion.
+        slug_url_kwarg (str): URL keyword argument for the FAQ slug.
+    Methods:
+        get_success_url():
+            Returns the URL to redirect to after successful deletion,
+            specifically the registration update page for the relevant registration.
+    """
     model = FAQ
     template_name = 'central_admin/registration_confirm_delete.html'
     slug_url_kwarg = 'faq_slug'
@@ -1025,6 +1517,22 @@ class FAQDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
     
 
 class ScheduleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for listing Schedule objects associated with a specific Registration and organization.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality for Schedule objects.
+    Attributes:
+        model (Schedule): The model to list.
+        template_name (str): The template used to render the schedule list.
+        context_object_name (str): The context variable name for the list of schedules.
+    Methods:
+        get_queryset(self):
+            Retrieves the queryset of Schedule objects filtered by the current user's organization and the specified registration slug.
+        get_context_data(self, **kwargs):
+            Adds the registration object to the context for template rendering.
+    """
     model = Schedule
     template_name = 'central_admin/schedule_list.html'
     context_object_name = 'schedules'
@@ -1041,6 +1549,25 @@ class ScheduleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
 
 
 class ScheduleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new Schedule instance associated with a specific Registration.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides the view logic for creating a model instance.
+    Attributes:
+        model (Schedule): The model class to create.
+        template_name (str): The template used to render the view.
+        form_class (ScheduleForm): The form class used for creating a Schedule.
+    Methods:
+        form_valid(form):
+            Associates the new Schedule with the current user's organization and the specified Registration.
+            Saves the Schedule instance and proceeds with the default form_valid behavior.
+        get_context_data(**kwargs):
+            Adds the relevant Registration object to the context for template rendering.
+        get_success_url():
+            Returns the URL to redirect to after successful creation, passing the registration_slug as a URL parameter.
+    """
     model = Schedule
     template_name = 'central_admin/schedule_create.html'
     form_class = ScheduleForm
@@ -1063,6 +1590,23 @@ class ScheduleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Create
     
 
 class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View for updating a Schedule instance in the central admin interface.
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        - UpdateView: Provides update functionality for a model instance.
+    Attributes:
+        model (Schedule): The model to be updated.
+        template_name (str): Path to the template used to render the update form.
+        form_class (ScheduleForm): The form class used for updating the Schedule.
+        slug_url_kwarg (str): The keyword argument for the schedule's slug in the URL.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the related Registration object to the context using the 'registration_slug' from the URL.
+        get_success_url(self):
+            Returns the URL to redirect to after a successful update, using the 'registration_slug' from the URL.
+    """
     model = Schedule
     template_name = 'central_admin/schedule_update.html'
     form_class = ScheduleForm
@@ -1078,6 +1622,22 @@ class ScheduleUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Update
 
 
 class ScheduleGroupListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for listing ScheduleGroup objects associated with a specific Registration.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality for ScheduleGroup objects.
+    Attributes:
+        model (ScheduleGroup): The model to list.
+        template_name (str): Template used for rendering the list.
+        context_object_name (str): Name of the context variable for the list.
+    Methods:
+        get_queryset():
+            Retrieves ScheduleGroup objects filtered by the registration specified in the URL kwargs.
+        get_context_data(**kwargs):
+            Adds the current Registration object to the context for template rendering.
+    """
     model = ScheduleGroup
     template_name = 'central_admin/schedule_group_list.html'
     context_object_name = 'schedule_groups'
@@ -1094,6 +1654,25 @@ class ScheduleGroupListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Lis
     
 
 class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View for creating a new ScheduleGroup associated with a specific Registration.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        CreateView: Provides the view logic for creating a model instance.
+    Attributes:
+        model (ScheduleGroup): The model to be created.
+        template_name (str): The template used for rendering the form.
+        form_class (ScheduleGroupForm): The form class used for input validation and rendering.
+    Methods:
+        form_valid(form):
+            Associates the new ScheduleGroup with the Registration specified by the 'registration_slug' URL parameter,
+            saves the instance, and proceeds with the default form_valid behavior.
+        get_context_data(**kwargs):
+            Adds the relevant Registration instance to the context for template rendering.
+        get_success_url():
+            Returns the URL to redirect to after successful creation, pointing to the schedule group list for the current registration.
+    """
     model = ScheduleGroup
     template_name = 'central_admin/schedule_group_create.html'
     form_class = ScheduleGroupForm
@@ -1119,6 +1698,23 @@ class MoreMenuView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView
 
 
 class BusRequestListView(ListView):
+    """
+    Displays a paginated list of bus requests for a specific registration and organization in the central admin interface.
+    Attributes:
+        model (BusRequest): The model associated with this view.
+        template_name (str): The template used to render the bus request list.
+        context_object_name (str): The name of the context variable for the bus requests.
+        paginate_by (int): Number of bus requests to display per page.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of BusRequest objects filtered by the current user's organization and the specified registration.
+        get_context_data(self, **kwargs):
+            Extends the context with:
+                - The current registration object.
+                - The total number of bus requests for the organization and registration.
+                - The number of open and closed requests.
+                - A flag for each bus request indicating if a ticket exists for its receipt.
+    """
     model = BusRequest
     template_name = 'central_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
@@ -1127,6 +1723,14 @@ class BusRequestListView(ListView):
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, registration=registration).order_by('-created_at')
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(student_name__icontains=search_query) |
+                Q(contact_no__icontains=search_query) |
+                Q(contact_email__icontains=search_query) |
+                Q(receipt__receipt_id__icontains=search_query)
+            )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -1152,9 +1756,34 @@ class BusRequestListView(ListView):
                 registration=registration, 
                 recipt=request.receipt
             ).exists()
+        context["search_query"] = self.request.GET.get('search', '').strip()
         return context
 
 class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for displaying a paginated list of open bus requests for a specific registration in the central admin panel.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (BusRequest): The model to list.
+        template_name (str): Template used for rendering the list.
+        context_object_name (str): Name of the context variable for the
+        paginate_by (int): Number of items per page.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of open BusRequest objects filtered by the current user's organization,
+            the specified registration (by slug), and status 'open', ordered by creation date descending.
+        get_context_data(self, **kwargs):
+            Extends context with:
+                - registration: The Registration instance for the given slug.
+                - total_requests: Total number of BusRequest objects for the org and registration.
+                - open_requests: Number of open BusRequest objects.
+                - closed_requests: Number of closed BusRequest objects.
+                - For each bus request in the page, adds 'has_ticket' attribute indicating if a Ticket exists
+                  for the registration and the request's receipt.
+    """
     model = BusRequest
     template_name = 'central_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
@@ -1191,6 +1820,26 @@ class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Li
         return context
 
 class BusRequestClosedListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View for displaying a paginated list of closed bus requests for a specific registration in the central admin interface.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        ListView: Provides list display functionality.
+    Attributes:
+        model (BusRequest): The model to list.
+        template_name (str): Template used for rendering the list.
+        context_object_name (str): Name of the context variable for the queryset.
+        paginate_by (int): Number of items per page.
+    Methods:
+        get_queryset(self):
+            Returns a queryset of closed BusRequest objects filtered by the current user's organization and the specified registration.
+        get_context_data(self, **kwargs):
+            Adds additional context including:
+                - The current registration object.
+                - Total, open, and closed request counts for the registration and organization.
+                - For each bus request, a boolean 'has_ticket' indicating if a ticket exists for the request's receipt.
+    """
     model = BusRequest
     template_name = 'central_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
@@ -1227,6 +1876,23 @@ class BusRequestClosedListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, 
         return context
 
 class BusRequestDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    View for handling the deletion of BusRequest objects by central admin users.
+    Inherits from:
+        LoginRequiredMixin: Ensures the user is authenticated.
+        CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        DeleteView: Provides the delete functionality for a Django model.
+    Attributes:
+        model (BusRequest): The model to be deleted.
+        template_name (str): Template used to confirm deletion.
+        slug_field (str): The field used to identify the object in the URL.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    Methods:
+        get_context_data(self, **kwargs):
+            Adds the 'registration' attribute of the BusRequest object to the context.
+        get_success_url(self):
+            Returns the URL to redirect to after successful deletion, using the 'registration_slug' from the URL kwargs.
+    """
     model = BusRequest
     template_name = 'central_admin/bus_request_confirm_delete.html'
     slug_field = 'slug'
@@ -1242,6 +1908,24 @@ class BusRequestDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Dele
 
 
 class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
+    """
+    View for handling the bus search form in the central admin interface.
+    This view allows central admin users to search for bus schedules and stops associated with a specific registration.
+    It ensures that only authenticated users with central admin access can use the form. The view dynamically filters
+    the available stops based on the registration code provided in the URL, and stores the selected stop and schedule
+    in the session upon successful form submission. The context is enriched with registration details and the type of
+    change (pickup or drop) based on query parameters. Upon successful form submission, the user is redirected to the
+    bus search results page with relevant query parameters.
+    Attributes:
+        template_name (str): The template used to render the form.
+        form_class (Form): The form class used for bus searching.
+    Methods:
+        get_registration(): Retrieves the Registration object based on the registration code from the URL.
+        get_form(form_class=None): Returns the form instance with the 'stop' queryset filtered by registration.
+        form_valid(form): Handles valid form submission, storing selected stop and schedule in the session.
+        get_context_data(**kwargs): Adds registration and change type information to the template context.
+        get_success_url(): Constructs the URL to redirect to after successful form submission, including query parameters.
+    """
     template_name = 'central_admin/bus_search_form.html'
     form_class = BusSearchForm
 
@@ -1286,6 +1970,20 @@ class BusSearchFormView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormVie
 
 
 class BusSearchResultsView(ListView):
+    """
+    View to display available bus records for a given registration, stop, and schedule, filtered by change type (pickup or drop).
+    This view retrieves bus records that match the user's registration, selected stop, and schedule, and ensures that the number of bookings does not exceed the bus capacity for either pickup or drop, depending on the requested change type. The results are annotated with the number of available seats and provided to the template for display.
+    Context:
+        bus_records: Queryset of filtered and annotated BusRecord instances.
+        registration: The Registration instance corresponding to the registration code in the URL.
+        stop: The Stop instance corresponding to the stop_id from the session.
+        schedule: The Schedule instance corresponding to the schedule_id from the session.
+        ticket: The Ticket instance corresponding to the ticket_id in the URL.
+        change_type: The type of change requested ('pickup' or 'drop').
+    Methods:
+        get_queryset(): Returns a queryset of BusRecord objects filtered and annotated based on registration, stop, schedule, and change type.
+        get_context_data(**kwargs): Adds registration, stop, schedule, ticket, and change_type to the context.
+    """
     template_name = 'central_admin/bus_search_results.html'
     context_object_name = 'bus_records'
 
@@ -1338,6 +2036,23 @@ class BusSearchResultsView(ListView):
     
 
 class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for updating the bus information (pickup or drop) associated with a ticket for a given registration.
+    This view allows central admin users to change the assigned bus record and stop for either pickup or drop for a specific ticket.
+    It ensures that booking counts on the involved BusRecord instances are updated accordingly and prevents negative booking counts.
+    Methods:
+        get(request, registration_code, ticket_id, bus_record_slug):
+            Handles GET requests to update the pickup or drop bus record and stop for a ticket.
+            - Retrieves the relevant Registration, Ticket, and Stop objects.
+            - Determines the type of change ('pickup' or 'drop') from the request.
+            - Updates the booking counts on the old and new BusRecord instances.
+            - Updates the ticket's pickup/drop bus record and stop.
+            - Redirects to the ticket list view for the registration.
+    Decorators:
+        @transaction.atomic: Ensures all database operations within the method are atomic.
+    Access:
+        - Requires the user to be logged in and have central admin access.
+    """
     @transaction.atomic
     def get(self, request, registration_code, ticket_id, bus_record_slug):
         registration = get_object_or_404(Registration, code=registration_code)
@@ -1398,6 +2113,26 @@ class UpdateBusInfoView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
 
 
 class BusRequestStatusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to handle status updates for BusRequest objects by central admin users.
+
+    POST:
+        - Toggles the status of a BusRequest between 'open' and 'closed'.
+        - Optionally creates a BusRequestComment if a comment is provided in the POST data.
+        - Renders and returns the updated modal body HTML for the bus request.
+        - Sets the 'HX-Trigger' header to 'reloadPage' to notify the frontend to reload the page.
+
+    Permissions:
+        - User must be authenticated and have central admin access.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        *args: Additional positional arguments.
+        **kwargs: Additional keyword arguments, expects 'bus_request_slug' to identify the BusRequest.
+
+    Returns:
+        HttpResponse: Contains the rendered modal body HTML and triggers a page reload on the frontend.
+    """
     def post(self, request, *args, **kwargs):
         bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
         new_status = 'open' if bus_request.status == 'closed' else 'closed'
@@ -1416,6 +2151,21 @@ class BusRequestStatusUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin
         return response
 
 class BusRequestCommentView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to handle the creation of comments on bus requests by central admin users.
+
+    Methods:
+        post(request, *args, **kwargs):
+            Handles POST requests to create a new comment for a specific bus request.
+            - Retrieves the BusRequest instance using the provided slug.
+            - Validates the submitted comment form.
+            - If valid, creates a new BusRequestComment associated with the bus request and the current user.
+            - Renders the new comment as HTML and returns it in the response.
+            - Returns a 400 response if the form is invalid.
+
+    Permissions:
+        - Requires the user to be authenticated and have central admin access.
+    """
     def post(self, request, *args, **kwargs):
         bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
         comment_form = BusRequestCommentForm(request.POST)
@@ -1431,6 +2181,13 @@ class BusRequestCommentView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vie
 
 
 class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to handle ticket export requests for central admin users.
+    This view accepts POST requests to initiate the export of ticket data to an Excel file.
+    It extracts filtering parameters from the request, triggers an asynchronous Celery task
+    (`export_tickets_to_excel`) to perform the export, and returns a JSON response indicating
+    that the export request has been received.
+    """
     def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
@@ -1454,7 +2211,20 @@ class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
 
 class StudentGroupFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
     """
-    View to filter student groups based on the selected institution.
+    View to filter and retrieve student groups for a given institution.
+
+    This view requires the user to be authenticated and have central admin access.
+    It handles GET requests, extracting the 'institution' slug from the query parameters.
+    If an institution slug is provided, it fetches and orders the related StudentGroup objects by name.
+    The resulting student groups are rendered in the 'central_admin/partials/student_group_options.html' template.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        *args: Additional positional arguments.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        HttpResponse: Rendered HTML with the filtered student groups.
     """
     def get(self, request, *args, **kwargs):
         institution_slug = request.GET.get('institution')
@@ -1463,6 +2233,19 @@ class StudentGroupFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
 
 
 class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to handle the generation of student passes by central admin users.
+    This view accepts POST requests and triggers an asynchronous Celery task to generate student passes
+    based on the provided filters. The filters can include start and end dates, institution, ticket type,
+    and student group. The user initiating the request must be authenticated and have central admin access.
+    Attributes:
+        None
+    Methods:
+        post(request, *args, **kwargs):
+            Handles POST requests to initiate the student pass generation process.
+            Extracts filter parameters from the request, triggers the Celery task, and returns a JSON response
+            indicating that the request has been received.
+    """
     def post(self, request, *args, **kwargs):
         registration_slug = self.kwargs.get('registration_slug')
         filters = {
@@ -1482,8 +2265,56 @@ class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
 
 
 class StudentPassFileDownloadView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for downloading a student's pass file.
+
+    This view allows central admin users to download a file associated with a student pass.
+    It requires the user to be authenticated and have central admin access.
+
+    Methods
+    -------
+    get(request, *args, **kwargs):
+        Handles GET requests to retrieve and download the specified student pass file as an attachment.
+        - Retrieves the StudentPassFile object using the 'slug' from the URL.
+        - Returns a FileResponse to prompt the user to download the file.
+    """
     def get(self, request, *args, **kwargs):
         student_pass_file = get_object_or_404(StudentPassFile, slug=self.kwargs['slug'])
         return FileResponse(student_pass_file.file, as_attachment=True, filename=student_pass_file.file.name)
+
+
+class StopTransferView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin, View):
+    """
+    View to transfer a stop to a new route and update all related tickets.
+    """
+    template_name = 'central_admin/stop_transfer.html'
+
+    def get(self, request, registration_slug, route_slug, stop_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        stop = get_object_or_404(Stop, slug=stop_slug, registration=registration)
+        form = StopTransferForm(org=request.user.profile.org, registration=registration)
+        return render(request, self.template_name, {
+            'form': form,
+            'stop': stop,
+            'registration': registration,
+        })
+
+    def post(self, request, registration_slug, route_slug, stop_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        stop = get_object_or_404(Stop, slug=stop_slug, registration=registration)
+        form = StopTransferForm(request.POST, org=request.user.profile.org, registration=registration)
+        if form.is_valid():
+            new_route = form.cleaned_data['new_route']
+            try:
+                move_stop_and_update_tickets(stop, new_route)
+                messages.success(request, f"Stop '{stop.name}' transferred to route '{new_route.name}' and tickets updated.")
+                return redirect('central_admin:stop_list', registration_slug=registration.slug, route_slug=new_route.slug)
+            except Exception as e:
+                messages.error(request, f"Error: {str(e)}")
+        return render(request, self.template_name, {
+            'form': form,
+            'stop': stop,
+            'registration': registration,
+        })
 
 
