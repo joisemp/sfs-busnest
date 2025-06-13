@@ -1,3 +1,20 @@
+"""
+Django admin configuration for the services app.
+
+This module registers models from the services app with the Django admin interface and customizes their display for easier management by administrators.
+
+Admin Classes:
+    OrganisationAdmin: Admin interface for Organisation model, showing name and email.
+    InstitutionAdmin: Admin interface for Institution model, showing name, label, and email.
+    BusAdmin: Admin interface for Bus model, showing registration number and capacity.
+    RouteAdmin: Admin interface for Route model, showing organization and name.
+    StopAdmin: Admin interface for Stop model, showing organization and name.
+    RegistrationAdmin: Admin interface for Registration model, showing organization and name.
+
+Direct Registrations:
+    Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile, ScheduleGroup: Registered with default admin options.
+"""
+
 from django.contrib import admin
 from services.models import Institution, Bus, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile, ScheduleGroup
 

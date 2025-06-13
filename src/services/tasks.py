@@ -1,3 +1,32 @@
+"""
+Celery tasks for the services app.
+
+This module defines asynchronous background tasks for the SFS Institutions system, including:
+- Email sending and newsletter delivery
+- Processing uploaded Excel files for routes, receipts, and buses
+- Exporting tickets to Excel
+- Generating student pass PDFs
+- Bulk updating student groups
+- Marking expired receipts
+
+Each task handles logging, error handling, and user notification via the Notification model. Utility functions are provided for sending export emails and generating download links.
+
+Tasks:
+    count_task: Example task that logs numbers 1 to 10.
+    send_newsletter: Example task that simulates sending newsletters.
+    send_email_task: Sends an email asynchronously.
+    process_uploaded_route_excel: Processes uploaded route Excel files and creates Route/Stop objects.
+    process_uploaded_receipt_data_excel: Processes uploaded receipt Excel files and creates Receipt/StudentGroup objects.
+    process_uploaded_bus_excel: Processes uploaded bus Excel files and creates/updates Bus objects.
+    mark_expired_receipts: Marks receipts as expired after a set number of days.
+    export_tickets_to_excel: Exports filtered tickets to an Excel file and emails the user a download link.
+    generate_student_pass: Generates a PDF of student passes and emails the user a download link.
+    bulk_update_student_groups_task: Bulk updates student groups for tickets based on preview data.
+
+Utility Functions:
+    send_export_email: Sends an email with a download link for an exported file.
+"""
+
 from celery import shared_task
 from click import File
 from django.http import HttpResponse
@@ -32,6 +61,9 @@ logger = logging.getLogger(__name__)
 
 @shared_task(name='count_to_10')
 def count_task():
+    """
+    Example Celery task that logs numbers 1 to 10 with a delay.
+    """
     logger.info("Task started: Count to 10")
     for i in range(1, 11):
         logger.info(i)
@@ -41,6 +73,9 @@ def count_task():
 
 @shared_task(name='send_newsletter')
 def send_newsletter():
+    """
+    Example Celery task that simulates sending newsletters.
+    """
     logger.info("Task started : sending newsletters")
     for i in range(1, 11):
         logger.info(f'{i}. Newsletter')
@@ -50,6 +85,16 @@ def send_newsletter():
 
 @shared_task(name='send_email_task')
 def send_email_task(subject, message, recipient_list, from_email=None):
+    """
+    Sends an email asynchronously using Django's send_mail.
+    Args:
+        subject (str): Email subject.
+        message (str): Email body.
+        recipient_list (list): List of recipient email addresses.
+        from_email (str, optional): Sender email address.
+    Returns:
+        str: Success message if sent, raises exception on failure.
+    """
     try:
         logger.info(f"Starting email task: Sending email to {recipient_list}")
         send_mail(
@@ -68,6 +113,14 @@ def send_email_task(subject, message, recipient_list, from_email=None):
 
 @shared_task(name='process_uploaded_route_excel')
 def process_uploaded_route_excel(user_id, file_path, org_id, registration_id):
+    """
+    Processes an uploaded route Excel file, creating Route and Stop objects, and notifies the user.
+    Args:
+        user_id (int): ID of the user who uploaded the file.
+        file_path (str): Path to the uploaded file.
+        org_id (int): Organization ID.
+        registration_id (int): Registration ID.
+    """
     try:
         user = User.objects.get(id=user_id)
         notification = Notification.objects.create(
@@ -209,6 +262,15 @@ def process_uploaded_route_excel(user_id, file_path, org_id, registration_id):
 
 @shared_task(name='process_uploaded_receipt_data_excel')
 def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_id, reg_id):
+    """
+    Processes an uploaded receipt data Excel file, creating Receipt and StudentGroup objects, and notifies the user.
+    Args:
+        user_id (int): ID of the user who uploaded the file.
+        file_path (str): Path to the uploaded file.
+        org_id (int): Organization ID.
+        institution_id (int): Institution ID.
+        reg_id (int): Registration ID.
+    """
     try:
         user = User.objects.get(id=user_id)
         notification = Notification.objects.create(
@@ -410,6 +472,13 @@ def process_uploaded_receipt_data_excel(user_id, file_path, org_id, institution_
 
 @shared_task(name='process_uploaded_bus_excel')
 def process_uploaded_bus_excel(user_id, file_path, org_id):
+    """
+    Processes an uploaded bus Excel file, creating or updating Bus objects, and notifies the user.
+    Args:
+        user_id (int): ID of the user who uploaded the file.
+        file_path (str): Path to the uploaded file.
+        org_id (int): Organization ID.
+    """
     try:
         user = User.objects.get(id=user_id)
         notification = Notification.objects.create(
@@ -561,6 +630,11 @@ def process_uploaded_bus_excel(user_id, file_path, org_id):
 
 @shared_task
 def mark_expired_receipts():
+    """
+    Marks receipts as expired if they are older than a set number of days.
+    Returns:
+        str: Log message indicating how many receipts were marked as expired.
+    """
     expiry_days = 7 
     expiry_date = now() - timedelta(days=expiry_days)
 
@@ -572,6 +646,12 @@ def mark_expired_receipts():
 
 
 def send_export_email(user, exported_file):
+    """
+    Sends an email to the user with a download link for the exported file.
+    Args:
+        user (User): The user to notify.
+        exported_file (ExportedFile): The exported file object.
+    """
     from urllib.parse import urljoin
 
     download_url = reverse('central_admin:exported_file_download', kwargs={'slug': exported_file.slug})
@@ -592,6 +672,16 @@ def send_export_email(user, exported_file):
 
 @shared_task(name='export_tickets_to_excel')
 def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=None):
+    """
+    Exports filtered tickets to an Excel file and emails the user a download link.
+    Args:
+        user_id (int): ID of the user requesting the export.
+        registration_slug (str): Registration slug.
+        search_term (str, optional): Search term for filtering tickets.
+        filters (dict, optional): Additional filters for the queryset.
+    Returns:
+        str: Success message after export and email.
+    """
     user = User.objects.get(id=user_id)
     registration = get_object_or_404(Registration, slug=registration_slug)
 
@@ -680,6 +770,15 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
 @shared_task(name='generate_student_pass')
 def generate_student_pass(user_id, registration_slug, filters=None):
+    """
+    Generates a PDF of student passes for filtered tickets and emails the user a download link.
+    Args:
+        user_id (int): ID of the user requesting the generation.
+        registration_slug (str): Registration slug.
+        filters (dict, optional): Additional filters for the queryset.
+    Returns:
+        str: Success message after generation and email.
+    """
     user = User.objects.get(id=user_id)
     registration = get_object_or_404(Registration, slug=registration_slug)
 
@@ -749,6 +848,13 @@ def generate_student_pass(user_id, registration_slug, filters=None):
 
 @shared_task
 def bulk_update_student_groups_task(user_id, institution_id, preview_data):
+    """
+    Bulk updates student groups for tickets based on preview data.
+    Args:
+        user_id (int): ID of the user initiating the update.
+        institution_id (int): Institution ID.
+        preview_data (list): List of dictionaries with student_id and new_group.
+    """
     from services.models import Ticket, StudentGroup, Institution
     user = User.objects.get(id=user_id)
     institution = Institution.objects.get(id=institution_id)

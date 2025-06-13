@@ -1,3 +1,17 @@
+"""
+Views for student-side bus registration and booking in the SFS Institutions system.
+
+This module contains Django class-based and function-based views for student interactions, including:
+- Student validation and registration
+- Rules and regulations display
+- Stop and schedule group selection
+- Bus search and booking
+- Bus request creation
+- Success and error pages for booking and requests
+
+Each view is responsible for a specific step in the student bus registration and booking workflow, handling session state, form validation, and context preparation for templates.
+"""
+
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.views.generic import FormView, ListView, CreateView, TemplateView, View
@@ -10,10 +24,17 @@ from services.tasks import send_email_task
 from services.utils.utils import get_filtered_bus_records
 
 class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
+    """
+    View for validating a student's receipt and student ID for registration.
+    Prevents duplicate ticket creation for the same receipt.
+    """
     template_name = 'students/validate_student_form.html'
     form_class = ValidateStudentForm  
     
     def form_valid(self, form):
+        """
+        Validates the receipt and student ID, stores details in session, and checks for existing tickets.
+        """
         try:
             receipt_id = form.cleaned_data['receipt_id']
             student_id = form.cleaned_data['student_id']
@@ -39,58 +60,94 @@ class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
             return self.form_invalid(form)
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
     
     def get_success_url(self):
+        """
+        Returns the URL for the rules and regulations page after validation.
+        """
         registration_code = self.kwargs.get('registration_code')
         return reverse('students:rules_and_regulations', kwargs={'registration_code': registration_code})
     
 
 class RulesAndRegulationsView(RegistrationOpenCheckMixin, TemplateView):
+    """
+    View to display rules and regulations to the student.
+    """
     template_name = 'students/rules_and_regulations.html'
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
 
 
 class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
+    """
+    View for students to select a stop for bus search.
+    """
     template_name = 'students/search_form.html'
     form_class = StopSelectForm
 
     def get_registration(self):
-        """Fetch registration using the code from the URL."""
+        """
+        Fetch registration using the code from the URL.
+        """
         registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
     
     def get_form(self, form_class=None):
+        """
+        Customizes the form's queryset for stops based on registration.
+        """
         form = super().get_form(form_class)
         registration = self.get_registration()
         form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.get_registration()
         return context
 
     def form_valid(self, form):
+        """
+        Stores the selected stop in the session and proceeds to the next step.
+        """
         stop = form.cleaned_data['stop']
         self.request.session['stop_id'] = stop.id
         return super().form_valid(form)
 
     def get_success_url(self):
+        """
+        Returns the URL for bus search results after stop selection.
+        """
         registration_code = self.get_registration().code
         return reverse('students:bus_search_results', kwargs={'registration_code': registration_code})
     
 
 class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
+    """
+    View for students to select a schedule group and pickup/drop options.
+    """
+
     template_name = 'students/select_schedule_group.html'
 
     def get(self, request, registration_code):
+        """
+        Renders the schedule group selection page for the student.
+        """
         registration = get_object_or_404(Registration, code=registration_code)
         schedule_groups = ScheduleGroup.objects.filter(registration=registration)
         return render(
@@ -103,6 +160,9 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
         )
 
     def post(self, request, registration_code):
+        """
+        Handles the schedule group selection and stores pickup/drop choices in the session.
+        """
         selected_id = request.POST.get("schedule_group")
         pickup = request.POST.get(f"pickup_{selected_id}")  # Checkbox value
         drop = request.POST.get(f"drop_{selected_id}")  # Checkbox value
@@ -139,10 +199,16 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
 
 
 class BusSearchResultsView(RegistrationOpenCheckMixin, ListView):
+    """
+    View to display available buses for the selected stop and schedule group.
+    """
     template_name = 'students/search_results.html'
     context_object_name = 'buses'
 
     def get_queryset(self):
+        """
+        Returns queryset of buses filtered by selected schedule(s) and stop.
+        """
         # Retrieve the registration based on the registration code
         registration_code = self.kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
@@ -172,6 +238,9 @@ class BusSearchResultsView(RegistrationOpenCheckMixin, ListView):
         return buses
     
     def get(self, request, *args, **kwargs):
+        """
+        Redirects to 'bus_not_found' if no buses are found, otherwise renders results.
+        """
         self.object_list = self.get_queryset()
         if not self.object_list:
             registration_code = self.kwargs.get('registration_code')
@@ -186,21 +255,34 @@ class BusSearchResultsView(RegistrationOpenCheckMixin, ListView):
 
 
 class BusNotFoundView(RegistrationOpenCheckMixin, TemplateView):
+    """
+    View to display a message when no buses are found for the student's search.
+    """
     template_name = 'students/bus_not_found.html'
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
     
 
 class BusRequestFormView(RegistrationOpenCheckMixin, CreateView):
+    """
+    View for students to submit a bus request if no suitable bus is found.
+    Prevents duplicate requests for the same receipt and registration.
+    """
     model = BusRequest
     template_name = 'students/bus_request.html'
     form_class = BusRequestForm
     
     @transaction.atomic
     def form_valid(self, form):
+        """
+        Validates and saves the bus request, ensuring no duplicate exists.
+        """
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         receipt = get_object_or_404(Receipt, id=self.request.session.get('receipt_id'))
         
@@ -220,20 +302,33 @@ class BusRequestFormView(RegistrationOpenCheckMixin, CreateView):
     
 
 class BusRequestSuccessView(RegistrationOpenCheckMixin, TemplateView):
+    """
+    View to display a success message after a bus request is submitted.
+    """
     template_name = 'students/bus_request_success.html'
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
     
 
 class BusBookingView(RegistrationOpenCheckMixin, CreateView):
+    """
+    View for students to book a bus ticket, handling both one-way and two-way bookings.
+    Sends a confirmation email upon successful booking.
+    """
     model = Ticket
     template_name = 'students/bus_booking.html'
     form_class = TicketForm
     
     def get_form(self, form_class=None):
+        """
+        Customizes the form fields and queryset for pickup/drop points based on booking type.
+        """
         form = super().get_form(form_class)
         self.schedule_group_id = self.request.session.get('schedule_group_id')
         self.pickup_id = self.request.session.get('pickup')
@@ -279,6 +374,9 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
     
     @transaction.atomic
     def form_valid(self, form):
+        """
+        Validates and saves the ticket, updates trip booking counts, and sends confirmation email.
+        """
         ticket = form.save(commit=False)
         registration = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         receipt_id = self.request.session.get('receipt_id')
@@ -418,9 +516,15 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
     
 
 class BusBookingSuccessView(TemplateView):
+    """
+    View to display a success message after a bus ticket is booked.
+    """
     template_name = 'students/bus_booking_success.html'
     
     def get_context_data(self, **kwargs):
+        """
+        Adds booking success message and registration to the context.
+        """
         context = super().get_context_data(**kwargs)
         message = self.request.session.get('success_message')
         registration = get_object_or_404(Registration, code=self.request.session.get('registration_code'))
@@ -430,40 +534,63 @@ class BusBookingSuccessView(TemplateView):
     
 
 class PickupStopSelectFormView(RegistrationOpenCheckMixin, FormView):
+    """
+    View for students to select a pickup stop for one-way or two-way bookings.
+    """
     template_name = 'students/pickup_stop_search_form.html'
     form_class = StopSelectForm
 
     def get_registration(self):
-        """Fetch registration using the code from the URL."""
+        """
+        Fetch registration using the code from the URL.
+        """
         registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
     
     def get_form(self, form_class=None):
+        """
+        Customizes the form's queryset for stops based on registration.
+        """
         form = super().get_form(form_class)
         registration = self.get_registration()
         form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.get_registration()
         return context
 
     def form_valid(self, form):
+        """
+        Stores the selected pickup stop in the session and proceeds to the next step.
+        """
         stop = form.cleaned_data['stop']
         self.request.session['pickup_stop_id'] = stop.id
         return super().form_valid(form)
 
     def get_success_url(self):
+        """
+        Returns the URL for pickup bus selection after stop selection.
+        """
         registration_code = self.get_registration().code
         return reverse('students:pickup_bus_select', kwargs={'registration_code': registration_code})
     
 
 class PickupBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
+    """
+    View to display available pickup buses for the selected stop and schedule group.
+    """
     template_name = 'students/pickup_bus_results.html'
     context_object_name = 'buses'
 
     def get_queryset(self):
+        """
+        Returns queryset of pickup buses filtered by selected schedule(s) and stop.
+        """
         # Retrieve the registration based on the registration code
         registration_code = self.kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
@@ -489,6 +616,9 @@ class PickupBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
         return buses
     
     def get(self, request, *args, **kwargs):
+        """
+        Redirects to 'bus_not_found' if no buses are found, otherwise renders results.
+        """
         self.object_list = self.get_queryset()
         if not self.object_list:
             registration_code = self.kwargs.get('registration_code')
@@ -500,29 +630,42 @@ class PickupBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
-    
-    
+
 class DropStopSelectFormView(RegistrationOpenCheckMixin, FormView):
+    """
+    View for students to select a drop stop for one-way or two-way bookings.
+    """
     template_name = 'students/drop_stop_search_form.html'
     form_class = StopSelectForm
 
     def get_registration(self):
-        """Fetch registration using the code from the URL."""
+        """
+        Fetch registration using the code from the URL.
+        """
         registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
     
     def get_form(self, form_class=None):
+        """
+        Customizes the form's queryset for stops based on registration.
+        """
         form = super().get_form(form_class)
         registration = self.get_registration()
         form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.get_registration()
         return context
 
     def form_valid(self, form):
+        """
+        Stores the selected drop stop in the session and proceeds to the next step.
+        """
         stop = form.cleaned_data['stop']
         self.request.session['drop_stop_id'] = stop.id
         registration_code = self.get_registration().code
@@ -531,10 +674,16 @@ class DropStopSelectFormView(RegistrationOpenCheckMixin, FormView):
 
 
 class DropBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
+    """
+    View to display available drop buses for the selected stop and schedule group.
+    """
     template_name = 'students/drop_bus_results.html'
     context_object_name = 'buses'
 
     def get_queryset(self):
+        """
+        Returns queryset of drop buses filtered by selected schedule(s) and stop.
+        """
         # Retrieve the registration based on the registration code
         registration_code = self.kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
@@ -559,6 +708,9 @@ class DropBusSearchResultsView(RegistrationOpenCheckMixin, ListView):
         return buses
     
     def get(self, request, *args, **kwargs):
+        """
+        Redirects to 'bus_not_found' if no buses are found, otherwise renders results.
+        """
         self.object_list = self.get_queryset()
         if not self.object_list:
             registration_code = self.kwargs.get('registration_code')
