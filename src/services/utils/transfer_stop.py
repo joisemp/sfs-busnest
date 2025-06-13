@@ -1,9 +1,30 @@
+"""
+Utility for moving a stop to a new route and updating all related tickets and bus records.
+
+This module provides a function to safely transfer a stop from one route to another, ensuring that all tickets referencing the stop are updated to reference the new route, and that bus record assignments and trip booking counts are adjusted accordingly. The operation is performed atomically to maintain data integrity.
+
+Functions:
+    move_stop_and_update_tickets(stop_to_move, new_route):
+        Moves a stop to a new route, updates all tickets and bus records referencing the stop, and ensures trip booking counts and assignments remain valid.
+"""
+
 from collections import defaultdict
 from django.db import transaction
 from django.db import models
 from services.models import Ticket, BusRecord
 
 def move_stop_and_update_tickets(stop_to_move, new_route):
+    """
+    Moves a stop to a new route and updates all tickets and bus records referencing the stop.
+    Ensures that all tickets referencing the stop are reassigned to valid bus records and trips on the new route, and that trip booking counts are updated accordingly.
+    The operation is performed atomically to maintain data integrity.
+
+    Args:
+        stop_to_move: The Stop instance to move.
+        new_route: The Route instance to assign the stop to.
+    Raises:
+        ValueError: If no suitable bus record or capacity is found for any ticket.
+    """
     # Step 1: Tickets referencing the stop
     tickets = Ticket.objects.filter(
         models.Q(pickup_point=stop_to_move) | models.Q(drop_point=stop_to_move)

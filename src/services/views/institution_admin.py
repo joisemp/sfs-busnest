@@ -1,3 +1,40 @@
+"""
+Views for Institution Admin functionalities in the SFS Institutions system.
+
+This module contains Django class-based views for managing registrations, tickets, receipts, student groups, bus searches, bus requests, and bulk updates for institution administrators. It includes list, create, update, and delete views, as well as custom logic for searching and updating bus and student group information.
+
+Classes:
+    RegistrationListView: Lists registrations for the current user's organization.
+    TicketListView: Lists and filters tickets for a registration and institution.
+    TicketUpdateView: Updates ticket details and related receipt institution.
+    TicketDeleteView: Deletes a ticket.
+    ReceiptListView: Lists receipts for a registration.
+    ReceiptDataFileUploadView: Handles uploading and processing of receipt data Excel files.
+    ReceiptCreateView: Creates a new receipt.
+    ReceiptDeleteView: Deletes a receipt.
+    StudentGroupListView: Lists student groups for a registration.
+    StudentGroupCreateView: Creates a new student group.
+    StudentGroupUpdateView: Updates a student group.
+    StudentGroupDeleteView: Deletes a student group.
+    BusSearchFormView: Handles bus search form for a registration.
+    BusSearchResultsView: Displays bus search results based on session criteria.
+    TicketExportView: Triggers export of tickets to Excel via Celery.
+    StopSelectFormView: Handles stop selection form for students.
+    SelectScheduleGroupView: Handles schedule group selection for a ticket.
+    BusSearchResultsView: (students) Displays filtered bus records for a stop and schedule.
+    UpdateBusInfoView: Updates ticket's bus info and trip booking counts.
+    BusRequestListView: Lists bus requests for a registration.
+    BusRequestOpenListView: Lists open bus requests.
+    BusRequestClosedListView: Lists closed bus requests.
+    BusRequestDeleteView: Deletes a bus request.
+    BusRequestStatusUpdateView: Updates the status of a bus request and adds comments.
+    BusRequestCommentView: Adds a comment to a bus request.
+    BulkStudentGroupUpdateView: Handles bulk update of student groups via Excel upload.
+    BulkStudentGroupUpdateConfirmView: Confirms and processes bulk student group updates.
+
+Each view is protected by login and institution admin access mixins, and many use Celery tasks for background processing of long-running operations.
+"""
+
 import threading
 from urllib.parse import urlencode
 from django.db import transaction
@@ -19,22 +56,34 @@ import openpyxl
 from django.contrib import messages
 
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list all registrations for the current user's organization.
+    """
     model = Registration
     template_name = 'institution_admin/registration_list.html'
     context_object_name = 'registrations'
     
     def get_queryset(self):
+        """
+        Returns queryset of registrations filtered by the user's organization.
+        """
         queryset = Registration.objects.filter(org=self.request.user.profile.org)
         return queryset
     
 
 class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list and filter tickets for a registration and institution.
+    """
     model = Ticket
     template_name = 'institution_admin/ticket_list.html'
     context_object_name = 'tickets'
     paginate_by = 15
     
     def get_queryset(self):
+        """
+        Returns queryset of tickets filtered by registration, institution, and optional GET parameters.
+        """
         # Get registration based on slug
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
@@ -80,6 +129,9 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         return queryset
     
     def get_context_data(self, **kwargs):
+        """
+        Adds filter status and filter options to the context for the template.
+        """
         # Get default context from parent
         context = super().get_context_data(**kwargs)
         
@@ -106,12 +158,18 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
 
 
 class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
+    """
+    View to update ticket details and ensure receipt institution matches ticket institution.
+    """
     model = Ticket
     form_class = TicketForm
     template_name = 'institution_admin/ticket_update.html'
     slug_url_kwarg = 'ticket_slug'
 
     def form_valid(self, form):
+        """
+        Updates the ticket and its related receipt's institution if needed.
+        """
         ticket = form.save()
         
         if ticket.institution != ticket.recipt.institution:
@@ -121,6 +179,9 @@ class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Updat
         return super().form_valid(form)
     
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful update.
+        """
         return reverse(
             'institution_admin:ticket_list', 
             kwargs={'registration_slug': self.kwargs['registration_slug']}
@@ -128,11 +189,17 @@ class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Updat
 
 
 class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    View to delete a ticket.
+    """
     model = Ticket
     template_name = 'institution_admin/ticket_confirm_delete.html'
     slug_url_kwarg = 'ticket_slug'
     
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful delete.
+        """
         return reverse(
             'institution_admin:ticket_list', 
             kwargs={'registration_slug': self.kwargs['registration_slug']}
@@ -140,12 +207,18 @@ class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Delet
 
 
 class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list all receipts for a registration.
+    """
     model = Receipt
     template_name = 'institution_admin/receipt_list.html'
     context_object_name = 'receipts'
     paginate_by = 30
 
     def get_queryset(self):
+        """
+        Returns queryset of receipts filtered by registration, organization, and institution.
+        """
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
         queryset = Receipt.objects.filter(
@@ -156,17 +229,26 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
         return queryset
 
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.registration  # Ensure registration is passed to the template
         return context
     
 
 class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    """
+    View to handle uploading and background processing of receipt data Excel files.
+    """
     model = ReceiptFile
     fields = ['registration', 'file']
     template_name = 'institution_admin/receipt_file_upload.html'
     
     def form_valid(self, form):
+        """
+        Saves the uploaded file and triggers background processing via Celery.
+        """
         receipt_data_file = form.save(commit=False)
         user = self.request.user
         receipt_data_file.org = user.profile.org
@@ -188,11 +270,17 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
     
     
 class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    """
+    View to create a new receipt.
+    """
     template_name = 'institution_admin/receipt_create.html'
     model = Receipt
     form_class = ReceiptForm
     
     def form_valid(self, form):
+        """
+        Saves the new receipt and redirects to the receipt list.
+        """
         receipt = form.save(commit=False)
         user = self.request.user
         receipt.org = user.profile.org
@@ -207,11 +295,17 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Crea
     
 
 class ReceiptDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    View to delete a receipt.
+    """
     model = Receipt
     template_name = 'institution_admin/receipt_confirm_delete.html'
     slug_url_kwarg = 'receipt_slug'
 
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful delete.
+        """
         return reverse(
             'institution_admin:receipt_list',
             kwargs={'registration_slug': self.object.registration.slug}
@@ -219,11 +313,17 @@ class ReceiptDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Dele
     
     
 class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list all student groups for a registration.
+    """
     model = StudentGroup
     template_name = 'institution_admin/student_group_list.html'
     context_object_name = 'student_groups'  
     
     def get_queryset(self):
+        """
+        Returns queryset of student groups filtered by organization and institution.
+        """
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
         queryset = StudentGroup.objects.filter(
@@ -233,17 +333,26 @@ class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         return queryset
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.registration  # Ensure registration is passed to the template
         return context
     
     
 class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    """
+    View to create a new student group.
+    """
     template_name = 'institution_admin/student_group_create.html'
     model = StudentGroup
     form_class = StudentGroupForm
 
     def form_valid(self, form):
+        """
+        Saves the new student group and redirects to the student group list.
+        """
         student_group = form.save(commit=False)
         user = self.request.user
         student_group.org = user.profile.org
@@ -258,32 +367,50 @@ class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
 
 
 class StudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
+    """
+    View to update a student group.
+    """
     model = StudentGroup
     form_class = StudentGroupForm
     template_name = 'institution_admin/student_group_update.html'
     slug_url_kwarg = 'student_group_slug'
 
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful update.
+        """
         return reverse(
             'institution_admin:student_group_list',
             kwargs={'registration_slug': self.kwargs['registration_slug']}
         )
 
     def form_valid(self, form):
+        """
+        Handles the form submission for updating a student group.
+        """
         return super().form_valid(form)
     
     
 class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    View to delete a student group.
+    """
     model = StudentGroup
     template_name = 'institution_admin/student_group_confirm_delete.html'
     slug_url_kwarg = 'student_group_slug'
 
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
         return context
 
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful delete.
+        """
         return reverse(
             'institution_admin:student_group_list',
             kwargs={'registration_slug': self.kwargs['registration_slug']}
@@ -291,15 +418,23 @@ class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
     
     
 class BusSearchFormView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
+    """
+    View to handle the bus search form for a registration.
+    """
     template_name = 'institution_admin/bus_search_form.html'
     form_class = BusSearchForm
 
     def get_registration(self):
-        """Fetch registration using the code from the URL."""
+        """
+        Fetch registration using the code from the URL.
+        """
         registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
     
     def get_form(self, form_class=None):
+        """
+        Customizes the form's queryset for pickup and drop points based on registration.
+        """
         form = super().get_form(form_class)
         registration = self.get_registration()
         form.fields['pickup_point'].queryset = registration.stops.all()
@@ -307,6 +442,9 @@ class BusSearchFormView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Form
         return form
 
     def form_valid(self, form):
+        """
+        Stores search criteria in the session and proceeds to the results view.
+        """
         pickup_point = form.cleaned_data['pickup_point']
         drop_point = form.cleaned_data['drop_point']
         schedule = form.cleaned_data['schedule']
@@ -319,21 +457,33 @@ class BusSearchFormView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Form
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
 
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful form submission.
+        """
         registration_code = self.get_registration().code
         ticket_id = self.kwargs.get('ticket_id')
         return reverse('institution_admin:bus_search_results', kwargs={'ticket_id': ticket_id, 'registration_code': registration_code})
     
 
 class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to display bus search results based on session criteria.
+    """
     template_name = 'institution_admin/bus_search_results.html'
     context_object_name = 'buses'
 
     def get_queryset(self):
+        """
+        Returns queryset of buses matching the search criteria from the session.
+        """
         registration_code = self.kwargs.get('registration_code')
         registration = get_object_or_404(Registration, code=registration_code)
 
@@ -369,7 +519,9 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
         return buses
 
     def get_context_data(self, **kwargs):
-        """Include additional context like the registration."""
+        """
+        Adds registration, ticket, pickup/drop points, and schedule to the context.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
@@ -380,7 +532,13 @@ class BusSearchResultsView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
     
 
 class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to trigger export of tickets to Excel via Celery.
+    """
     def post(self, request, *args, **kwargs):
+        """
+        Triggers the Celery task to export tickets and returns a JSON response.
+        """
         registration_slug = self.kwargs.get('registration_slug')
         search_term = request.GET.get('search', '')
         # Always filter by the current user's institution for institution admin
@@ -403,40 +561,63 @@ class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View)
     
     
 class StopSelectFormView(FormView):
+    """
+    View to handle stop selection form for students.
+    """
     template_name = 'students/search_form.html'
     form_class = StopSelectForm
 
     def get_registration(self):
-        """Fetch registration using the code from the URL."""
+        """
+        Fetch registration using the code from the URL.
+        """
         registration_code = self.kwargs.get('registration_code')
         return get_object_or_404(Registration, code=registration_code)
     
     def get_form(self, form_class=None):
+        """
+        Customizes the form's queryset for stops based on registration.
+        """
         form = super().get_form(form_class)
         registration = self.get_registration()
         form.fields['stop'].queryset = registration.stops.all().order_by('name')
         return form
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         return context
 
     def form_valid(self, form):
+        """
+        Stores the selected stop in the session and proceeds to the next step.
+        """
         stop = form.cleaned_data['stop']
         self.request.session['stop_id'] = stop.id
         return super().form_valid(form)
 
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful form submission.
+        """
         registration_code = self.get_registration().code
         query_string = self.request.GET.get('type', '')
         return reverse('institution_admin:schedule_group_select', kwargs={'registration_code': registration_code, 'ticket_id': self.kwargs.get('ticket_id')}) + f"?type={query_string}"
     
 
 class SelectScheduleGroupView(View):
+    """
+    View to handle schedule group selection for a ticket.
+    """
     template_name = 'institution_admin/select_schedule_group.html'
 
     def get(self, request, registration_code, ticket_id):
+        """
+        Renders the schedule group selection page.
+        """
         registration = get_object_or_404(Registration, code=registration_code)
         schedules = Schedule.objects.filter(org=registration.org, registration=registration)
         query_string = self.request.GET.get('type', '')
@@ -444,6 +625,9 @@ class SelectScheduleGroupView(View):
         return render(request, self.template_name, {'schedules': schedules, 'type': type})
 
     def post(self, request, registration_code, ticket_id):
+        """
+        Handles the schedule group selection and stores it in the session.
+        """
         selected_id = request.POST.get("schedule_group")
 
         if not selected_id:
@@ -474,10 +658,16 @@ class SelectScheduleGroupView(View):
     
     
 class BusSearchResultsView(ListView):
+    """
+    View (for students) to display filtered bus records for a stop and schedule.
+    """
     template_name = 'institution_admin/search_results.html'
     context_object_name = 'buses'
 
     def get_queryset(self):
+        """
+        Returns queryset of buses filtered by stop and schedule from the session.
+        """
         # Get pickup point, drop point, and schedule from session
         stop_id = self.request.session.get('stop_id')
         schedule_id = self.request.session.get('schedule_id')
@@ -494,6 +684,9 @@ class BusSearchResultsView(ListView):
         return buses
     
     def get(self, request, *args, **kwargs):
+        """
+        Redirects to 'bus_not_found' if no buses are found, otherwise renders results.
+        """
         self.object_list = self.get_queryset()
         if not self.object_list:
             registration_code = self.kwargs.get('registration_code')
@@ -501,7 +694,9 @@ class BusSearchResultsView(ListView):
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        """Include additional context like the registration."""
+        """
+        Adds registration, ticket, change type, stop, and schedule to the context.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = get_object_or_404(Registration, code=self.kwargs.get('registration_code'))
         context['ticket'] = get_object_or_404(Ticket, ticket_id=self.kwargs.get('ticket_id'))
@@ -512,8 +707,14 @@ class BusSearchResultsView(ListView):
 
 
 class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to update a ticket's bus info and trip booking counts.
+    """
     @transaction.atomic
     def get(self, request, registration_code, ticket_id, bus_slug):
+        """
+        Updates the ticket's pickup or drop bus record and adjusts trip booking counts.
+        """
         registration = get_object_or_404(Registration, code=registration_code)
         ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
         bus_record = get_object_or_404(BusRecord, slug=bus_slug)
@@ -571,12 +772,18 @@ class UpdateBusInfoView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View
 
 
 class BusRequestListView(ListView):
+    """
+    View to list all bus requests for a registration.
+    """
     model = BusRequest
     template_name = 'institution_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
     paginate_by = 20
     
     def get_queryset(self):
+        """
+        Returns queryset of bus requests filtered by registration and institution, with optional search.
+        """
         registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
         institution = self.request.user.profile.institution
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration).order_by('-created_at')
@@ -591,6 +798,9 @@ class BusRequestListView(ListView):
         return queryset
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration and request counts to the context, and checks if each request has a ticket.
+        """
         context = super().get_context_data(**kwargs)
         registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         context["registration"] = registration
@@ -619,18 +829,27 @@ class BusRequestListView(ListView):
         return context
 
 class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list all open bus requests for a registration.
+    """
     model = BusRequest
     template_name = 'institution_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
     paginate_by = 20
     
     def get_queryset(self):
+        """
+        Returns queryset of open bus requests filtered by registration and institution.
+        """
         registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
         institution = self.request.user.profile.institution
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration, status='open').order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration and request counts to the context, and checks if each request has a ticket.
+        """
         context = super().get_context_data(**kwargs)
         registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         context["registration"] = registration
@@ -659,18 +878,27 @@ class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
         return context
 
 class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list all closed bus requests for a registration.
+    """
     model = BusRequest
     template_name = 'institution_admin/bus_request_list.html'
     context_object_name = 'bus_requests'
     paginate_by = 20
     
     def get_queryset(self):
+        """
+        Returns queryset of closed bus requests filtered by registration and institution.
+        """
         registration = get_object_or_404(Registration, slug=self.kwargs["registration_slug"])
         institution = self.request.user.profile.institution
         queryset = BusRequest.objects.filter(org=self.request.user.profile.org, institution=institution, registration=registration, status='closed').order_by('-created_at')
         return queryset
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration and request counts to the context, and checks if each request has a ticket.
+        """
         context = super().get_context_data(**kwargs)
         registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
         context["registration"] = registration
@@ -699,22 +927,37 @@ class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixi
         return context
 
 class BusRequestDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    View to delete a bus request.
+    """
     model = BusRequest
     template_name = 'institution_admin/bus_request_confirm_delete.html'
     slug_field = 'slug'
     slug_url_kwarg = 'bus_request_slug'
     
     def get_context_data(self, **kwargs):
+        """
+        Adds registration to the context for the template.
+        """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.object.registration
         return context
     
     def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful delete.
+        """
         return reverse('central_admin:bus_request_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
 
 class BusRequestStatusUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to update the status of a bus request and add comments.
+    """
     def post(self, request, *args, **kwargs):
+        """
+        Toggles the status of a bus request and adds a comment if provided.
+        """
         bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
         new_status = 'open' if bus_request.status == 'closed' else 'closed'
         comment_text = request.POST.get('comment')
@@ -732,7 +975,13 @@ class BusRequestStatusUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
         return response
 
 class BusRequestCommentView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to add a comment to a bus request.
+    """
     def post(self, request, *args, **kwargs):
+        """
+        Handles the submission of a comment form for a bus request.
+        """
         bus_request = get_object_or_404(BusRequest, slug=self.kwargs['bus_request_slug'])
         comment_form = BusRequestCommentForm(request.POST)
         if comment_form.is_valid():
@@ -747,14 +996,23 @@ class BusRequestCommentView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
 
 
 class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
+    """
+    View to handle bulk update of student groups via Excel upload.
+    """
     template_name = 'institution_admin/bulk_student_group_update_upload.html'
     form_class = BulkStudentGroupUpdateForm
 
     def get(self, request, *args, **kwargs):
+        """
+        Renders the upload form for bulk student group update.
+        """
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
 
     def form_valid(self, form):
+        """
+        Validates and previews the bulk update data from the uploaded Excel file.
+        """
         file = form.cleaned_data['file']
         wb = openpyxl.load_workbook(file, read_only=True)
         ws = wb.active
@@ -811,6 +1069,9 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
         })
 
     def dispatch(self, request, *args, **kwargs):
+        """
+        Ensures bulk update is only allowed when registration is closed.
+        """
         registration_slug = self.kwargs.get('registration_slug')
         registration = get_object_or_404(Registration, slug=registration_slug)
         if registration.status:
@@ -818,7 +1079,13 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
         return super().dispatch(request, *args, **kwargs)
 
 class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to confirm and process bulk student group updates.
+    """
     def post(self, request, *args, **kwargs):
+        """
+        Triggers the Celery task to process the bulk update and clears the preview session.
+        """
         preview_data = request.session.get('bulk_update_preview', [])
         institution = request.user.profile.institution
         user_id = request.user.id
@@ -830,6 +1097,9 @@ class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyA
         )
     
     def dispatch(self, request, *args, **kwargs):
+        """
+        Ensures bulk update is only allowed when registration is closed.
+        """
         registration_slug = self.kwargs.get('registration_slug')
         registration = get_object_or_404(Registration, slug=registration_slug)
         if registration.status:

@@ -1,3 +1,15 @@
+"""
+Utility functions for the services app.
+
+This module provides utility functions for generating student ID PDFs and filtering bus records based on schedule and stop criteria. It is used throughout the SFS Institutions system for reporting, exporting, and bus assignment logic.
+
+Functions:
+    generate_ids_pdf(students):
+        Generates a PDF containing ID cards for a list of students, using a template image and ReportLab.
+    get_filtered_bus_records(schedule_ids, stop_id):
+        Returns a list of BusRecord objects that have available capacity and valid trips for all required schedules and the specified stop.
+"""
+
 from django.db.models import Prefetch
 from services.models import BusRecord, Trip
 from io import BytesIO
@@ -13,6 +25,12 @@ TEMPLATE_PATH = finders.find("images/id_img_nobg.png")  # Use finders to locate 
 def generate_ids_pdf(students):
     """
     Generates a PDF containing ID cards for a list of students.
+    Args:
+        students (list): List of student dictionaries with required fields for ID generation.
+    Returns:
+        BytesIO: A buffer containing the generated PDF.
+    Raises:
+        FileNotFoundError: If the template image is not found.
     """
     if not TEMPLATE_PATH:
         raise FileNotFoundError("Template image not found. Ensure 'images/id_img.png' exists in the static files directory.")
@@ -133,6 +151,16 @@ def generate_ids_pdf(students):
 
 
 def get_filtered_bus_records(schedule_ids, stop_id):
+    """
+    Returns a list of BusRecord objects that have available capacity and valid trips for all required schedules and the specified stop.
+    Args:
+        schedule_ids (list): List of schedule IDs to filter trips.
+        stop_id (int): The stop ID that must be present in the trip's route.
+    Returns:
+        list: Filtered BusRecord objects.
+    Raises:
+        ValueError: If no schedule IDs are provided.
+    """
     
     if not schedule_ids:
         raise ValueError("At least one schedule ID is required.")
