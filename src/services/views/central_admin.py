@@ -1283,25 +1283,25 @@ class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     
 class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """
-    TicketListView displays a paginated list of Ticket objects for a specific Registration, 
-    restricted to users with central admin access. The view supports filtering and searching 
-    tickets based on various GET parameters, including institution, pickup/drop points, 
-    schedule, buses, student group, and a general search term. The filtered status and 
-    filter options are provided in the context for use in the template.
+    Displays a paginated list of Ticket objects for a specific Registration, restricted to central admin users.
+
+    Features:
+        - Supports filtering by institution, pickup/drop points, schedule, buses, student group, pickup/drop schedule, and a general search term.
+        - Filtered status and filter options are provided in the context for use in the template.
+        - Results are ordered by creation date (most recent first).
+
     Attributes:
         model (Ticket): The model associated with this view.
         template_name (str): The template used to render the ticket list.
         context_object_name (str): The context variable name for the ticket queryset.
         paginate_by (int): Number of tickets to display per page.
+
     Methods:
         get_queryset(self):
-            Returns a queryset of Ticket objects filtered by registration, institution, 
-            pickup/drop points, schedule, buses, student group, and search term as specified 
-            in the GET parameters. Sets a flag indicating if any filters are applied.
+            Returns a queryset of Ticket objects filtered by registration and GET parameters.
+            Sets a flag indicating if any filters are applied.
         get_context_data(self, **kwargs):
-            Extends the context with filter status, filter options (pickup/drop points, 
-            schedules, institutions, bus records, student groups), the current registration, 
-            and the search term.
+            Extends the context with filter status, filter options (pickup/drop points, schedules, institutions, bus records, student groups), the current registration, search term, and selected pickup/drop schedules.
     """
     model = Ticket
     template_name = 'central_admin/ticket_list.html'
@@ -1311,11 +1311,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
-        
-        # Base queryset filtered by registration and institution
         queryset = Ticket.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('-created_at')
-        
-        # Apply filters based on GET parameters
         institution = self.request.GET.get('institution')
         pickup_points = self.request.GET.getlist('pickup_point')
         drop_points = self.request.GET.getlist('drop_point')
@@ -1323,10 +1319,10 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         pickup_buses = self.request.GET.getlist('pickup_bus')
         drop_buses = self.request.GET.getlist('drop_bus')
         student_group = self.request.GET.get('student_group')
-        filters = False  # Default no filters applied
-        
+        pickup_schedule = self.request.GET.get('pickup_schedule')
+        drop_schedule = self.request.GET.get('drop_schedule')
+        filters = False
         self.search_term = self.request.GET.get('search', '')
-        
         if self.search_term:
             queryset = Ticket.objects.filter(
                 Q(student_name__icontains=self.search_term) |
@@ -1358,29 +1354,30 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         if student_group:
             queryset = queryset.filter(student_group_id=student_group)
             filters = True
-        
-        # Pass the filters flag to context (done in get_context_data)
-        self.filters = filters  # Store in the instance for later access
-
+        if pickup_schedule:
+            queryset = queryset.filter(pickup_schedule_id=pickup_schedule)
+            filters = True
+        if drop_schedule:
+            queryset = queryset.filter(drop_schedule_id=drop_schedule)
+            filters = True
+        self.filters = filters
+        self.selected_pickup_schedule = pickup_schedule
+        self.selected_drop_schedule = drop_schedule
         return queryset
     
     def get_context_data(self, **kwargs):
-        # Get default context from parent
         context = super().get_context_data(**kwargs)
-        
-        # Add the filter status to the context
-        context['filters'] = self.filters  # Pass the filters flag to the template
-        
-        # Add the filter options to the context
+        context['filters'] = self.filters
         context['registration'] = self.registration
         context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
         context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
         context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")
-        context['student_groups'] = StudentGroup.objects.filter(org = self.request.user.profile.org).order_by('name')
+        context['student_groups'] = StudentGroup.objects.filter(org=self.request.user.profile.org).order_by('name')
         context['search_term'] = self.search_term
-
+        context['selected_pickup_schedule'] = self.selected_pickup_schedule
+        context['selected_drop_schedule'] = self.selected_drop_schedule
         return context
     
 
