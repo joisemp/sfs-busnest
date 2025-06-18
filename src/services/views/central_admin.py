@@ -2196,6 +2196,8 @@ class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
             'pickup_buses': request.GET.getlist('pickup_bus'),
             'drop_buses': request.GET.getlist('drop_bus'),
             'student_group': request.GET.get('student_group'),
+            'pickup_schedule': request.GET.get('pickup_schedule'),
+            'drop_schedule': request.GET.get('drop_schedule'),  
         }
 
         # Trigger the Celery task

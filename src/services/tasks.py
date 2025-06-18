@@ -711,6 +711,10 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
             queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
         if filters.get('student_group'):
             queryset = queryset.filter(student_group_id=filters['student_group'])
+        if filters.get('pickup_schedule'):
+            queryset = queryset.filter(pickup_schedule_id=filters['pickup_schedule'])
+        if filters.get('drop_schedule'):
+            queryset = queryset.filter(drop_schedule_id=filters['drop_schedule'])
 
     wb = openpyxl.Workbook()
     ws = wb.active
