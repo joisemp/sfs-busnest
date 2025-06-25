@@ -816,12 +816,12 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         ListView: Provides list display functionality.
     Attributes:
         model (Route): The model to list.
-        template_name (str): Template used to render the list.
+        template_name (str): Template used for rendering the list.
         context_object_name (str): Name of the context variable for the list of routes.
         paginate_by (int): Number of routes per page.
     Methods:
         get_queryset(self):
-            Returns a queryset of Route objects filtered by the user's organization and the specified registration.
+            Returns a queryset of Route objects filtered by the organization of the currently logged-in user.
             Supports optional search by route name via the 'search' GET parameter.
         get_context_data(self, **kwargs):
             Adds the current registration and search term to the context for template rendering.
@@ -1429,6 +1429,10 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         institution_slug = self.request.GET.get('institution')  # Changed to slug
         ticket_type = self.request.GET.get('ticket_type')
         student_group_id = self.request.GET.get('student_group')
+        pickup_bus = self.request.GET.get('pickup_bus')
+        drop_bus = self.request.GET.get('drop_bus')
+        pickup_schedule = self.request.GET.get('pickup_schedule')
+        drop_schedule = self.request.GET.get('drop_schedule')
 
         if start_date:
             queryset = queryset.filter(created_at__date__gte=parse_date(start_date))
@@ -1440,6 +1444,14 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
             queryset = queryset.filter(ticket_type=ticket_type)
         if student_group_id:
             queryset = queryset.filter(student_group_id=student_group_id)
+        if pickup_bus:
+            queryset = queryset.filter(pickup_bus_record_id=pickup_bus)
+        if drop_bus:
+            queryset = queryset.filter(drop_bus_record_id=drop_bus)
+        if pickup_schedule:
+            queryset = queryset.filter(pickup_schedule_id=pickup_schedule)
+        if drop_schedule:
+            queryset = queryset.filter(drop_schedule_id=drop_schedule)
 
         return queryset
 
@@ -1452,6 +1464,13 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['selected_institution'] = self.request.GET.get('institution', '')
         context['ticket_types'] = Ticket.TICKET_TYPES
         context['selected_ticket_type'] = self.request.GET.get('ticket_type', '')
+        context['selected_student_group'] = self.request.GET.get('student_group', '')
+        context['bus_records'] = BusRecord.objects.filter(org=self.request.user.profile.org)
+        context['selected_pickup_bus'] = self.request.GET.get('pickup_bus', '')
+        context['selected_drop_bus'] = self.request.GET.get('drop_bus', '')
+        context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
+        context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
+        context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
         return context
 
 
