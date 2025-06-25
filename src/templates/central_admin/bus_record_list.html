@@ -22,8 +22,9 @@
          <div>
            <h2>Records</h2>
          </div>
-          <div class="button">
+          <div class="button d-flex gap-2">
              <a href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}" class="btn btn-primary ms-2 mt-1" style="height:37px">Add<i class="fa-solid fa-plus ms-2"></i></a>
+             <a href="{% url 'central_admin:bus_record_export_pdf' registration_slug=registration.slug %}" class="btn btn-success ms-2 mt-1" style="height:37px">Export PDF<i class="fa-solid fa-file-pdf ms-2"></i></a>
           </div>
       </div>
       <hr>

@@ -27,6 +27,10 @@ from django.contrib import messages
 from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.http import FileResponse
+import io
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -86,6 +90,7 @@ from services.forms.central_admin import (
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
 from services.utils.transfer_stop import move_stop_and_update_tickets
+from datetime import datetime
 
 User = get_user_model()
 
@@ -816,12 +821,12 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         ListView: Provides list display functionality.
     Attributes:
         model (Route): The model to list.
-        template_name (str): Template used to render the list.
+        template_name (str): Template used for rendering the list.
         context_object_name (str): Name of the context variable for the list of routes.
         paginate_by (int): Number of routes per page.
     Methods:
         get_queryset(self):
-            Returns a queryset of Route objects filtered by the user's organization and the specified registration.
+            Returns a queryset of Route objects filtered by the organization of the currently logged-in user.
             Supports optional search by route name via the 'search' GET parameter.
         get_context_data(self, **kwargs):
             Adds the current registration and search term to the context for template rendering.
@@ -1283,25 +1288,25 @@ class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     
 class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """
-    TicketListView displays a paginated list of Ticket objects for a specific Registration, 
-    restricted to users with central admin access. The view supports filtering and searching 
-    tickets based on various GET parameters, including institution, pickup/drop points, 
-    schedule, buses, student group, and a general search term. The filtered status and 
-    filter options are provided in the context for use in the template.
+    Displays a paginated list of Ticket objects for a specific Registration, restricted to central admin users.
+
+    Features:
+        - Supports filtering by institution, pickup/drop points, schedule, buses, student group, pickup/drop schedule, and a general search term.
+        - Filtered status and filter options are provided in the context for use in the template.
+        - Results are ordered by creation date (most recent first).
+
     Attributes:
         model (Ticket): The model associated with this view.
         template_name (str): The template used to render the ticket list.
         context_object_name (str): The context variable name for the ticket queryset.
         paginate_by (int): Number of tickets to display per page.
+
     Methods:
         get_queryset(self):
-            Returns a queryset of Ticket objects filtered by registration, institution, 
-            pickup/drop points, schedule, buses, student group, and search term as specified 
-            in the GET parameters. Sets a flag indicating if any filters are applied.
+            Returns a queryset of Ticket objects filtered by registration and GET parameters.
+            Sets a flag indicating if any filters are applied.
         get_context_data(self, **kwargs):
-            Extends the context with filter status, filter options (pickup/drop points, 
-            schedules, institutions, bus records, student groups), the current registration, 
-            and the search term.
+            Extends the context with filter status, filter options (pickup/drop points, schedules, institutions, bus records, student groups), the current registration, search term, and selected pickup/drop schedules.
     """
     model = Ticket
     template_name = 'central_admin/ticket_list.html'
@@ -1311,11 +1316,7 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
-        
-        # Base queryset filtered by registration and institution
         queryset = Ticket.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('-created_at')
-        
-        # Apply filters based on GET parameters
         institution = self.request.GET.get('institution')
         pickup_points = self.request.GET.getlist('pickup_point')
         drop_points = self.request.GET.getlist('drop_point')
@@ -1323,10 +1324,10 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         pickup_buses = self.request.GET.getlist('pickup_bus')
         drop_buses = self.request.GET.getlist('drop_bus')
         student_group = self.request.GET.get('student_group')
-        filters = False  # Default no filters applied
-        
+        pickup_schedule = self.request.GET.get('pickup_schedule')
+        drop_schedule = self.request.GET.get('drop_schedule')
+        filters = False
         self.search_term = self.request.GET.get('search', '')
-        
         if self.search_term:
             queryset = Ticket.objects.filter(
                 Q(student_name__icontains=self.search_term) |
@@ -1358,29 +1359,30 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         if student_group:
             queryset = queryset.filter(student_group_id=student_group)
             filters = True
-        
-        # Pass the filters flag to context (done in get_context_data)
-        self.filters = filters  # Store in the instance for later access
-
+        if pickup_schedule:
+            queryset = queryset.filter(pickup_schedule_id=pickup_schedule)
+            filters = True
+        if drop_schedule:
+            queryset = queryset.filter(drop_schedule_id=drop_schedule)
+            filters = True
+        self.filters = filters
+        self.selected_pickup_schedule = pickup_schedule
+        self.selected_drop_schedule = drop_schedule
         return queryset
     
     def get_context_data(self, **kwargs):
-        # Get default context from parent
         context = super().get_context_data(**kwargs)
-        
-        # Add the filter status to the context
-        context['filters'] = self.filters  # Pass the filters flag to the template
-        
-        # Add the filter options to the context
+        context['filters'] = self.filters
         context['registration'] = self.registration
         context['pickup_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
         context['drop_points'] = Stop.objects.filter(org=self.registration.org, registration=self.registration).order_by('name')
         context['schedules'] = Schedule.objects.filter(org=self.registration.org, registration=self.registration)
         context['institutions'] = Institution.objects.filter(org=self.registration.org)
         context['bus_records'] = BusRecord.objects.filter(org=self.registration.org, registration=self.registration).order_by("label")
-        context['student_groups'] = StudentGroup.objects.filter(org = self.request.user.profile.org).order_by('name')
+        context['student_groups'] = StudentGroup.objects.filter(org=self.request.user.profile.org).order_by('name')
         context['search_term'] = self.search_term
-
+        context['selected_pickup_schedule'] = self.selected_pickup_schedule
+        context['selected_drop_schedule'] = self.selected_drop_schedule
         return context
     
 
@@ -1432,6 +1434,10 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         institution_slug = self.request.GET.get('institution')  # Changed to slug
         ticket_type = self.request.GET.get('ticket_type')
         student_group_id = self.request.GET.get('student_group')
+        pickup_bus = self.request.GET.get('pickup_bus')
+        drop_bus = self.request.GET.get('drop_bus')
+        pickup_schedule = self.request.GET.get('pickup_schedule')
+        drop_schedule = self.request.GET.get('drop_schedule')
 
         if start_date:
             queryset = queryset.filter(created_at__date__gte=parse_date(start_date))
@@ -1443,6 +1449,14 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
             queryset = queryset.filter(ticket_type=ticket_type)
         if student_group_id:
             queryset = queryset.filter(student_group_id=student_group_id)
+        if pickup_bus:
+            queryset = queryset.filter(pickup_bus_record_id=pickup_bus)
+        if drop_bus:
+            queryset = queryset.filter(drop_bus_record_id=drop_bus)
+        if pickup_schedule:
+            queryset = queryset.filter(pickup_schedule_id=pickup_schedule)
+        if drop_schedule:
+            queryset = queryset.filter(drop_schedule_id=drop_schedule)
 
         return queryset
 
@@ -1455,6 +1469,13 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['selected_institution'] = self.request.GET.get('institution', '')
         context['ticket_types'] = Ticket.TICKET_TYPES
         context['selected_ticket_type'] = self.request.GET.get('ticket_type', '')
+        context['selected_student_group'] = self.request.GET.get('student_group', '')
+        context['bus_records'] = BusRecord.objects.filter(org=self.request.user.profile.org)
+        context['selected_pickup_bus'] = self.request.GET.get('pickup_bus', '')
+        context['selected_drop_bus'] = self.request.GET.get('drop_bus', '')
+        context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
+        context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
+        context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
         return context
 
 
@@ -2199,6 +2220,8 @@ class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
             'pickup_buses': request.GET.getlist('pickup_bus'),
             'drop_buses': request.GET.getlist('drop_bus'),
             'student_group': request.GET.get('student_group'),
+            'pickup_schedule': request.GET.get('pickup_schedule'),
+            'drop_schedule': request.GET.get('drop_schedule'),  
         }
 
         # Trigger the Celery task
@@ -2316,5 +2339,183 @@ class StopTransferView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Registra
             'stop': stop,
             'registration': registration,
         })
+
+class BusRecordExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, registration_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        bus_records = BusRecord.objects.filter(
+            org=request.user.profile.org, registration=registration
+        ).order_by('label')
+
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+
+        # Margins and layout
+        margin_left, margin_right = 40, 40
+        margin_top, margin_bottom = 60, 60
+        usable_width = width - margin_left - margin_right
+        y = height - margin_top
+
+        # Title (only on first page)
+        p.setFont("Helvetica-Bold", 20)
+        p.setFillColorRGB(0.13, 0.22, 0.38)
+        p.drawString(margin_left, y, f"Bus Records for {registration.name}")
+        y -= 30
+
+        # Subtitle (only on first page)
+        p.setFont("Helvetica-Bold", 12)
+        p.setFillColorRGB(0.25, 0.25, 0.25)
+        p.drawString(margin_left, y, f"Total Records: {bus_records.count()}")
+        y -= 20
+
+        # Horizontal line
+        p.setStrokeColorRGB(0.18, 0.32, 0.55)
+        p.setLineWidth(1.5)
+        p.line(margin_left, y, width - margin_right, y)
+        y -= 16
+
+        # Table settings
+        row_height, header_height = 22, 25
+        font_size, header_font_size = 10, 11
+
+        # Main headers (3 columns, full width)
+        main_headers = ["Label", "Registration No", "Capacity"]
+        main_col_widths = [
+            int(usable_width * 0.45),
+            int(usable_width * 0.40),
+            int(usable_width * 0.15),
+        ]
+        main_col_x = [margin_left]
+        for w in main_col_widths[:-1]:
+            main_col_x.append(main_col_x[-1] + w)
+        main_col_x.append(margin_left + sum(main_col_widths))
+
+        # Trip headers (3 columns, full width, slight indent)
+        trip_headers = ["Schedule", "Route", "Bookings"]
+        trip_col_widths = [
+            int(usable_width * 0.45),
+            int(usable_width * 0.40),
+            int(usable_width * 0.15),
+        ]
+        trip_col_x = [margin_left]
+        for w in trip_col_widths[:-1]:
+            trip_col_x.append(trip_col_x[-1] + w)
+        trip_col_x.append(margin_left + sum(trip_col_widths))
+
+        def draw_main_header(y):
+            p.setFont("Helvetica-Bold", header_font_size)
+            p.setFillColorRGB(0.19, 0.32, 0.55)
+            p.rect(margin_left, y - header_height + 6, usable_width, header_height, fill=1, stroke=0)
+            p.setFillColorRGB(1, 1, 1)
+            for i, h in enumerate(main_headers):
+                p.drawString(main_col_x[i] + 8, y - header_height + 16, h)
+            p.setStrokeColorRGB(0.18, 0.32, 0.55)
+            p.setLineWidth(1)
+            p.line(margin_left, y - header_height + 6, margin_left + usable_width, y - header_height + 6)
+            return y - header_height
+
+        def draw_main_row(y, values):
+            p.setFont("Helvetica", font_size)
+            p.setFillColorRGB(0.97, 0.98, 1)
+            p.rect(margin_left, y - row_height + 6, usable_width, row_height, fill=1, stroke=0)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            for i, val in enumerate(values):
+                p.drawString(main_col_x[i] + 8, y - row_height + 14, str(val))
+            p.setStrokeColorRGB(0.85, 0.85, 0.9)
+            p.setLineWidth(0.5)
+            p.line(margin_left, y - row_height + 6, margin_left + usable_width, y - row_height + 6)
+            return y - row_height
+
+        def draw_trip_header(y):
+            p.setFont("Helvetica-Bold", header_font_size)
+            p.setFillColorRGB(0.82, 0.89, 0.98)
+            p.rect(margin_left, y - header_height + 6, usable_width, header_height, fill=1, stroke=0)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            for i, h in enumerate(trip_headers):
+                p.drawString(trip_col_x[i] + 8, y - header_height + 16, h)
+            p.setStrokeColorRGB(0.18, 0.32, 0.55)
+            p.setLineWidth(0.7)
+            p.line(margin_left, y - header_height + 6, margin_left + usable_width, y - header_height + 6)
+            return y - header_height
+
+        def draw_trip_row(y, values):
+            p.setFont("Helvetica", font_size)
+            p.setFillColorRGB(1, 1, 1)
+            p.rect(margin_left, y - row_height + 6, usable_width, row_height, fill=1, stroke=0)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            for i, val in enumerate(values):
+                p.drawString(trip_col_x[i] + 8, y - row_height + 14, str(val))
+            p.setStrokeColorRGB(0.85, 0.85, 0.9)
+            p.setLineWidth(0.5)
+            p.line(margin_left, y - row_height + 6, margin_left + usable_width, y - row_height + 6)
+            return y - row_height
+
+        # Only redraw table headers on new pages, not the title/subtitle
+        def redraw_page_header(y):
+            return y  # No-op, as we don't want to redraw title/subtitle
+
+        first_page = True
+
+        for record in bus_records:
+            trips = list(record.trips.select_related('schedule', 'route').all())
+            trip_count = max(1, len(trips))
+            needed_space = row_height + header_height + trip_count * row_height + 30
+            if y < margin_bottom + needed_space:
+                p.showPage()
+                y = height - margin_top
+                # Only redraw table headers, not title/subtitle
+                first_page = False
+
+            reg_no = record.bus.registration_no if record.bus else "----"
+            cap = str(record.bus.capacity) if record.bus else "----"
+            y = draw_main_header(y)
+            y = draw_main_row(y, [record.label, reg_no, cap])
+            y = draw_trip_header(y)
+
+            if trips:
+                for trip in trips:
+                    if y < margin_bottom + row_height + 20:
+                        p.showPage()
+                        y = height - margin_top
+                        # Only redraw table headers, not title/subtitle
+                        y = draw_main_header(y)
+                        y = draw_main_row(y, [record.label, reg_no, cap])
+                        y = draw_trip_header(y)
+                    y = draw_trip_row(
+                        y,
+                        [
+                            trip.schedule.name if trip.schedule else "----",
+                            trip.route.name if trip.route else "----",
+                            getattr(trip, "booking_count", "----"),
+                        ],
+                    )
+            else:
+                if y < margin_bottom + row_height + 20:
+                    p.showPage()
+                    y = height - margin_top
+                    y = draw_main_header(y)
+                    y = draw_main_row(y, [record.label, reg_no, cap])
+                    y = draw_trip_header(y)
+                y = draw_trip_row(y, ["No trips", "", ""])
+
+            y -= 20  # Space between bus records
+
+        # Footer
+        p.setFont("Helvetica-Oblique", 9)
+        p.setFillColorRGB(0.5, 0.5, 0.5)
+        p.drawRightString(
+            width - margin_right,
+            margin_bottom - 30,
+            f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        )
+        p.setFillColorRGB(0, 0, 0)
+        p.save()
+        buffer.seek(0)
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=f"bus_records_{registration.slug}.pdf",
+        )
 
 

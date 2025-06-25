@@ -23,7 +23,7 @@
             <a onclick="generateStudentPass()" class="btn btn-primary"><i class="fa-solid fa-id-card-clip me-2"></i>Generate ID</a>
         </div>
     </div>
-    <form method="get" class="d-flex align-items-end gap-3">
+    <form method="get" class="d-flex align-items-end gap-3 flex-wrap">
         <div>
             <label for="start_date" class="form-label">Start Date</label>
             <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
@@ -62,6 +62,42 @@
                 <option value="{{ type }}" {% if type == selected_ticket_type %}selected{% endif %}>
                     {{ label }}
                 </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="pickup_bus" class="form-label">Pickup Bus</label>
+            <select id="pickup_bus" name="pickup_bus" class="form-select">
+                <option value="">All Pickup Buses</option>
+                {% for bus in bus_records %}
+                <option value="{{ bus.id }}" {% if bus.id|stringformat:'s' == selected_pickup_bus %}selected{% endif %}>{{ bus.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="drop_bus" class="form-label">Drop Bus</label>
+            <select id="drop_bus" name="drop_bus" class="form-select">
+                <option value="">All Drop Buses</option>
+                {% for bus in bus_records %}
+                <option value="{{ bus.id }}" {% if bus.id|stringformat:'s' == selected_drop_bus %}selected{% endif %}>{{ bus.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="pickup_schedule" class="form-label">Pickup Schedule</label>
+            <select id="pickup_schedule" name="pickup_schedule" class="form-select">
+                <option value="">All Pickup Schedules</option>
+                {% for schedule in schedules %}
+                <option value="{{ schedule.id }}" {% if schedule.id|stringformat:'s' == selected_pickup_schedule %}selected{% endif %}>{{ schedule.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="drop_schedule" class="form-label">Drop Schedule</label>
+            <select id="drop_schedule" name="drop_schedule" class="form-select">
+                <option value="">All Drop Schedules</option>
+                {% for schedule in schedules %}
+                <option value="{{ schedule.id }}" {% if schedule.id|stringformat:'s' == selected_drop_schedule %}selected{% endif %}>{{ schedule.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -134,9 +170,7 @@
     </div>
     <div class="pagination-container d-md-flex justify-content-md-between align-items-center mt-3">
         <div class="text-muted mb-3 mb-md-0">
-            {% if is_paginated %}
             Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} tickets
-            {% endif %}
         </div>
         <div>
             <nav aria-label="Page navigation">

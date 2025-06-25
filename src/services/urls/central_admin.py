@@ -161,4 +161,6 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/generate-student-pass/', GenerateStudentPassView.as_view(), name='generate_student_pass'),
      
      path('student-pass/download/<slug:slug>/', StudentPassFileDownloadView.as_view(), name='student_pass_file_download'),
+     
+     path('registrations/<slug:registration_slug>/bus-records/export-pdf/', central_admin.BusRecordExportPDFView.as_view(), name='bus_record_export_pdf'),
 ]
