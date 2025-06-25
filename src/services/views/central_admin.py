@@ -27,6 +27,10 @@ from django.contrib import messages
 from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.http import FileResponse
+import io
 
 from config.mixins.access_mixin import CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -86,6 +90,7 @@ from services.forms.central_admin import (
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
 from services.utils.transfer_stop import move_stop_and_update_tickets
+from datetime import datetime
 
 User = get_user_model()
 
@@ -2334,5 +2339,183 @@ class StopTransferView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Registra
             'stop': stop,
             'registration': registration,
         })
+
+class BusRecordExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, registration_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        bus_records = BusRecord.objects.filter(
+            org=request.user.profile.org, registration=registration
+        ).order_by('label')
+
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+
+        # Margins and layout
+        margin_left, margin_right = 40, 40
+        margin_top, margin_bottom = 60, 60
+        usable_width = width - margin_left - margin_right
+        y = height - margin_top
+
+        # Title (only on first page)
+        p.setFont("Helvetica-Bold", 20)
+        p.setFillColorRGB(0.13, 0.22, 0.38)
+        p.drawString(margin_left, y, f"Bus Records for {registration.name}")
+        y -= 30
+
+        # Subtitle (only on first page)
+        p.setFont("Helvetica-Bold", 12)
+        p.setFillColorRGB(0.25, 0.25, 0.25)
+        p.drawString(margin_left, y, f"Total Records: {bus_records.count()}")
+        y -= 20
+
+        # Horizontal line
+        p.setStrokeColorRGB(0.18, 0.32, 0.55)
+        p.setLineWidth(1.5)
+        p.line(margin_left, y, width - margin_right, y)
+        y -= 16
+
+        # Table settings
+        row_height, header_height = 22, 25
+        font_size, header_font_size = 10, 11
+
+        # Main headers (3 columns, full width)
+        main_headers = ["Label", "Registration No", "Capacity"]
+        main_col_widths = [
+            int(usable_width * 0.45),
+            int(usable_width * 0.40),
+            int(usable_width * 0.15),
+        ]
+        main_col_x = [margin_left]
+        for w in main_col_widths[:-1]:
+            main_col_x.append(main_col_x[-1] + w)
+        main_col_x.append(margin_left + sum(main_col_widths))
+
+        # Trip headers (3 columns, full width, slight indent)
+        trip_headers = ["Schedule", "Route", "Bookings"]
+        trip_col_widths = [
+            int(usable_width * 0.45),
+            int(usable_width * 0.40),
+            int(usable_width * 0.15),
+        ]
+        trip_col_x = [margin_left]
+        for w in trip_col_widths[:-1]:
+            trip_col_x.append(trip_col_x[-1] + w)
+        trip_col_x.append(margin_left + sum(trip_col_widths))
+
+        def draw_main_header(y):
+            p.setFont("Helvetica-Bold", header_font_size)
+            p.setFillColorRGB(0.19, 0.32, 0.55)
+            p.rect(margin_left, y - header_height + 6, usable_width, header_height, fill=1, stroke=0)
+            p.setFillColorRGB(1, 1, 1)
+            for i, h in enumerate(main_headers):
+                p.drawString(main_col_x[i] + 8, y - header_height + 16, h)
+            p.setStrokeColorRGB(0.18, 0.32, 0.55)
+            p.setLineWidth(1)
+            p.line(margin_left, y - header_height + 6, margin_left + usable_width, y - header_height + 6)
+            return y - header_height
+
+        def draw_main_row(y, values):
+            p.setFont("Helvetica", font_size)
+            p.setFillColorRGB(0.97, 0.98, 1)
+            p.rect(margin_left, y - row_height + 6, usable_width, row_height, fill=1, stroke=0)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            for i, val in enumerate(values):
+                p.drawString(main_col_x[i] + 8, y - row_height + 14, str(val))
+            p.setStrokeColorRGB(0.85, 0.85, 0.9)
+            p.setLineWidth(0.5)
+            p.line(margin_left, y - row_height + 6, margin_left + usable_width, y - row_height + 6)
+            return y - row_height
+
+        def draw_trip_header(y):
+            p.setFont("Helvetica-Bold", header_font_size)
+            p.setFillColorRGB(0.82, 0.89, 0.98)
+            p.rect(margin_left, y - header_height + 6, usable_width, header_height, fill=1, stroke=0)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            for i, h in enumerate(trip_headers):
+                p.drawString(trip_col_x[i] + 8, y - header_height + 16, h)
+            p.setStrokeColorRGB(0.18, 0.32, 0.55)
+            p.setLineWidth(0.7)
+            p.line(margin_left, y - header_height + 6, margin_left + usable_width, y - header_height + 6)
+            return y - header_height
+
+        def draw_trip_row(y, values):
+            p.setFont("Helvetica", font_size)
+            p.setFillColorRGB(1, 1, 1)
+            p.rect(margin_left, y - row_height + 6, usable_width, row_height, fill=1, stroke=0)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            for i, val in enumerate(values):
+                p.drawString(trip_col_x[i] + 8, y - row_height + 14, str(val))
+            p.setStrokeColorRGB(0.85, 0.85, 0.9)
+            p.setLineWidth(0.5)
+            p.line(margin_left, y - row_height + 6, margin_left + usable_width, y - row_height + 6)
+            return y - row_height
+
+        # Only redraw table headers on new pages, not the title/subtitle
+        def redraw_page_header(y):
+            return y  # No-op, as we don't want to redraw title/subtitle
+
+        first_page = True
+
+        for record in bus_records:
+            trips = list(record.trips.select_related('schedule', 'route').all())
+            trip_count = max(1, len(trips))
+            needed_space = row_height + header_height + trip_count * row_height + 30
+            if y < margin_bottom + needed_space:
+                p.showPage()
+                y = height - margin_top
+                # Only redraw table headers, not title/subtitle
+                first_page = False
+
+            reg_no = record.bus.registration_no if record.bus else "----"
+            cap = str(record.bus.capacity) if record.bus else "----"
+            y = draw_main_header(y)
+            y = draw_main_row(y, [record.label, reg_no, cap])
+            y = draw_trip_header(y)
+
+            if trips:
+                for trip in trips:
+                    if y < margin_bottom + row_height + 20:
+                        p.showPage()
+                        y = height - margin_top
+                        # Only redraw table headers, not title/subtitle
+                        y = draw_main_header(y)
+                        y = draw_main_row(y, [record.label, reg_no, cap])
+                        y = draw_trip_header(y)
+                    y = draw_trip_row(
+                        y,
+                        [
+                            trip.schedule.name if trip.schedule else "----",
+                            trip.route.name if trip.route else "----",
+                            getattr(trip, "booking_count", "----"),
+                        ],
+                    )
+            else:
+                if y < margin_bottom + row_height + 20:
+                    p.showPage()
+                    y = height - margin_top
+                    y = draw_main_header(y)
+                    y = draw_main_row(y, [record.label, reg_no, cap])
+                    y = draw_trip_header(y)
+                y = draw_trip_row(y, ["No trips", "", ""])
+
+            y -= 20  # Space between bus records
+
+        # Footer
+        p.setFont("Helvetica-Oblique", 9)
+        p.setFillColorRGB(0.5, 0.5, 0.5)
+        p.drawRightString(
+            width - margin_right,
+            margin_bottom - 30,
+            f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        )
+        p.setFillColorRGB(0, 0, 0)
+        p.save()
+        buffer.seek(0)
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=f"bus_records_{registration.slug}.pdf",
+        )
 
 
