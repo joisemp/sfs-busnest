@@ -546,6 +546,80 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
 
+class BusRecordDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    BusRecordDeleteView is a Django class-based view that handles the deletion of BusRecord instances.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (BusRecord).
+        slug_field (str): The field used to look up the BusRecord.
+        slug_url_kwarg (str): The URL kwarg for the BusRecord slug.
+    Methods:
+        delete(self, request, *args, **kwargs):
+            Validates that the BusRecord has no associated trips or tickets before deletion.
+            Prevents deletion if there are any trips, pickup tickets, or drop tickets associated.
+            Logs the deletion activity and redirects to the bus record list view.
+        get_context_data(self, **kwargs):
+            Adds the registration object and dependency counts to the context for use in the template.
+            Includes trip count, pickup ticket count, drop ticket count, and a can_delete flag.
+        get_success_url(self):
+            Returns the URL to redirect to after a successful deletion.
+    """
+    model = BusRecord
+    template_name = 'central_admin/bus_record_confirm_delete.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'bus_record_slug'
+
+    def delete(self, request, *args, **kwargs):
+        bus_record = self.get_object()
+        user = self.request.user
+        
+        # Check if there are any trips associated with this bus record
+        if bus_record.trips.exists():
+            messages.error(request, f"Cannot delete Bus Record '{bus_record.label}' because it has associated trips. Please delete all trips first.")
+            return redirect('central_admin:bus_record_list', registration_slug=self.kwargs['registration_slug'])
+        
+        # Check if there are any tickets using this bus record for pickup
+        if bus_record.pickup_tickets.exists():
+            pickup_count = bus_record.pickup_tickets.count()
+            messages.error(request, f"Cannot delete Bus Record '{bus_record.label}' because it is assigned as pickup bus for {pickup_count} ticket(s). Please reassign or delete these tickets first.")
+            return redirect('central_admin:bus_record_list', registration_slug=self.kwargs['registration_slug'])
+        
+        # Check if there are any tickets using this bus record for drop
+        if bus_record.drop_tickets.exists():
+            drop_count = bus_record.drop_tickets.count()
+            messages.error(request, f"Cannot delete Bus Record '{bus_record.label}' because it is assigned as drop bus for {drop_count} ticket(s). Please reassign or delete these tickets first.")
+            return redirect('central_admin:bus_record_list', registration_slug=self.kwargs['registration_slug'])
+        
+        log_user_activity(user, f"Deleted Bus Record: {bus_record.label}", f"Bus Record {bus_record.label} was deleted.")
+        return super().delete(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        """
+        Adds the registration object and dependency information to the context for use in the template.
+        Includes counts of related trips and tickets to determine if deletion is allowed.
+        """
+        context = super().get_context_data(**kwargs)
+        context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        
+        # Add information about related objects that would prevent deletion
+        bus_record = self.get_object()
+        context["trips_count"] = bus_record.trips.count()
+        context["pickup_tickets_count"] = bus_record.pickup_tickets.count()
+        context["drop_tickets_count"] = bus_record.drop_tickets.count()
+        context["can_delete"] = (context["trips_count"] == 0 and 
+                                context["pickup_tickets_count"] == 0 and 
+                                context["drop_tickets_count"] == 0)
+        return context
+
+    def get_success_url(self):
+        """
+        Returns the URL to redirect to after a successful deletion.
+        """
+        return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
+    
+
 class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """
     View for displaying a list of Trip objects associated with a specific BusRecord for central admin users.
@@ -648,6 +722,9 @@ class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
     Methods:
         get_context_data(self, **kwargs):
             Adds 'registration' and 'bus_record' objects to the context based on URL parameters.
+            Also checks for related tickets and adds dependency information.
+        delete(self, request, *args, **kwargs):
+            Checks for tickets associated with this trip before allowing deletion.
         get_success_url(self):
             Returns the URL to redirect to after successful deletion, using 'registration_slug' and 'bus_record_slug' from the URL.
     """
@@ -660,7 +737,60 @@ class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
         context = super().get_context_data(**kwargs)
         context['registration'] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         context['bus_record'] = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        
+        # Check for tickets associated with this trip
+        trip = self.get_object()
+        
+        # Find tickets that use this trip's schedule and bus record for pickup
+        pickup_tickets = Ticket.objects.filter(
+            pickup_schedule=trip.schedule,
+            pickup_bus_record=trip.record
+        )
+        
+        # Find tickets that use this trip's schedule and bus record for drop
+        drop_tickets = Ticket.objects.filter(
+            drop_schedule=trip.schedule,
+            drop_bus_record=trip.record
+        )
+        
+        # Get unique tickets (a ticket might appear in both pickup and drop)
+        all_tickets = pickup_tickets.union(drop_tickets)
+        ticket_count = all_tickets.count()
+        
+        context['ticket_count'] = ticket_count
+        context['can_delete'] = ticket_count == 0
+        
         return context
+    
+    def delete(self, request, *args, **kwargs):
+        """
+        Check for tickets associated with this trip before allowing deletion.
+        """
+        trip = self.get_object()
+        
+        # Check for tickets that use this trip's schedule and bus record
+        pickup_tickets = Ticket.objects.filter(
+            pickup_schedule=trip.schedule,
+            pickup_bus_record=trip.record
+        )
+        
+        drop_tickets = Ticket.objects.filter(
+            drop_schedule=trip.schedule,
+            drop_bus_record=trip.record
+        )
+        
+        all_tickets = pickup_tickets.union(drop_tickets)
+        
+        if all_tickets.exists():
+            messages.error(
+                request,
+                f"Cannot delete this trip because it has {all_tickets.count()} ticket(s) associated with it. "
+                "Please remove or reassign all tickets before deleting the trip."
+            )
+            return redirect(self.get_success_url())
+        
+        messages.success(request, f"Trip '{trip.schedule.name}' for '{trip.record.label}' has been successfully deleted.")
+        return super().delete(request, *args, **kwargs)
     
     def get_success_url(self):
         return reverse('central_admin:trip_list', kwargs={'registration_slug': self.kwargs['registration_slug'], 'bus_record_slug': self.kwargs['bus_record_slug']})
@@ -966,7 +1096,7 @@ class RouteDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVie
     Attributes:
         model (Route): The model to be deleted.
         template_name (str): Template used to confirm deletion.
-        slug_field (str): The field used to look up the Route instance.
+        slug_field (str): The field used for lookup.
         slug_url_kwarg (str): The URL keyword argument for the Route slug.
     Methods:
         get_context_data(self, **kwargs):
@@ -1487,7 +1617,7 @@ class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView)
         CentralAdminOnlyAccessMixin: Restricts access to central admin users.
         CreateView: Provides the view logic for creating a new object.
     Attributes:
-        template_name (str): Path to the template used for rendering the form.
+        template_name (str): Path to the template used to render the form.
         model (FAQ): The model class to create an instance of.
         form_class (FAQForm): The form class used for input validation and rendering.
     Methods:
@@ -1708,8 +1838,7 @@ class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, C
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['registration']=Registration.objects.get(slug=self.kwargs["registration_slug"])
-        return context
-    
+        return context    
     def get_success_url(self):
         return reverse('central_admin:schedule_group_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
 
@@ -1918,7 +2047,7 @@ class BusRequestDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Dele
     template_name = 'central_admin/bus_request_confirm_delete.html'
     slug_field = 'slug'
     slug_url_kwarg = 'bus_request_slug'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['registration'] = self.object.registration

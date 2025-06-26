@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/bus_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+  <h4>Are you sure you want to delete Bus Record: {{ object.label }}?</h4>
+  <p>This action cannot be undone and will remove this bus record from the registration "{{ registration.name }}".</p>
+  
+  <div class="mb-3">
+    <p><strong>Bus:</strong> 
+      {% if object.bus %}
+        {{ object.bus.registration_no }} - {{ object.bus.label }}
+      {% else %}
+        No bus assigned
+      {% endif %}
+    </p>
+    <p><strong>Registration:</strong> {{ registration.name }}</p>
+    <p><strong>Minimum Required Capacity:</strong> {{ object.min_required_capacity }}</p>
+  </div>
+
+  <!-- Check for dependencies that prevent deletion -->
+  {% if not can_delete %}
+    <div class="alert alert-danger">
+      <h6><i class="fa-solid fa-triangle-exclamation me-2"></i>Cannot Delete - Dependencies Found</h6>
+      <ul class="mb-0">
+        {% if trips_count > 0 %}
+          <li>{{ trips_count }} trip(s) are associated with this bus record</li>
+        {% endif %}
+        {% if pickup_tickets_count > 0 %}
+          <li>{{ pickup_tickets_count }} ticket(s) use this bus record for pickup</li>
+        {% endif %}
+        {% if drop_tickets_count > 0 %}
+          <li>{{ drop_tickets_count }} ticket(s) use this bus record for drop</li>
+        {% endif %}
+      </ul>
+      <p class="mt-2 mb-0"><small>Please remove all dependencies before deleting this bus record.</small></p>
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% if can_delete %}
+      <button class="btn btn-danger me-2" type="submit">Confirm Delete</button>
+    {% else %}
+      <button class="btn btn-danger me-2" type="submit" disabled>Cannot Delete</button>
+    {% endif %}
+    <a class="btn text-primary" href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}">Cancel</a>
+  </form>
+{% endblock %}

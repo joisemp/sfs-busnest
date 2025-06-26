@@ -365,7 +365,7 @@ class BusRecord(models.Model):
         __str__: Returns the label.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='bus_records')
-    bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, related_name='records')
+    bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, blank=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
     label = models.CharField(max_length=20)
     min_required_capacity = models.PositiveIntegerField(default=0)
