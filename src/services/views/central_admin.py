@@ -2647,4 +2647,5 @@ class BusRecordExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
             filename=f"bus_records_{registration.slug}.pdf",
         )
 
-
+def  reservation_list(request):
+    return render(request,"central_admin/reservation_list.html")
