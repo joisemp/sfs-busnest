@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/reservation_detail/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<section id="reservation-detail">
+  <div class="detail-container">
+        <div class="goback-header">
+            <button class="back-btn">
+                <i class="fa-solid fa-arrow-left"></i>
+                Go back
+            </button>
+        </div>
+        
+        <div class="detail-card">
+            <div class="detail-header">
+             <i class="fa-solid fa-book" style="font-size: 1.5rem;"></i>
+                <div>
+                    <h1 class="title">Reservation Detail</h1>
+                    <p class="subtitle">SFS Public School</p>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="info-label">Reservation no :</span>
+                    <span class="info-value">1908</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Date :</span>
+                    <span class="info-value">13 August 2025</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Booked By :</span>
+                    <span class="info-value">Shantharaj</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Contact number :</span>
+                    <span class="info-value">8327237093</span>
+                </div>
+                
+                <div class="info-row">
+                    <div class="route-info">
+                        <span class="route-item">SFS School</span>
+                        <span class="route-arrow">⟶</span>
+                        <span class="route-item">Christ Academy</span>
+                    </div>
+                </div>
+                
+                <div class="time-info">
+                    <div class="time-item">
+                        <span class="time-label">Departure time :</span>
+                        <span class="time-value">8:30 am</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="time-label">Arrival time :</span>
+                        <span class="time-value">5:30 pm</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="time-label">Total Time :</span>
+                        <span class="time-value">5 hour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="approve-btn">Approve</button>
+                <button class="reject-btn">Reject</button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}
