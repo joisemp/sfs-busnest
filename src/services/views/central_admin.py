@@ -2647,5 +2647,17 @@ class BusRecordExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
             filename=f"bus_records_{registration.slug}.pdf",
         )
 
-def  reservation_list(request):
-    return render(request,"central_admin/reservation_list.html")
+
+class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    ReservationListView displays the list of reservations for central admin users.
+    
+    This view inherits from:
+        - LoginRequiredMixin: Ensures that the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Ensures that the user has central admin access.
+        - TemplateView: Renders a template with the given context.
+    
+    Attributes:
+        template_name (str): The template to render for this view.
+    """
+    template_name = "central_admin/reservation_list.html"
