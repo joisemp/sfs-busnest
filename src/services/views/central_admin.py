@@ -117,11 +117,18 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['org'] = self.request.user.profile.org
-        context['active_registrations'] = Registration.objects.filter(org=self.request.user.profile.org).count()
-        context['buses_available'] = Bus.objects.filter(org=self.request.user.profile.org).count()
-        context['institution_count'] = Institution.objects.filter(org=self.request.user.profile.org).count()
-        context['recent_activities'] = UserActivity.objects.filter(org=self.request.user.profile.org).order_by('-timestamp')[:10]
+        org = self.request.user.profile.org
+        context['org'] = org
+        context['active_registrations'] = Registration.objects.filter(org=org).count()
+        context['buses_available'] = Bus.objects.filter(org=org).count()
+        context['institution_count'] = Institution.objects.filter(org=org).count()
+        context['recent_activities'] = UserActivity.objects.filter(org=org).order_by('-timestamp')[:10]
+        
+        # Add ticket statistics
+        context['total_tickets'] = Ticket.objects.filter(org=org).count()
+        context['total_stops'] = Stop.objects.filter(org=org).count()
+        context['total_routes'] = Route.objects.filter(org=org).count()
+        
         return context
 
 
@@ -406,9 +413,24 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
     def get_queryset(self):
         self.noneRecords = self.request.GET.get('noneRecords')
         if self.noneRecords == 'True':
-            queryset = BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]).order_by('label')
+            queryset = BusRecord.objects.filter(
+                org=self.request.user.profile.org, 
+                bus=None, 
+                registration__slug=self.kwargs["registration_slug"]
+            ).order_by('label').annotate(
+                pickup_ticket_count=Count('pickup_tickets', distinct=True),
+                drop_ticket_count=Count('drop_tickets', distinct=True),
+                trip_count=Count('trips', distinct=True)
+            )
         else:
-            queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"]).order_by('label')
+            queryset = BusRecord.objects.filter(
+                org=self.request.user.profile.org, 
+                registration__slug=self.kwargs["registration_slug"]
+            ).order_by('label').annotate(
+                pickup_ticket_count=Count('pickup_tickets', distinct=True),
+                drop_ticket_count=Count('drop_tickets', distinct=True),
+                trip_count=Count('trips', distinct=True)
+            )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -969,7 +991,11 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
         self.search_term = self.request.GET.get('search', '')
-        queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration)
+        queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration).annotate(
+            stop_count=Count('stops', distinct=True),
+            pickup_ticket_count=Count('stops__ticket_pickups', distinct=True),
+            drop_ticket_count=Count('stops__ticket_drops', distinct=True)
+        )
         if self.search_term:
             queryset = queryset.filter(name__icontains=self.search_term)
         return queryset
@@ -978,6 +1004,13 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
         context["search_term"] = self.search_term
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
+        
         return context
     
 
@@ -1144,7 +1177,10 @@ class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         route = Route.objects.get(slug=self.kwargs['route_slug'])
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        queryset = Stop.objects.filter(registration=registration, route=route)
+        queryset = Stop.objects.filter(registration=registration, route=route).annotate(
+            pickup_ticket_count=Count('ticket_pickups', distinct=True),
+            drop_ticket_count=Count('ticket_drops', distinct=True)
+        )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -1513,6 +1549,13 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context['search_term'] = self.search_term
         context['selected_pickup_schedule'] = self.selected_pickup_schedule
         context['selected_drop_schedule'] = self.selected_drop_schedule
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
+        
         return context
     
 
@@ -1606,6 +1649,13 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
         context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
         context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
+        
         return context
 
 

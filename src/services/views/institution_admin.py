@@ -153,6 +153,13 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
             org = self.request.user.profile.org,
             institution = self.request.user.profile.institution
         ).order_by('name')
+        context['search_term'] = self.search_term
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
 
         return context
 

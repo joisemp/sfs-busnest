@@ -30,15 +30,27 @@
         <div class="content mt-3" style="cursor: pointer;">
             {% for stop in stops %}
             <div class="card mb-2">
-                <div class="card-body d-flex align-item-center" style="justify-content: space-between;">
-                <div class="info fw-semibold">
-                    <div class="btn">{{stop}}</div>
-                </div>
-                <div class="buttons">
-                   <a class="btn btn-sm text-danger" href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Delete<i class="fa-solid fa-trash-can ms-2"></i></a>
-                   <a class="btn btn-sm  btn-dark" href="{% url 'central_admin:stop_update' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
-                   <a class="btn btn-sm btn-warning" href="{% url 'central_admin:stop_transfer' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Transfer<i class="fa-solid fa-arrow-right-arrow-left ms-2"></i></a>
-                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="info fw-semibold">
+                            <div class="stop-name">{{stop.name}}</div>
+                            <div class="ticket-counts mt-1">
+                                <small class="text-muted">
+                                    <span class="badge bg-success me-2">
+                                        <i class="fas fa-arrow-up me-1"></i>Pickup: {{ stop.pickup_ticket_count }}
+                                    </span>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-arrow-down me-1"></i>Drop: {{ stop.drop_ticket_count }}
+                                    </span>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="buttons">
+                           <a class="btn btn-sm text-danger" href="{% url 'central_admin:stop_delete' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Delete<i class="fa-solid fa-trash-can ms-2"></i></a>
+                           <a class="btn btn-sm  btn-dark" href="{% url 'central_admin:stop_update' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Edit<i class="fa-regular fa-pen-to-square ms-2"></i></a>
+                           <a class="btn btn-sm btn-warning" href="{% url 'central_admin:stop_transfer' registration_slug=registration.slug route_slug=route.slug stop_slug=stop.slug %}">Transfer<i class="fa-solid fa-arrow-right-arrow-left ms-2"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endfor %}
