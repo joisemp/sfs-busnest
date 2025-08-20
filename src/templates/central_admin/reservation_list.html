@@ -1,6 +1,61 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/reservation_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
 
 {% block content %}
-    <h1>Reservation List Page</h1>
+<section id="reservation-list">
+    <div class="section-header">
+        <div class="d-flex justify-content-between">
+            <div>
+                <h2>Reservation</h2>
+            </div>
+            <div class="button">
+                <a href="#" class="btn btn-primary me-2 me-md-0 me-2"><i
+                        class="fa-solid fa-plus me-md-2 me-0"></i>Create</a>
+            </div>
+        </div>
+        <hr>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">SFS PUBLIC SCHOOL</h5>
+                    <p class="card-text text-muted">Shantharaj</p>
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span class="badge text-bg-danger me-2">Danger</span>
+                        <div class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
+                                class="fa-solid fa-arrow-right ms-2"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">SFS PUBLIC SCHOOL</h5>
+                    <p class="card-text text-muted">Shantharaj</p>
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span class="badge text-bg-danger me-2">Danger</span>
+                        <div class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
+                                class="fa-solid fa-arrow-right ms-2"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+</section>
 {% endblock content %}

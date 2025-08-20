@@ -20,8 +20,8 @@
   opacity: 0.9;
 }
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background-color: #291fd9;
-  border-color: #291fd9;
+  background-color: rgb(41.1374407583, 30.5592417062, 217.4407582938);
+  border-color: rgb(41.1374407583, 30.5592417062, 217.4407582938);
 }
 
 .btn-secondary {
@@ -79,7 +79,7 @@
   font-weight: 500;
 }
 .link:hover, .link:focus, .link:active {
-  color: #291fd9;
+  color: rgb(41.1374407583, 30.5592417062, 217.4407582938);
 }
 
 header .navbar {
