@@ -2661,3 +2661,9 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
         template_name (str): The template to render for this view.
     """
     template_name = "central_admin/reservation_list.html"
+
+class ReservationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    ReservationDetailView displays the details of a specific reservation for central admin users.
+    """
+    template_name = "central_admin/reservation_detail.html"
