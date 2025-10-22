@@ -88,7 +88,12 @@
                     <div class="time-item">
                         <span class="time-label">Total Duration :</span>
                         <span class="time-value">
-                            {% widthratio reservation.total_duration.total_seconds 3600 1 %} hour{% if reservation.total_duration.total_seconds|divisibleby:3600|divisibleby:7200 %}s{% endif %}
+                            {% if reservation.total_duration.days > 0 %}
+                                {{ reservation.total_duration.days }} day{% if reservation.total_duration.days > 1 %}s{% endif %}
+                                {% widthratio reservation.total_duration.seconds 3600 1 %} hour{% if reservation.total_duration.seconds|divisibleby:3600 and reservation.total_duration.seconds >= 7200 %}s{% endif %}
+                            {% else %}
+                                {% widthratio reservation.total_duration.total_seconds 3600 1 %} hour{% if reservation.total_duration.total_seconds >= 7200 %}s{% endif %}
+                            {% endif %}
                         </span>
                     </div>
                 </div>

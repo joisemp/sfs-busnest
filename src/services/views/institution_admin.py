@@ -1182,12 +1182,25 @@ class ReservationCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
     def form_valid(self, form):
         """
         Saves the new reservation request with org, institution, and created_by set automatically.
+        Extracts date and time from datetime fields and calculates duration.
         """
         reservation = form.save(commit=False)
         reservation.org = self.request.user.profile.org
         reservation.institution = self.request.user.profile.institution
         reservation.created_by = self.request.user
         reservation.status = 'pending'
+        
+        # Extract date and time from datetime fields
+        departure_datetime = form.cleaned_data['departure_datetime']
+        arrival_datetime = form.cleaned_data['arrival_datetime']
+        
+        reservation.date = departure_datetime.date()
+        reservation.departure_time = departure_datetime.time()
+        reservation.arrival_time = arrival_datetime.time()
+        
+        # Calculate total duration
+        reservation.total_duration = arrival_datetime - departure_datetime
+        
         reservation.save()
         messages.success(self.request, "Bus reservation request created successfully!")
         return redirect('institution_admin:reservation_list')

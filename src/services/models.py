@@ -964,27 +964,12 @@ class BusReservationRequest(models.Model):
     def save(self, *args, **kwargs):
         """
         Save the BusReservationRequest instance, generating a unique slug and reservation_no if not present.
-        Automatically calculates total_duration from departure_time and arrival_time.
         """
         if not self.slug:
             base_slug = slugify(f"reservation-{self.institution.label}-{self.date}")
             self.slug = generate_unique_slug(self, base_slug)
         if not self.reservation_no:
             self.reservation_no = generate_unique_code(self, no_of_char=8, unique_field='reservation_no')
-        
-        # Calculate total duration from departure and arrival times
-        if self.departure_time and self.arrival_time:
-            from datetime import datetime, timedelta
-            
-            # Combine date with times to handle overnight trips
-            departure_dt = datetime.combine(self.date, self.departure_time)
-            arrival_dt = datetime.combine(self.date, self.arrival_time)
-            
-            # If arrival is before departure, assume it's next day
-            if arrival_dt < departure_dt:
-                arrival_dt += timedelta(days=1)
-            
-            self.total_duration = arrival_dt - departure_dt
         
         super().save(*args, **kwargs)
     
