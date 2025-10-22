@@ -40,11 +40,11 @@ from urllib.parse import urlencode
 from django.db import transaction
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View
+from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View, DetailView
 from django.urls import reverse, reverse_lazy
 from services.forms.central_admin import BusRequestCommentForm
 from services.forms.students import StopSelectForm
-from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip
+from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip, BusReservationRequest
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm, BulkStudentGroupUpdateForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -1112,3 +1112,50 @@ class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyA
         if registration.status:
             raise Http404("Bulk update is only allowed when registration is closed.")
         return super().dispatch(request, *args, **kwargs)
+
+
+class ReservationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    ReservationListView displays the list of reservations for institution admin users.
+    Only shows reservations created by their institution.
+    
+    This view inherits from:
+        - LoginRequiredMixin: Ensures that the user is authenticated.
+        - InsitutionAdminOnlyAccessMixin: Ensures that the user has institution admin access.
+        - ListView: Provides list display functionality.
+    
+    Attributes:
+        model (BusReservationRequest): The model to list.
+        template_name (str): The template to render for this view.
+        context_object_name (str): The context variable name for the list.
+    """
+    model = BusReservationRequest
+    template_name = "institution_admin/reservation_list.html"
+    context_object_name = 'reservations'
+    
+    def get_queryset(self):
+        """
+        Returns queryset of reservations filtered by the institution.
+        """
+        return BusReservationRequest.objects.filter(
+            institution=self.request.user.profile.institution
+        ).select_related('institution', 'created_by').order_by('-created_at')
+
+
+class ReservationDetailView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DetailView):
+    """
+    ReservationDetailView displays the details of a specific reservation for institution admin users.
+    """
+    model = BusReservationRequest
+    template_name = "institution_admin/reservation_detail.html"
+    context_object_name = 'reservation'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def get_queryset(self):
+        """
+        Ensures institution admins can only view their own institution's reservations.
+        """
+        return BusReservationRequest.objects.filter(
+            institution=self.request.user.profile.institution
+        )

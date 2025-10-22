@@ -2,5 +2,6 @@
     <div class="nav">
         <!-- <a href="{% url 'central_admin:institution_list' %}" class="navlink {% if request.resolver_match.url_name == 'institution_list' %}active{% endif %}"> <i class="fa-solid fa-graduation-cap me-2"></i><span>Institution</span></a> -->
         <a href="{% url 'institution_admin:registration_list' %}" class="navlink {% if request.resolver_match.url_name == 'registration_list' %}active{% endif %}"><i class="fa-solid fa-book-open-reader me-2"></i><span>Registration</span></a>
+        <a href="{% url 'institution_admin:reservation_list' %}" class="navlink {% if request.resolver_match.url_name == 'reservation_list' or request.resolver_match.url_name == 'reservation_detail' %}active{% endif %}"><i class="fa-solid fa-calendar-check me-2"></i><span>Reservations</span></a>
     </div>
 </section>

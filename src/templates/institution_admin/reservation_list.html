@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/reservation_list/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar/dashboard.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<section id="reservation-list">
+    <div class="section-header">
+        <div class="d-flex justify-content-between">
+            <div>
+                <h2>Reservation</h2>
+            </div>
+            <div class="button">
+                <a href="#" class="btn btn-primary me-2 me-md-0 me-2"><i
+                        class="fa-solid fa-plus me-md-2 me-0"></i>Create</a>
+            </div>
+        </div>
+        <hr>
+    </div>
+    <div class="row">
+        {% for reservation in reservations %}
+        <div class="col-12 col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ reservation.institution.name }}</h5>
+                    <p class="card-text text-muted">{{ reservation.booked_by }}</p>
+                    <div class="d-flex align-items-center justify-content-end">
+                        {% if reservation.status == 'pending' %}
+                        <span class="badge text-bg-warning me-2">Pending</span>
+                        {% elif reservation.status == 'approved' %}
+                        <span class="badge text-bg-success me-2">Approved</span>
+                        {% elif reservation.status == 'rejected' %}
+                        <span class="badge text-bg-danger me-2">Rejected</span>
+                        {% endif %}
+                        <a href="{% url 'institution_admin:reservation_detail' reservation.slug %}" class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
+                                class="fa-solid fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                No reservations found.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</section>
+{% endblock content %}
