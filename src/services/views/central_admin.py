@@ -65,6 +65,7 @@ from services.models import (
     UserActivity, 
     Notification,
     StudentPassFile,
+    BusReservationRequest,
     log_user_activity
 )
 
@@ -2711,9 +2712,25 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
         template_name (str): The template to render for this view.
     """
     template_name = "central_admin/reservation_list.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reservations'] = BusReservationRequest.objects.filter(
+            org=self.request.user.profile.org
+        ).select_related('institution', 'created_by').order_by('-created_at')
+        return context
 
 class ReservationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     """
     ReservationDetailView displays the details of a specific reservation for central admin users.
     """
     template_name = "central_admin/reservation_detail.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reservation'] = get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=self.request.user.profile.org
+        )
+        return context

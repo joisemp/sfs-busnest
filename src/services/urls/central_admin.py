@@ -167,5 +167,5 @@ urlpatterns = [
 
      path('reservations/', ReservationListView.as_view(), name='reservation'),
 
-     path('reservations-detail/', ReservationDetailView.as_view(), name='reservation_detail'),
+     path('reservations/<slug:slug>/', ReservationDetailView.as_view(), name='reservation_detail'),
 ]

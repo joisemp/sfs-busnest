@@ -25,37 +25,36 @@
         <hr>
     </div>
     <div class="row">
+        {% for reservation in reservations %}
         <div class="col-12 col-md-6 col-lg-4 mb-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">SFS PUBLIC SCHOOL</h5>
-                    <p class="card-text text-muted">Shantharaj</p>
+                    <h5 class="card-title">{{ reservation.institution.name }}</h5>
+                    <p class="card-text text-muted">{{ reservation.booked_by }}</p>
                     <div class="d-flex align-items-center justify-content-end">
-                        <span class="badge text-bg-danger me-2">Danger</span>
-                        <div class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
+                        {% if reservation.status == 'pending' %}
+                        <span class="badge text-bg-warning me-2">Pending</span>
+                        {% elif reservation.status == 'approved' %}
+                        <span class="badge text-bg-success me-2">Approved</span>
+                        {% elif reservation.status == 'rejected' %}
+                        <span class="badge text-bg-danger me-2">Rejected</span>
+                        {% endif %}
+                        <a href="{% url 'central_admin:reservation_detail' reservation.slug %}" class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
                                 class="fa-solid fa-arrow-right ms-2"></i>
-                        </div>
+                        </a>
                     </div>
 
                 </div>
             </div>
         </div>
-
-        <div class="col-12 col-md-6 col-lg-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">SFS PUBLIC SCHOOL</h5>
-                    <p class="card-text text-muted">Shantharaj</p>
-                    <div class="d-flex align-items-center justify-content-end">
-                        <span class="badge text-bg-danger me-2">Danger</span>
-                        <div class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
-                                class="fa-solid fa-arrow-right ms-2"></i>
-                        </div>
-                    </div>
-
-                </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                No reservations found.
             </div>
         </div>
+        {% endfor %}
+    </div>
 
 </section>
 {% endblock content %}
