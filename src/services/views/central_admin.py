@@ -27,6 +27,7 @@ from django.contrib import messages
 from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
+from django.utils import timezone
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import FileResponse
@@ -2734,3 +2735,50 @@ class ReservationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Tem
             org=self.request.user.profile.org
         )
         return context
+
+
+class ReservationApproveView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to approve a bus reservation request.
+    """
+    def post(self, request, *args, **kwargs):
+        reservation = get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=request.user.profile.org,
+            status='pending'
+        )
+        
+        reservation.status = 'approved'
+        reservation.approved_by = request.user
+        reservation.approved_at = timezone.now()
+        reservation.save()
+        
+        messages.success(request, f"Reservation #{reservation.reservation_no} has been approved successfully!")
+        return redirect('central_admin:reservation_detail', slug=reservation.slug)
+
+
+class ReservationRejectView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to reject a bus reservation request with a reason.
+    """
+    def post(self, request, *args, **kwargs):
+        reservation = get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=request.user.profile.org,
+            status='pending'
+        )
+        
+        rejection_reason = request.POST.get('rejection_reason', '').strip()
+        
+        if not rejection_reason:
+            messages.error(request, "Rejection reason is required!")
+            return redirect('central_admin:reservation_detail', slug=reservation.slug)
+        
+        reservation.status = 'rejected'
+        reservation.rejected_reason = rejection_reason
+        reservation.save()
+        
+        messages.success(request, f"Reservation #{reservation.reservation_no} has been rejected.")
+        return redirect('central_admin:reservation_detail', slug=reservation.slug)

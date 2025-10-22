@@ -168,4 +168,6 @@ urlpatterns = [
      path('reservations/', ReservationListView.as_view(), name='reservation'),
 
      path('reservations/<slug:slug>/', ReservationDetailView.as_view(), name='reservation_detail'),
+     path('reservations/<slug:slug>/approve/', central_admin.ReservationApproveView.as_view(), name='reservation_approve'),
+     path('reservations/<slug:slug>/reject/', central_admin.ReservationRejectView.as_view(), name='reservation_reject'),
 ]
