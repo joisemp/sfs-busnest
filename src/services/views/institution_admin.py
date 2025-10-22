@@ -45,7 +45,7 @@ from django.urls import reverse, reverse_lazy
 from services.forms.central_admin import BusRequestCommentForm
 from services.forms.students import StopSelectForm
 from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip, BusReservationRequest
-from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm, BulkStudentGroupUpdateForm
+from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm, BulkStudentGroupUpdateForm, BusReservationRequestForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
@@ -1159,3 +1159,80 @@ class ReservationDetailView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
         return BusReservationRequest.objects.filter(
             institution=self.request.user.profile.institution
         )
+
+
+class ReservationCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    """
+    ReservationCreateView allows institution admins to create new bus reservation requests.
+    
+    This view inherits from:
+        - LoginRequiredMixin: Ensures that the user is authenticated.
+        - InsitutionAdminOnlyAccessMixin: Ensures that the user has institution admin access.
+        - CreateView: Provides create functionality for the model.
+    
+    Attributes:
+        model (BusReservationRequest): The model to create.
+        template_name (str): The template to render for this view.
+        form_class (BusReservationRequestForm): The form class for the reservation.
+    """
+    model = BusReservationRequest
+    template_name = "institution_admin/reservation_create.html"
+    form_class = BusReservationRequestForm
+    
+    def form_valid(self, form):
+        """
+        Saves the new reservation request with org, institution, and created_by set automatically.
+        """
+        reservation = form.save(commit=False)
+        reservation.org = self.request.user.profile.org
+        reservation.institution = self.request.user.profile.institution
+        reservation.created_by = self.request.user
+        reservation.status = 'pending'
+        reservation.save()
+        messages.success(self.request, "Bus reservation request created successfully!")
+        return redirect('institution_admin:reservation_list')
+    
+    def get_context_data(self, **kwargs):
+        """
+        Adds additional context to the template.
+        """
+        context = super().get_context_data(**kwargs)
+        return context
+
+
+class ReservationDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    ReservationDeleteView allows institution admins to delete their pending reservation requests.
+    
+    This view inherits from:
+        - LoginRequiredMixin: Ensures that the user is authenticated.
+        - InsitutionAdminOnlyAccessMixin: Ensures that the user has institution admin access.
+        - DeleteView: Provides delete functionality for the model.
+    
+    Attributes:
+        model (BusReservationRequest): The model to delete.
+        slug_field (str): The field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+        success_url (str): URL to redirect to after successful deletion.
+    """
+    model = BusReservationRequest
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    success_url = reverse_lazy('institution_admin:reservation_list')
+    
+    def get_queryset(self):
+        """
+        Ensures institution admins can only delete their own institution's pending reservations.
+        """
+        return BusReservationRequest.objects.filter(
+            institution=self.request.user.profile.institution,
+            status='pending'  # Only allow deletion of pending reservations
+        )
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handles the deletion and shows success message.
+        """
+        messages.success(request, "Reservation deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+

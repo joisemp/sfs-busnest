@@ -15,7 +15,7 @@ Forms:
 
 from django import forms
 from config.mixins import form_mixin
-from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule
+from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule, BusReservationRequest
 
 
 class ReceiptForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -81,3 +81,34 @@ class BulkStudentGroupUpdateForm(forms.Form):
     Field: file (Excel file upload)
     """
     file = forms.FileField(label="Upload Excel file", required=True)
+
+
+class BusReservationRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for creating bus reservation requests in the institution admin interface.
+    Fields: date, booked_by, contact_number, from_location, to_location, 
+            departure_time, arrival_time, requested_capacity, purpose, notes
+    """
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        help_text="Date of the reservation"
+    )
+    departure_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+        help_text="Departure time"
+    )
+    arrival_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+        help_text="Arrival time"
+    )
+    
+    class Meta:
+        model = BusReservationRequest
+        fields = [
+            'date', 'booked_by', 'contact_number', 'from_location', 'to_location',
+            'departure_time', 'arrival_time', 'requested_capacity', 'purpose', 'notes'
+        ]
+        widgets = {
+            'purpose': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }

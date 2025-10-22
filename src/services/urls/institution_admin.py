@@ -46,7 +46,9 @@ urlpatterns = [
      path('registrations/', institution_admin.RegistrationListView.as_view(), name='registration_list'),
      
      path('reservations/', institution_admin.ReservationListView.as_view(), name='reservation_list'),
+     path('reservations/create/', institution_admin.ReservationCreateView.as_view(), name='reservation_create'),
      path('reservations/<slug:slug>/', institution_admin.ReservationDetailView.as_view(), name='reservation_detail'),
+     path('reservations/<slug:slug>/delete/', institution_admin.ReservationDeleteView.as_view(), name='reservation_delete'),
      
      path('registrations/<slug:registration_slug>/tickets/', institution_admin.TicketListView.as_view(), name='ticket_list'),
      path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/', institution_admin.TicketUpdateView.as_view(), name='ticket_update'),

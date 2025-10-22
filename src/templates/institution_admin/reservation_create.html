@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/form_style/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar/dashboard.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<section id="reservation-create">
+    <div class="container">
+        <div class="form-header">
+            <h2>Create Bus Reservation</h2>
+            <p class="text-muted">Request buses for your institution's needs</p>
+        </div>
+
+        <form action="" method="post" class="reservation-form">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3 class="section-title">Reservation Details</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+                        {{ form.date }}
+                        {% if form.date.help_text %}
+                        <small class="form-text text-muted">{{ form.date.help_text }}</small>
+                        {% endif %}
+                        {% if form.date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.date.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.booked_by.id_for_label }}">{{ form.booked_by.label }}</label>
+                        {{ form.booked_by }}
+                        {% if form.booked_by.help_text %}
+                        <small class="form-text text-muted">{{ form.booked_by.help_text }}</small>
+                        {% endif %}
+                        {% if form.booked_by.errors %}
+                        <div class="invalid-feedback d-block">{{ form.booked_by.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.contact_number.id_for_label }}">{{ form.contact_number.label }}</label>
+                        {{ form.contact_number }}
+                        {% if form.contact_number.help_text %}
+                        <small class="form-text text-muted">{{ form.contact_number.help_text }}</small>
+                        {% endif %}
+                        {% if form.contact_number.errors %}
+                        <div class="invalid-feedback d-block">{{ form.contact_number.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Journey Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.from_location.id_for_label }}">{{ form.from_location.label }}</label>
+                        {{ form.from_location }}
+                        {% if form.from_location.help_text %}
+                        <small class="form-text text-muted">{{ form.from_location.help_text }}</small>
+                        {% endif %}
+                        {% if form.from_location.errors %}
+                        <div class="invalid-feedback d-block">{{ form.from_location.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.to_location.id_for_label }}">{{ form.to_location.label }}</label>
+                        {{ form.to_location }}
+                        {% if form.to_location.help_text %}
+                        <small class="form-text text-muted">{{ form.to_location.help_text }}</small>
+                        {% endif %}
+                        {% if form.to_location.errors %}
+                        <div class="invalid-feedback d-block">{{ form.to_location.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.departure_time.id_for_label }}">{{ form.departure_time.label }}</label>
+                        {{ form.departure_time }}
+                        {% if form.departure_time.help_text %}
+                        <small class="form-text text-muted">{{ form.departure_time.help_text }}</small>
+                        {% endif %}
+                        {% if form.departure_time.errors %}
+                        <div class="invalid-feedback d-block">{{ form.departure_time.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.arrival_time.id_for_label }}">{{ form.arrival_time.label }}</label>
+                        {{ form.arrival_time }}
+                        {% if form.arrival_time.help_text %}
+                        <small class="form-text text-muted">{{ form.arrival_time.help_text }}</small>
+                        {% endif %}
+                        {% if form.arrival_time.errors %}
+                        <div class="invalid-feedback d-block">{{ form.arrival_time.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.requested_capacity.id_for_label }}">{{ form.requested_capacity.label }}</label>
+                        {{ form.requested_capacity }}
+                        {% if form.requested_capacity.help_text %}
+                        <small class="form-text text-muted">{{ form.requested_capacity.help_text }}</small>
+                        {% endif %}
+                        {% if form.requested_capacity.errors %}
+                        <div class="invalid-feedback d-block">{{ form.requested_capacity.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Additional Information</h3>
+                
+                <div class="form-group">
+                    <label for="{{ form.purpose.id_for_label }}">{{ form.purpose.label }}</label>
+                    {{ form.purpose }}
+                    {% if form.purpose.help_text %}
+                    <small class="form-text text-muted">{{ form.purpose.help_text }}</small>
+                    {% endif %}
+                    {% if form.purpose.errors %}
+                    <div class="invalid-feedback d-block">{{ form.purpose.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {% if form.notes.help_text %}
+                    <small class="form-text text-muted">{{ form.notes.help_text }}</small>
+                    {% endif %}
+                    {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'institution_admin:reservation_list' %}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Create Reservation</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock content %}

@@ -7,14 +7,14 @@
 {% endblock style %}
 
 {% block sidebar %}
-{% include 'central_admin/sidebar.html' %}
+{% include 'institution_admin/sidebar/dashboard.html' %}
 {% endblock sidebar %}
 
 {% block content %}
 <section id="reservation-detail">
   <div class="detail-container">
         <div class="goback-header">
-            <a href="{% url 'central_admin:reservation' %}" class="back-btn">
+            <a href="{% url 'institution_admin:reservation_list' %}" class="back-btn">
                 <i class="fa-solid fa-arrow-left"></i>
                 Go back
             </a>
@@ -138,19 +138,13 @@
             
             {% if reservation.status == 'pending' %}
             <div class="action-buttons">
-                <button class="approve-btn" onclick="updateStatus('approved')">Approve</button>
-                <button class="reject-btn" onclick="updateStatus('rejected')">Reject</button>
+                <form method="post" action="{% url 'institution_admin:reservation_delete' reservation.slug %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this reservation?');">
+                    {% csrf_token %}
+                    <button type="submit" class="reject-btn">Delete Reservation</button>
+                </form>
             </div>
             {% endif %}
         </div>
     </div>
 </section>
-
-<script>
-function updateStatus(status) {
-    // Placeholder for status update functionality
-    // This would typically make an AJAX call to update the reservation status
-    alert('Status update to: ' + status + '\n(This functionality needs to be implemented)');
-}
-</script>
 {% endblock content %}
