@@ -26,7 +26,7 @@ Forms:
 
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -292,3 +292,38 @@ class StopTransferForm(forms.Form):
         super().__init__(*args, **kwargs)
         if org and registration:
             self.fields['new_route'].queryset = Route.objects.filter(org=org, registration=registration)
+
+
+class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for assigning buses to approved reservation requests.
+    Filters buses to show only available buses from the organization.
+    Fields: bus, notes
+    """
+    class Meta:
+        model = BusReservationAssignment
+        fields = ['bus', 'notes']
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional notes about this bus assignment...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Filters the bus queryset to show only available buses from the organization.
+        """
+        org = kwargs.pop('org', None)
+        reservation_request = kwargs.pop('reservation_request', None)
+        super().__init__(*args, **kwargs)
+        
+        if org:
+            # Filter to show only available buses from the organization
+            self.fields['bus'].queryset = Bus.objects.filter(org=org, is_available=True).order_by('registration_no')
+            
+            # If reservation_request is provided, exclude already assigned buses
+            if reservation_request:
+                already_assigned_bus_ids = reservation_request.bus_assignments.values_list('bus_id', flat=True)
+                self.fields['bus'].queryset = self.fields['bus'].queryset.exclude(id__in=already_assigned_bus_ids)
+        
+        self.fields['bus'].label = "Select Bus"
+        self.fields['notes'].label = "Assignment Notes"
+        self.fields['notes'].required = False

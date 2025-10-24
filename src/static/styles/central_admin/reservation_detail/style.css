@@ -407,6 +407,57 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 #reservation-detail .reject-btn:hover {
   background: #b91c1c;
 }
+#reservation-detail .section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+#reservation-detail .capacity-summary {
+  margin: 1rem 0;
+}
+#reservation-detail .capacity-card {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+#reservation-detail .capacity-card.fulfilled {
+  background: #d1fae5;
+  border: 1px solid #10b981;
+}
+#reservation-detail .capacity-card.pending {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+#reservation-detail .capacity-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+#reservation-detail .capacity-value {
+  font-size: 1.25rem;
+  color: #111827;
+  font-weight: 700;
+}
+#reservation-detail .table {
+  margin-top: 1rem;
+}
+#reservation-detail .table th {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #374151;
+  padding: 0.75rem 1rem;
+}
+#reservation-detail .table td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
 @media (max-width: 768px) {
   #reservation-detail .detail-container {
     padding: 1rem 0.5rem;
@@ -437,6 +488,12 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
     width: 100%;
     justify-content: center;
     text-align: center;
+  }
+  #reservation-detail .capacity-card {
+    margin-bottom: 0.5rem;
+  }
+  #reservation-detail .table-responsive {
+    overflow-x: auto;
   }
 }
 @media (max-width: 480px) {

@@ -170,4 +170,6 @@ urlpatterns = [
      path('reservations/<slug:slug>/', ReservationDetailView.as_view(), name='reservation_detail'),
      path('reservations/<slug:slug>/approve/', central_admin.ReservationApproveView.as_view(), name='reservation_approve'),
      path('reservations/<slug:slug>/reject/', central_admin.ReservationRejectView.as_view(), name='reservation_reject'),
+     path('reservations/<slug:slug>/assign-bus/', central_admin.BusAssignmentCreateView.as_view(), name='bus_assignment_create'),
+     path('reservations/bus-assignment/<int:assignment_id>/delete/', central_admin.BusAssignmentDeleteView.as_view(), name='bus_assignment_delete'),
 ]

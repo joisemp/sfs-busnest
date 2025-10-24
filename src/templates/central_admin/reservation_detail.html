@@ -152,6 +152,97 @@
             {% endif %}
         </div>
     </div>
+    
+    {% if reservation.status == 'approved' %}
+    <!-- Bus Assignment Section Card -->
+    <div class="detail-container">
+        <div class="detail-card">
+            <div class="bus-assignment-section">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="section-title">Assigned Buses</h3>
+                        <a href="{% url 'central_admin:bus_assignment_create' reservation.slug %}" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-plus"></i> Assign Bus
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="capacity-summary mb-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="capacity-card">
+                                <span class="capacity-label">Requested</span>
+                                <span class="capacity-value">{{ reservation.requested_capacity }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="capacity-card">
+                                <span class="capacity-label">Assigned</span>
+                                <span class="capacity-value">{{ reservation.total_assigned_capacity }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="capacity-card {% if reservation.is_capacity_fulfilled %}fulfilled{% else %}pending{% endif %}">
+                                <span class="capacity-label">Status</span>
+                                <span class="capacity-value">
+                                    {% if reservation.is_capacity_fulfilled %}
+                                        <i class="fa-solid fa-circle-check text-success"></i> Fulfilled
+                                    {% else %}
+                                        <i class="fa-solid fa-circle-exclamation text-warning"></i> {{ reservation.requested_capacity|add:"-"|add:reservation.total_assigned_capacity }} needed
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if reservation.bus_assignments.all %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Bus Registration</th>
+                                <th>Driver</th>
+                                <th>Capacity</th>
+                                <th>Assigned By</th>
+                                <th>Assigned At</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in reservation.bus_assignments.all %}
+                            <tr>
+                                <td><strong>{{ assignment.bus.registration_no }}</strong></td>
+                                <td>{{ assignment.bus.driver }}</td>
+                                <td>{{ assignment.bus.capacity }} seats</td>
+                                <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.email }}</td>
+                                <td>{{ assignment.assigned_at|date:"d M Y, g:i a" }}</td>
+                                <td>{{ assignment.notes|default:"-" }}</td>
+                                <td>
+                                    <form method="post" action="{% url 'central_admin:bus_assignment_delete' assignment.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to remove this bus assignment?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fa-solid fa-circle-info"></i> No buses assigned yet. Click "Assign Bus" to add buses to this reservation.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+        </div>
+    </div>
 </section>
 
 <!-- Rejection Modal -->

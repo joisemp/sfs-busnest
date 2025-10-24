@@ -978,7 +978,7 @@ class BusReservationRequest(models.Model):
         """
         Returns the total capacity of all assigned buses for this reservation.
         """
-        return sum(assignment.bus_record.bus.capacity for assignment in self.bus_assignments.all() if assignment.bus_record and assignment.bus_record.bus)
+        return sum(assignment.bus.capacity for assignment in self.bus_assignments.all() if assignment.bus)
     
     @property
     def is_capacity_fulfilled(self):
@@ -1017,4 +1017,4 @@ class BusReservationAssignment(models.Model):
         """
         String representation of the BusReservationAssignment.
         """
-        return f"{self.bus_record.label} assigned to {self.reservation_request}"
+        return f"{self.bus.registration_no} assigned to {self.reservation_request}"

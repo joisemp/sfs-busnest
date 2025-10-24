@@ -67,6 +67,7 @@ from services.models import (
     Notification,
     StudentPassFile,
     BusReservationRequest,
+    BusReservationAssignment,
     log_user_activity
 )
 
@@ -87,7 +88,8 @@ from services.forms.central_admin import (
     ScheduleGroupForm, 
     BusRequestStatusForm, 
     BusRequestCommentForm,
-    StopTransferForm
+    StopTransferForm,
+    BusAssignmentForm
 )
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
@@ -2782,3 +2784,76 @@ class ReservationRejectView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vie
         
         messages.success(request, f"Reservation #{reservation.reservation_no} has been rejected.")
         return redirect('central_admin:reservation_detail', slug=reservation.slug)
+
+
+class BusAssignmentCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View to assign a bus to an approved reservation request.
+    Only allows assignment to approved reservations.
+    """
+    model = BusReservationAssignment
+    form_class = BusAssignmentForm
+    template_name = 'central_admin/bus_assignment_create.html'
+    
+    def get_reservation(self):
+        """Get the reservation request for this assignment."""
+        return get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=self.request.user.profile.org,
+            status='approved'
+        )
+    
+    def get_form_kwargs(self):
+        """Pass org and reservation_request to the form."""
+        kwargs = super().get_form_kwargs()
+        kwargs['org'] = self.request.user.profile.org
+        kwargs['reservation_request'] = self.get_reservation()
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        """Add reservation to context."""
+        context = super().get_context_data(**kwargs)
+        context['reservation'] = self.get_reservation()
+        return context
+    
+    def form_valid(self, form):
+        """Save the bus assignment with the reservation and assigned_by user."""
+        form.instance.reservation_request = self.get_reservation()
+        form.instance.assigned_by = self.request.user
+        
+        try:
+            response = super().form_valid(form)
+            messages.success(
+                self.request,
+                f"Bus {form.instance.bus.registration_no} has been assigned successfully!"
+            )
+            return response
+        except IntegrityError:
+            messages.error(self.request, "This bus is already assigned to this reservation!")
+            return redirect('central_admin:reservation_detail', slug=self.kwargs['slug'])
+    
+    def get_success_url(self):
+        """Redirect back to the reservation detail page."""
+        return reverse('central_admin:reservation_detail', kwargs={'slug': self.kwargs['slug']})
+
+
+class BusAssignmentDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to remove a bus assignment from a reservation request.
+    """
+    def post(self, request, *args, **kwargs):
+        assignment = get_object_or_404(
+            BusReservationAssignment,
+            id=self.kwargs['assignment_id'],
+            reservation_request__org=request.user.profile.org
+        )
+        
+        bus_reg_no = assignment.bus.registration_no
+        reservation_slug = assignment.reservation_request.slug
+        
+        assignment.delete()
+        
+        messages.success(request, f"Bus {bus_reg_no} has been removed from this reservation.")
+        return redirect('central_admin:reservation_detail', slug=reservation_slug)
+
