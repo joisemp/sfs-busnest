@@ -41,7 +41,7 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['email', 'first_name', 'last_name', 'is_central_admin', 'is_institution_admin']  
+        fields = ['email', 'first_name', 'last_name', 'is_central_admin', 'is_driver', 'is_institution_admin']  
     
     def clean_email(self):
         """

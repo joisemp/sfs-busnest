@@ -67,6 +67,7 @@ class UserProfile(models.Model):
     last_name = models.CharField(max_length=255)
     is_central_admin = models.BooleanField(_('is central admin'), default=False)
     is_institution_admin = models.BooleanField(_('is institution admin'), default=False)
+    is_driver = models.BooleanField(_('is driver'), default=False)
     is_student = models.BooleanField(_('is student'), default=False)
     slug = models.SlugField(unique=True, db_index=True)
     
