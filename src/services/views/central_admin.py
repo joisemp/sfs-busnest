@@ -1002,7 +1002,19 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         )
         if self.search_term:
             queryset = queryset.filter(name__icontains=self.search_term)
-        return queryset
+        
+        # Natural sorting - convert to list and sort with natural key
+        routes_list = list(queryset)
+        routes_list.sort(key=lambda x: self._natural_sort_key(x.name))
+        return routes_list
+    
+    def _natural_sort_key(self, text):
+        """
+        Generate a key for natural sorting that handles numbers correctly.
+        Converts 'Route 10' to come after 'Route 9' instead of after 'Route 1'.
+        """
+        import re
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', text)]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2856,4 +2868,283 @@ class BusAssignmentDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
         
         messages.success(request, f"Bus {bus_reg_no} has been removed from this reservation.")
         return redirect('central_admin:reservation_detail', slug=reservation_slug)
+
+
+class StopTransferManagementView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin, TemplateView):
+    """
+    View to display the drag-and-drop interface for transferring stops between routes.
+    This view provides a visual interface where stops can be dragged from one route to another.
+    
+    Attributes:
+        template_name (str): The template for the stop transfer management page.
+    
+    Methods:
+        get_context_data: Provides registration and all its routes with their stops to the template.
+    """
+    template_name = 'central_admin/stop_transfer_management.html'
+    
+    def get_context_data(self, **kwargs):
+        """
+        Add registration and all routes with their stops to the context.
+        
+        Returns:
+            dict: Context data with registration and routes.
+        """
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs['registration_slug']
+        registration = get_object_or_404(
+            Registration, 
+            slug=registration_slug, 
+            org=self.request.user.profile.org
+        )
+        
+        # Get all routes for this registration with their stops
+        routes = Route.objects.filter(
+            registration=registration,
+            org=self.request.user.profile.org
+        ).prefetch_related('stops')
+        
+        # Natural sorting - convert to list and sort with natural key
+        routes_list = list(routes)
+        routes_list.sort(key=lambda x: self._natural_sort_key(x.name))
+        
+        context['registration'] = registration
+        context['routes'] = routes_list
+        
+        return context
+    
+    def _natural_sort_key(self, text):
+        """
+        Generate a key for natural sorting that handles numbers correctly.
+        Converts 'Route 10' to come after 'Route 9' instead of after 'Route 1'.
+        """
+        import re
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', text)]
+
+
+class TransferStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to handle stop transfer between routes.
+    This view processes POST requests to move a stop from one route to another,
+    updates all related tickets, and recalculates trip booking counts.
+    
+    Methods:
+        post: Handles the stop transfer operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to transfer a stop from source route to target route.
+        
+        Request JSON format:
+        {
+            "stop_slug": "stop-slug",
+            "target_route_slug": "target-route-slug"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with updated data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            stop_slug = data.get('stop_slug')
+            target_route_slug = data.get('target_route_slug')
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not stop_slug or not target_route_slug:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Missing required parameters: stop_slug and target_route_slug'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the stop
+            stop = get_object_or_404(
+                Stop,
+                slug=stop_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Get the target route
+            target_route = get_object_or_404(
+                Route,
+                slug=target_route_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if stop is already in target route
+            if stop.route.id == target_route.id:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Stop '{stop.name}' is already in route '{target_route.name}'"
+                }, status=400)
+            
+            # Store source route name for logging
+            source_route_name = stop.route.name
+            
+            # Perform the transfer using the existing utility function
+            move_stop_and_update_tickets(stop, target_route)
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Transferred stop via drag-and-drop",
+                description=f"Moved stop '{stop.name}' from route '{source_route_name}' to route '{target_route.name}' in registration '{registration.name}'"
+            )
+            
+            # Get updated stop count for both routes
+            source_route = Route.objects.get(name=source_route_name, registration=registration)
+            source_stop_count = source_route.stops.count()
+            target_stop_count = target_route.stops.count()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop '{stop.name}' successfully transferred from '{source_route_name}' to '{target_route.name}'. All tickets and trip counts have been updated.",
+                'stop': {
+                    'slug': stop.slug,
+                    'name': stop.name,
+                    'new_route_slug': target_route.slug,
+                    'new_route_name': target_route.name
+                },
+                'source_route': {
+                    'slug': source_route.slug,
+                    'stop_count': source_stop_count
+                },
+                'target_route': {
+                    'slug': target_route.slug,
+                    'stop_count': target_stop_count
+                }
+            })
+            
+        except ValueError as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"Transfer failed: {str(e)}"
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An unexpected error occurred: {str(e)}"
+            }, status=500)
+
+
+class UpdateStopNameAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to update a stop's name in real-time.
+    This view processes POST requests to rename a stop and returns the updated name.
+    
+    Methods:
+        post: Handles the stop name update operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to update a stop's name.
+        
+        Request JSON format:
+        {
+            "stop_slug": "stop-slug",
+            "new_name": "New Stop Name"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with updated stop data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            stop_slug = data.get('stop_slug')
+            new_name = data.get('new_name', '').strip()
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not stop_slug or not new_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop slug and new name are required'
+                }, status=400)
+            
+            # Validate name length
+            if len(new_name) > 200:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name cannot exceed 200 characters'
+                }, status=400)
+            
+            if len(new_name) < 2:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name must be at least 2 characters'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the stop
+            stop = get_object_or_404(
+                Stop,
+                slug=stop_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Store old name for logging
+            old_name = stop.name
+            
+            # Check if name is actually different
+            if old_name == new_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'New name is the same as the current name'
+                }, status=400)
+            
+            # Update the stop name
+            stop.name = new_name
+            stop.save()
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Updated stop name",
+                description=f"Renamed stop from '{old_name}' to '{new_name}' in route '{stop.route.name}' (Registration: '{registration.name}')"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop renamed from '{old_name}' to '{new_name}' successfully",
+                'stop': {
+                    'slug': stop.slug,
+                    'name': stop.name,
+                    'old_name': old_name,
+                    'route_slug': stop.route.slug,
+                    'route_name': stop.route.name
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
 

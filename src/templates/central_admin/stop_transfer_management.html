@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/stop_transfer/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <a href="{% url 'central_admin:route_list' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3 mb-md-4">
+            <i class="fa-solid fa-arrow-left me-2"></i>Back to Routes
+        </a>
+    </div>
+    <div class="gear d-flex justify-content-between align-items-center">
+        <div>
+            <h3><i class="fa-solid fa-right-left me-2"></i>Transfer Stops Between Routes</h3>
+            <p class="text-muted mb-0">Drag and drop stops from one route to another. All tickets will be updated automatically.</p>
+        </div>
+    </div>
+    <hr>
+</div>
+
+<!-- Alert/Notification Area -->
+<div id="transfer-notification" class="alert alert-dismissible fade" role="alert" style="display: none;">
+    <span id="notification-message"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<!-- Instructions Card -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fa-solid fa-circle-info me-2"></i>How to Use</h5>
+        <ul class="mb-0">
+            <li><strong>Transfer Stops:</strong> Drag a stop from any route and drop it onto a different route's drop zone</li>
+            <li><strong>Edit Stop Name:</strong> Double-click on a stop name to edit it inline, then press Enter to save or Esc to cancel</li>
+            <li>All tickets associated with the stop will be automatically updated</li>
+            <li>Trip booking counts will be recalculated for affected bus records</li>
+            <li>You cannot drop a stop back onto its current route</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Routes Container -->
+<section id="stop-transfer-container">
+    {% if routes %}
+    <div class="routes-grid">
+        {% for route in routes %}
+        <div class="route-card" data-route-slug="{{ route.slug }}">
+            <div class="route-header">
+                <div>
+                    <h5 class="route-name mb-1">{{ route.name }}</h5>
+                    <small class="text-muted">
+                        <span class="stop-count">{{ route.stops.count }}</span> 
+                        stop{{ route.stops.count|pluralize }}
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Drop Zone -->
+            <div class="drop-zone" data-route-slug="{{ route.slug }}">
+                <div class="drop-zone-placeholder">
+                    <i class="fa-solid fa-hand-point-down me-2"></i>
+                    Drop stop here
+                </div>
+                
+                <!-- Stops List -->
+                <div class="stops-container">
+                    {% if route.stops.all %}
+                        {% for stop in route.stops.all %}
+                        <div class="stop-item" 
+                             draggable="true" 
+                             data-stop-slug="{{ stop.slug }}"
+                             data-stop-name="{{ stop.name }}"
+                             data-route-slug="{{ route.slug }}"
+                             data-route-name="{{ route.name }}">
+                            <div class="stop-content">
+                                <div class="stop-drag-handle">
+                                    <i class="fa-solid fa-grip-vertical"></i>
+                                </div>
+                                <div class="stop-info">
+                                    <div class="stop-name" title="Double-click to edit">{{ stop.name }}</div>
+                                    <div class="stop-stats">
+                                        <span class="badge bg-success me-1">
+                                            <i class="fas fa-arrow-up"></i> {{ stop.ticket_pickups.count }}
+                                        </span>
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-arrow-down"></i> {{ stop.ticket_drops.count }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-route-message">
+                            <i class="fa-solid fa-inbox me-2"></i>No stops in this route
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fa-solid fa-circle-info me-2"></i>
+        No routes found for this registration. Please create routes first.
+    </div>
+    {% endif %}
+</section>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" style="display: none;">
+    <div class="spinner-container">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Processing transfer...</p>
+    </div>
+</div>
+
+<!-- Transfer Confirmation Modal -->
+<div class="modal fade" id="transferConfirmModal" tabindex="-1" aria-labelledby="transferConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="transferConfirmModalLabel">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Confirm Stop Transfer
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-start mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-right-left fa-2x text-primary me-3"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <p class="mb-2">Are you sure you want to transfer this stop?</p>
+                        <div class="transfer-details">
+                            <div class="mb-2">
+                                <strong>Stop:</strong> <span id="modal-stop-name" class="text-primary"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>From Route:</strong> <span id="modal-from-route" class="text-muted"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>To Route:</strong> <span id="modal-to-route" class="text-success"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info mb-0">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    <small>All tickets associated with this stop will be automatically updated, and trip booking counts will be recalculated.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmTransferBtn">
+                    <i class="fa-solid fa-check me-1"></i>Confirm Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block scripts %}
+<script>
+    // Pass CSRF token and API endpoints to JavaScript
+    const CSRF_TOKEN = '{{ csrf_token }}';
+    const TRANSFER_API_URL = "{% url 'central_admin:transfer_stop_api' registration_slug=registration.slug %}";
+    const UPDATE_STOP_NAME_API_URL = "{% url 'central_admin:update_stop_name_api' registration_slug=registration.slug %}";
+    const REGISTRATION_SLUG = "{{ registration.slug }}";
+</script>
+<script src="{% static 'js/stop_transfer.js' %}"></script>
+{% endblock scripts %}

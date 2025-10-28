@@ -37,6 +37,10 @@ URL Patterns (detailed):
 - registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/: List all stops for a route.
 - registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/update/: Update a stop.
 - registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/: Delete a stop.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/transfer/: Transfer a stop (form-based).
+- registrations/<slug:registration_slug>/stops/transfer-management/: Drag-and-drop stop transfer interface.
+- registrations/<slug:registration_slug>/stops/transfer-api/: API endpoint for stop transfer operations.
+- registrations/<slug:registration_slug>/stops/update-name-api/: API endpoint for updating stop names inline.
 - registrations/<slug:registration_slug>/faq/create/: Create a new FAQ for a registration.
 - registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/: Delete an FAQ.
 - registrations/<slug:registration_slug>/tickets/: List all tickets for a registration.
@@ -118,6 +122,11 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/update/', central_admin.StopUpdateView.as_view(), name='stop_update'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/transfer/', central_admin.StopTransferView.as_view(), name='stop_transfer'),
+     
+     # Drag-and-drop stop transfer management
+     path('registrations/<slug:registration_slug>/stops/transfer-management/', central_admin.StopTransferManagementView.as_view(), name='stop_transfer_management'),
+     path('registrations/<slug:registration_slug>/stops/transfer-api/', central_admin.TransferStopAPIView.as_view(), name='transfer_stop_api'),
+     path('registrations/<slug:registration_slug>/stops/update-name-api/', central_admin.UpdateStopNameAPIView.as_view(), name='update_stop_name_api'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),

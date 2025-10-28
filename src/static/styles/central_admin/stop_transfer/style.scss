@@ -1,0 +1,401 @@
+/**
+ * Stop Transfer Management Styles
+ * Drag-and-drop interface for transferring stops between routes
+ */
+
+@use 'sass:color';
+@use '../../sidebar_navbar_base';
+@import "../../base/colors";
+@import "../../base/typography";
+@import "../../base/buttons";
+
+// Main container
+#stop-transfer-container {
+    padding: 1rem 0;
+}
+
+// Routes grid layout
+.routes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+// Individual route card
+.route-card {
+    background: white;
+    border: 2px solid $gray-200;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+// Route header
+.route-header {
+    background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+    color: white;
+    padding: 1.25rem;
+    border-bottom: 3px solid $indigo-800;
+
+    .route-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: white;
+    }
+
+    .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+        font-size: 0.875rem;
+    }
+}
+
+// Drop zone
+.drop-zone {
+    min-height: 300px;
+    padding: 1rem;
+    background: $gray-50;
+    position: relative;
+    transition: all 0.3s ease;
+
+    // Drop zone placeholder (shown when dragging)
+    .drop-zone-placeholder {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: $gray-400;
+        font-size: 1.1rem;
+        font-weight: 500;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        text-align: center;
+        width: 100%;
+    }
+
+    // Active state when dragging
+    &.drag-active {
+        .drop-zone-placeholder {
+            opacity: 0.5;
+        }
+    }
+
+    // Over state when hovering with dragged item
+    &.drag-over {
+        background: color.scale($indigo-50, $lightness: 2%);
+        border: 2px dashed $indigo-400;
+        border-radius: 8px;
+
+        .drop-zone-placeholder {
+            opacity: 1;
+            color: $indigo-600;
+            font-weight: 600;
+        }
+    }
+}
+
+// Stops container
+.stops-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 250px;
+}
+
+// Individual stop item (draggable)
+.stop-item {
+    background: white;
+    border: 2px solid $gray-300;
+    border-radius: 8px;
+    padding: 0.875rem;
+    cursor: move;
+    transition: all 0.2s ease;
+    user-select: none;
+
+    &:hover {
+        border-color: $indigo-400;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+        transform: translateY(-2px);
+    }
+
+    &.dragging {
+        opacity: 0.4;
+        cursor: grabbing;
+        transform: scale(0.95);
+    }
+}
+
+// Stop content layout
+.stop-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+// Drag handle
+.stop-drag-handle {
+    color: $gray-400;
+    font-size: 1.25rem;
+    cursor: grab;
+    transition: color 0.2s ease;
+    padding: 0 0.25rem;
+
+    &:active {
+        cursor: grabbing;
+    }
+
+    .stop-item:hover & {
+        color: $indigo-600;
+    }
+}
+
+// Stop info
+.stop-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+
+    @media (max-width: 480px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+.stop-name {
+    font-weight: 600;
+    color: $gray-800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    
+    &:hover {
+        background-color: $gray-100;
+        color: $indigo-600;
+    }
+    
+    &[title] {
+        position: relative;
+    }
+}
+
+// Inline editing input field
+.stop-name-input {
+    font-weight: 600;
+    color: $gray-800;
+    font-size: 1rem;
+    padding: 0.35rem 0.6rem;
+    border: 2px solid $indigo-500;
+    border-radius: 4px;
+    outline: none;
+    background-color: $indigo-50;
+    transition: all 0.2s ease;
+    min-width: 150px;
+    max-width: 300px;
+    
+    &:focus {
+        border-color: $indigo-600;
+        background-color: white;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    
+    &::placeholder {
+        color: $gray-400;
+        font-weight: 400;
+    }
+    
+    // Hide pickup/drop indicators when in edit mode
+    ~ .stop-stats {
+        display: none;
+    }
+}
+
+.stop-stats {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        font-weight: 500;
+
+        i {
+            font-size: 0.7rem;
+        }
+    }
+}
+
+// Empty route message
+.empty-route-message {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: $gray-500;
+    font-size: 1rem;
+    font-style: italic;
+
+    i {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+}
+
+// Loading overlay
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    .spinner-container {
+        background: white;
+        padding: 2rem 3rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+
+        p {
+            margin: 0;
+            color: $gray-700;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+    }
+
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3rem;
+    }
+}
+
+// Notification styles
+#transfer-notification {
+    position: sticky;
+    top: 80px;
+    z-index: 1050;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Section header enhancements
+.section-header {
+    .gear {
+        h3 {
+            color: $gray-800;
+            font-weight: 600;
+
+            i {
+                color: $indigo-600;
+            }
+        }
+
+        p.text-muted {
+            font-size: 0.95rem;
+        }
+    }
+}
+
+// Instructions card
+.card {
+    border: 2px solid $gray-200;
+    border-radius: 10px;
+
+    .card-title {
+        color: $indigo-700;
+        font-weight: 600;
+        margin-bottom: 1rem;
+
+        i {
+            color: $indigo-500;
+        }
+    }
+
+    ul {
+        padding-left: 1.5rem;
+        margin-bottom: 0;
+
+        li {
+            color: $gray-700;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .routes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .route-card {
+        margin-bottom: 1rem;
+    }
+
+    .drop-zone {
+        min-height: 250px;
+    }
+
+    .stops-container {
+        min-height: 200px;
+    }
+}
+
+// Print styles
+@media print {
+    #stop-transfer-container,
+    .stop-item {
+        cursor: default !important;
+    }
+
+    .drop-zone-placeholder {
+        display: none !important;
+    }
+
+    #loading-overlay {
+        display: none !important;
+    }
+}
