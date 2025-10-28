@@ -127,6 +127,8 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/stops/transfer-management/', central_admin.StopTransferManagementView.as_view(), name='stop_transfer_management'),
      path('registrations/<slug:registration_slug>/stops/transfer-api/', central_admin.TransferStopAPIView.as_view(), name='transfer_stop_api'),
      path('registrations/<slug:registration_slug>/stops/update-name-api/', central_admin.UpdateStopNameAPIView.as_view(), name='update_stop_name_api'),
+     path('registrations/<slug:registration_slug>/stops/add-stop-api/', central_admin.AddStopAPIView.as_view(), name='add_stop_api'),
+     path('registrations/<slug:registration_slug>/stops/delete-stop-api/', central_admin.DeleteStopAPIView.as_view(), name='delete_stop_api'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),

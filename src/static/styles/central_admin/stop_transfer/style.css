@@ -392,6 +392,27 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   color: rgba(255, 255, 255, 0.85) !important;
   font-size: 0.875rem;
 }
+.route-header .add-stop-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.route-header .add-stop-btn:hover, .route-header .add-stop-btn:focus {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.route-header .add-stop-btn:active {
+  transform: translateY(0);
+}
+.route-header .add-stop-btn i {
+  font-size: 0.875rem;
+}
 
 .drop-zone {
   min-height: 300px;
@@ -480,16 +501,8 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 .stop-info {
   flex: 1;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-@media (max-width: 480px) {
-  .stop-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .stop-name {
@@ -500,6 +513,8 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   transition: all 0.2s ease;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
+  word-break: break-word;
+  line-height: 1.4;
 }
 .stop-name:hover {
   background-color: #f3f4f6;
@@ -543,6 +558,8 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+  align-items: center;
+  flex-wrap: wrap;
 }
 .stop-stats .badge {
   font-size: 0.75rem;
@@ -551,6 +568,24 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 }
 .stop-stats .badge i {
   font-size: 0.7rem;
+}
+.stop-stats .delete-stop-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-width: 1px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.stop-stats .delete-stop-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+.stop-stats .delete-stop-btn:active {
+  transform: scale(0.95);
+}
+.stop-stats .delete-stop-btn i {
+  font-size: 0.7rem;
+  pointer-events: none;
 }
 
 .empty-route-message {

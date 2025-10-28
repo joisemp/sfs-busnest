@@ -3148,3 +3148,218 @@ class UpdateStopNameAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vie
                 'message': f"An error occurred: {str(e)}"
             }, status=500)
 
+
+class AddStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to add a new stop to a route.
+    This view processes POST requests to create a new stop in a specified route.
+    
+    Methods:
+        post: Handles the stop creation operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to add a new stop to a route.
+        
+        Request JSON format:
+        {
+            "route_slug": "route-slug",
+            "stop_name": "New Stop Name"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with new stop data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            stop_name = data.get('stop_name', '').strip()
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not route_slug or not stop_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Route slug and stop name are required'
+                }, status=400)
+            
+            # Validate name length
+            if len(stop_name) > 200:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name cannot exceed 200 characters'
+                }, status=400)
+            
+            if len(stop_name) < 2:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name must be at least 2 characters'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the route
+            route = get_object_or_404(
+                Route,
+                slug=route_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if stop with same name already exists in this route
+            if Stop.objects.filter(
+                route=route,
+                name__iexact=stop_name,
+                org=request.user.profile.org
+            ).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': f"A stop with the name '{stop_name}' already exists in this route"
+                }, status=400)
+            
+            # Create the new stop
+            new_stop = Stop.objects.create(
+                name=stop_name,
+                route=route,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Created new stop",
+                description=f"Added stop '{stop_name}' to route '{route.name}' (Registration: '{registration.name}')"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop '{stop_name}' added successfully to route '{route.name}'",
+                'stop': {
+                    'slug': new_stop.slug,
+                    'name': new_stop.name,
+                    'route_slug': route.slug,
+                    'route_name': route.name,
+                    'pickup_count': 0,
+                    'drop_count': 0
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+class DeleteStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to delete a stop from a route.
+    This view processes POST requests to delete a stop that has no associated tickets.
+    
+    Methods:
+        post: Handles the stop deletion operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to delete a stop.
+        
+        Request JSON format:
+        {
+            "stop_slug": "stop-slug"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with deleted stop data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            stop_slug = data.get('stop_slug')
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not stop_slug:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop slug is required'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the stop
+            stop = get_object_or_404(
+                Stop,
+                slug=stop_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if stop has any associated tickets (pickup or drop)
+            pickup_count = stop.ticket_pickups.count()
+            drop_count = stop.ticket_drops.count()
+            
+            if pickup_count > 0 or drop_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Cannot delete stop '{stop.name}' because it has {pickup_count} pickup(s) and {drop_count} drop(s) associated with it. Please reassign or delete the tickets first."
+                }, status=400)
+            
+            # Store stop info for response
+            stop_name = stop.name
+            route_slug = stop.route.slug
+            route_name = stop.route.name
+            
+            # Delete the stop
+            stop.delete()
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Deleted stop",
+                description=f"Deleted stop '{stop_name}' from route '{route_name}' (Registration: '{registration.name}')"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop '{stop_name}' deleted successfully from route '{route_name}'",
+                'stop': {
+                    'slug': stop_slug,
+                    'name': stop_name,
+                    'route_slug': route_slug,
+                    'route_name': route_name
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+

@@ -111,6 +111,36 @@ cd src; $env:DJANGO_SETTINGS_MODULE="config.test_settings"; python manage.py tes
 # Always log progress and create Notification for user feedback
 ```
 
+### Utility Functions
+**Transfer Stop Utility** (`services/utils/transfer_stop.py`):
+```python
+def move_stop_and_update_tickets(stop, new_route, user):
+    """
+    Transfer stop to new route and update all associated tickets.
+    
+    Key Logic:
+    - Wraps everything in @transaction.atomic()
+    - Determines transfer type (pickup/drop/both) by comparing old vs new routes
+    - Only updates relevant bus records (selective updates)
+    - Validates route-specific trips exist before assignment
+    - Updates Trip.booking_count on source and target routes
+    - Logs activity for audit trail
+    
+    Returns: (success: bool, message: str, updated_count: int)
+    """
+```
+
+**Route Sorting** (`services/views/central_admin.py`):
+```python
+def _natural_sort_key(text):
+    """Natural/alphanumeric sorting for routes."""
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', text)]
+    
+# Usage:
+routes = routes.order_by('name')
+routes = sorted(routes, key=lambda r: _natural_sort_key(r.name))
+```
+
 ### Form Handling
 Forms split by role: `services/forms/{central_admin,institution_admin,students}.py`
 
@@ -121,6 +151,72 @@ Forms split by role: `services/forms/{central_admin,institution_admin,students}.
 - **Production**: DigitalOcean Spaces (S3-compatible) via `django-storages`
 - **Technologies**: Bootstrap 5, SCSS, vanilla JS, HTMX (no React/Vue)
 
+## Key Features
+
+### Stop Transfer Management System
+**Location**: `templates/central_admin/stop_transfer_management.html` + `static/js/stop_transfer.js`
+
+Complete drag-and-drop interface for managing stops across routes with real-time updates:
+
+**Features**:
+1. **Drag & Drop Transfer**: HTML5 drag-and-drop to move stops between routes
+   - Visual feedback during drag (opacity, cursor changes)
+   - Drop zones highlight on hover
+   - Bootstrap modal confirmation before transfer
+   
+2. **Inline Stop Editing**: Double-click stop name to edit in-place
+   - Enter to save, Escape to cancel
+   - Real-time API update with optimistic UI
+   
+3. **Add Stops**: Add new stops to any route via modal form
+   - Validation for duplicate names within route
+   - Dynamic UI update without page refresh
+   
+4. **Delete Stops**: Remove stops with zero ticket associations
+   - Button only shows for stops with 0 pickups and 0 drops
+   - Confirmation modal with danger styling
+   - Backend validation before deletion
+   
+5. **Natural Route Sorting**: Routes display in natural order (1, 2, 3... 10, 11, not 1, 10, 11, 2)
+   - Uses regex-based alphanumeric sorting: `re.split(r'(\d+)', text)`
+
+**Backend Logic** (`services/utils/transfer_stop.py`):
+- `move_stop_and_update_tickets()`: Atomic transaction handling stop transfer with selective bus record updates
+- **Selective Updates**: Only updates relevant bus records based on transfer type:
+  - Pickup stop transferred → updates only `pickup_bus_record`
+  - Drop stop transferred → updates only `drop_bus_record`  
+  - Both pickup & drop same → updates both records
+- **Route-Specific Validation**: Ensures tickets only assigned to bus records with trips on the target route
+- **Trip Count Management**: Auto-updates `Trip.booking_count` on source and target routes
+
+**API Endpoints** (all in `services/views/central_admin.py`):
+- `TransferStopAPIView`: POST - Transfer stop between routes
+- `UpdateStopNameAPIView`: POST - Update stop name
+- `AddStopAPIView`: POST - Create new stop in route
+- `DeleteStopAPIView`: POST - Delete stop (validates no tickets)
+- `StopTransferManagementView`: GET - Main interface
+
+**JavaScript Architecture** (`static/js/stop_transfer.js`):
+- **State Management**: `draggedStopData`, `pendingTransfer`, `pendingAddStop`, `pendingDeleteStop`
+- **Event Handlers**: Drag events, inline editing, modal confirmations
+- **Drag Prevention**: Buttons have `draggable="false"` and drag events are cancelled when clicking buttons
+- **Bootstrap Modals**: Professional confirmation dialogs for all destructive actions
+- **Error Handling**: Comprehensive try-catch with fallbacks for modal display
+
+**SCSS Styling** (`static/styles/central_admin/stop_transfer/style.scss`):
+- **SASS 2.0 Compatible**: Uses `color.scale()` instead of deprecated `lighten()`/`darken()`
+- **Vertical Layout**: `.stop-info` uses flex-column to stack name above buttons/indicators
+- **Drag States**: `.dragging`, `.drag-active`, `.drag-over` classes for visual feedback
+- **Responsive Grid**: Auto-fit grid for route cards (min 350px columns)
+- **Animations**: Smooth transitions, scale effects on buttons
+
+**Critical Implementation Notes**:
+- Always wrap transfers in `@transaction.atomic()` for data integrity
+- Log all operations with `log_user_activity()` for audit trail
+- Use `word-break: break-word` on stop names to prevent overflow with long names
+- Modal initialization requires checking for existing instance: `bootstrap.Modal.getInstance()` before creating new
+- Event delegation doesn't work well with dynamically added buttons - attach listeners directly after DOM insertion
+
 ## Common Gotchas
 
 1. **Trip Booking Count**: Must manually increment/decrement `Trip.booking_count` when creating/deleting tickets
@@ -129,6 +225,9 @@ Forms split by role: `services/forms/{central_admin,institution_admin,students}.
 4. **Schedule Groups**: `allow_one_way` flag determines if students can book only pickup or drop
 5. **Student Group Format**: Always `"{CLASS} - {SECTION}"` (e.g., "5 - A"), case-insensitive in Excel processing
 6. **File Storage**: Use `default_storage.open()` for cloud compatibility in Celery tasks
+7. **Stop Transfers**: When transferring stops, only update relevant bus records (pickup vs drop) to avoid unnecessary ticket modifications
+8. **Drag & Drop**: Always prevent drag events on interactive elements (buttons, inputs) using `e.target.closest('button')` check
+9. **Bootstrap Modals**: Check for existing modal instances before creating new ones to prevent memory leaks
 
 ## Database
 
