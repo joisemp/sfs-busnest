@@ -3363,3 +3363,196 @@ class DeleteStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
             }, status=500)
 
 
+class CreateRouteAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to create a new route in a registration.
+    This view processes POST requests to create a route with a given name.
+    
+    Methods:
+        post: Handles the route creation operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to create a new route.
+        
+        Request JSON format:
+        {
+            "route_name": "Route Name"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with created route data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            route_name = data.get('route_name', '').strip()
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not route_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Route name is required'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Check if route with same name already exists in this registration
+            if Route.objects.filter(
+                name__iexact=route_name,
+                registration=registration,
+                org=request.user.profile.org
+            ).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': f"A route with name '{route_name}' already exists in this registration"
+                }, status=400)
+            
+            # Create the route
+            route = Route.objects.create(
+                name=route_name,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Created route",
+                description=f"Created route '{route.name}' in registration '{registration.name}'"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Route '{route.name}' created successfully",
+                'route': {
+                    'slug': route.slug,
+                    'name': route.name,
+                    'stop_count': 0
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+class DeleteRouteAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to delete a route from a registration.
+    This view processes POST requests to delete a route that has no associated stops.
+    
+    Methods:
+        post: Handles the route deletion operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to delete a route.
+        
+        Request JSON format:
+        {
+            "route_slug": "route-slug"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with deleted route data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not route_slug:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Route slug is required'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the route
+            route = get_object_or_404(
+                Route,
+                slug=route_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if route has any stops
+            stop_count = route.stops.count()
+            
+            if stop_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Cannot delete route '{route.name}' because it has {stop_count} stop(s) associated with it. Please delete or transfer the stops first."
+                }, status=400)
+            
+            # Check if route has any trips (bus assignments)
+            trip_count = route.trips.count()
+            
+            if trip_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Cannot delete route '{route.name}' because it has {trip_count} trip(s) assigned to it. Please remove bus assignments first."
+                }, status=400)
+            
+            # Store route info for response
+            route_name = route.name
+            route_slug_value = route.slug
+            
+            # Delete the route
+            route.delete()
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Deleted route",
+                description=f"Deleted route '{route_name}' from registration '{registration.name}'"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Route '{route_name}' deleted successfully",
+                'route': {
+                    'slug': route_slug_value,
+                    'name': route_name
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+

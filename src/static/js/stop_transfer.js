@@ -16,6 +16,7 @@
   let pendingTransfer = null; // Store pending transfer data for modal confirmation
   let pendingAddStop = null; // Store route data for adding new stop
   let pendingDeleteStop = null; // Store stop data for deletion confirmation
+  let pendingDeleteRoute = null; // Store route data for deletion confirmation
 
   /**
    * Initialize drag-and-drop and inline editing functionality
@@ -25,6 +26,8 @@
     const dropZones = document.querySelectorAll(".drop-zone");
     const addStopButtons = document.querySelectorAll(".add-stop-btn");
     const deleteStopButtons = document.querySelectorAll(".delete-stop-btn");
+    const deleteRouteButtons = document.querySelectorAll(".delete-route-btn");
+    const createRouteBtn = document.getElementById("createRouteBtn");
 
     // Setup drag events for all stops
     stopItems.forEach((stop) => {
@@ -97,6 +100,53 @@
         document.getElementById("stopNameInput").value = "";
         document.getElementById("stopNameInput").classList.remove("is-invalid");
       });
+    }
+    
+    // Setup create route button
+    if (createRouteBtn) {
+      createRouteBtn.addEventListener("click", handleCreateRouteClick);
+    }
+    
+    // Setup create route modal confirm button
+    const confirmCreateRouteBtn = document.getElementById("confirmCreateRouteBtn");
+    if (confirmCreateRouteBtn) {
+      confirmCreateRouteBtn.addEventListener("click", handleCreateRouteConfirm);
+    }
+    
+    // Setup route name input Enter key
+    const routeNameInput = document.getElementById("routeNameInput");
+    if (routeNameInput) {
+      routeNameInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleCreateRouteConfirm();
+        }
+      });
+      
+      // Clear validation on input
+      routeNameInput.addEventListener("input", function () {
+        this.classList.remove("is-invalid");
+      });
+    }
+    
+    // Clear route name input when modal is hidden
+    const createRouteModal = document.getElementById("createRouteModal");
+    if (createRouteModal) {
+      createRouteModal.addEventListener("hidden.bs.modal", function () {
+        document.getElementById("routeNameInput").value = "";
+        document.getElementById("routeNameInput").classList.remove("is-invalid");
+      });
+    }
+    
+    // Setup delete route buttons
+    deleteRouteButtons.forEach((btn) => {
+      btn.addEventListener("click", handleDeleteRouteClick);
+    });
+    
+    // Setup delete route modal confirm button
+    const confirmDeleteRouteBtn = document.getElementById("confirmDeleteRouteBtn");
+    if (confirmDeleteRouteBtn) {
+      confirmDeleteRouteBtn.addEventListener("click", handleDeleteRouteConfirm);
     }
   }
 
@@ -518,6 +568,12 @@
     if (emptyMessage) {
       emptyMessage.remove();
     }
+    
+    // Remove delete route button if it exists (route is no longer empty)
+    const deleteRouteBtn = routeCard.querySelector(".delete-route-btn");
+    if (deleteRouteBtn) {
+      deleteRouteBtn.remove();
+    }
 
     // Create new stop element
     const stopElement = document.createElement("div");
@@ -901,11 +957,294 @@
           <i class="fa-solid fa-inbox me-2"></i>No stops in this route
         </div>
       `;
+      
+      // Add delete route button if route is now empty
+      const addStopBtn = routeCard.querySelector('.add-stop-btn');
+      if (addStopBtn && !routeCard.querySelector('.delete-route-btn')) {
+        const routeName = routeCard.querySelector('.route-name').textContent.trim();
+        const deleteRouteBtn = document.createElement('button');
+        deleteRouteBtn.className = 'btn btn-sm btn-outline-light delete-route-btn';
+        deleteRouteBtn.setAttribute('data-route-slug', routeSlug);
+        deleteRouteBtn.setAttribute('data-route-name', routeName);
+        deleteRouteBtn.setAttribute('title', 'Delete this route');
+        deleteRouteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        deleteRouteBtn.addEventListener('click', handleDeleteRouteClick);
+        addStopBtn.parentElement.appendChild(deleteRouteBtn);
+      }
     }
     
     // Update stop count
     const currentCount = parseInt(routeCard.querySelector(".stop-count").textContent);
     updateStopCount(routeSlug, currentCount - 1);
+  }
+
+  /**
+   * Handle create route button click
+   */
+  function handleCreateRouteClick(e) {
+    e.preventDefault();
+    
+    // Show the modal
+    const modalElement = document.getElementById("createRouteModal");
+    if (modalElement) {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        try {
+          let modal = bootstrap.Modal.getInstance(modalElement);
+          if (!modal) {
+            modal = new bootstrap.Modal(modalElement);
+          }
+          modal.show();
+        } catch (error) {
+          console.error("Error showing create route modal:", error);
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle create route confirmation
+   */
+  function handleCreateRouteConfirm() {
+    const routeNameInput = document.getElementById("routeNameInput");
+    const routeName = routeNameInput.value.trim();
+    
+    if (!routeName) {
+      routeNameInput.classList.add("is-invalid");
+      return;
+    }
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById("createRouteModal"));
+    modal.hide();
+    
+    // Create the route
+    createRoute(routeName);
+  }
+
+  /**
+   * Create a new route via API
+   */
+  function createRoute(routeName) {
+    showLoading(true);
+    
+    fetch(CREATE_ROUTE_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": CSRF_TOKEN,
+      },
+      body: JSON.stringify({
+        route_name: routeName,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        showLoading(false);
+        
+        if (data.success) {
+          showNotification(data.message, "success");
+          
+          // Add the route to the UI
+          addRouteToUI(data.route);
+        } else {
+          showNotification(data.message, "danger");
+        }
+      })
+      .catch((error) => {
+        showLoading(false);
+        showNotification(
+          "An error occurred while creating the route. Please try again.",
+          "danger"
+        );
+        console.error("Create route error:", error);
+      });
+  }
+
+  /**
+   * Add a newly created route to the UI
+   */
+  function addRouteToUI(routeData) {
+    const routesGrid = document.querySelector(".routes-grid");
+    
+    if (!routesGrid) {
+      // If no routes grid exists, reload the page to show the new route
+      window.location.reload();
+      return;
+    }
+    
+    // Create route card element
+    const routeCard = document.createElement("div");
+    routeCard.className = "route-card";
+    routeCard.dataset.routeSlug = routeData.slug;
+    
+    routeCard.innerHTML = `
+      <div class="route-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="route-name mb-1">${routeData.name}</h5>
+            <small class="text-muted">
+              <span class="stop-count">0</span> stops
+            </small>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-light add-stop-btn" 
+                    data-route-slug="${routeData.slug}"
+                    data-route-name="${routeData.name}"
+                    title="Add new stop to this route">
+              <i class="fa-solid fa-plus me-1"></i>Add Stop
+            </button>
+            <button class="btn btn-sm btn-outline-light delete-route-btn" 
+                    data-route-slug="${routeData.slug}"
+                    data-route-name="${routeData.name}"
+                    title="Delete this route">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="drop-zone" data-route-slug="${routeData.slug}">
+        <div class="stops-container">
+          <div class="empty-route-message">
+            <i class="fa-solid fa-inbox me-2"></i>No stops in this route
+          </div>
+        </div>
+        <div class="drop-zone-placeholder">Drop stop here</div>
+      </div>
+    `;
+    
+    // Add to grid
+    routesGrid.appendChild(routeCard);
+    
+    // Setup event listeners
+    const dropZone = routeCard.querySelector(".drop-zone");
+    dropZone.addEventListener("dragover", handleDragOver);
+    dropZone.addEventListener("dragenter", handleDragEnter);
+    dropZone.addEventListener("dragleave", handleDragLeave);
+    dropZone.addEventListener("drop", handleDrop);
+    
+    const addStopBtn = routeCard.querySelector(".add-stop-btn");
+    addStopBtn.addEventListener("click", handleAddStopClick);
+    
+    const deleteRouteBtn = routeCard.querySelector(".delete-route-btn");
+    deleteRouteBtn.addEventListener("click", handleDeleteRouteClick);
+  }
+
+  /**
+   * Handle delete route button click
+   */
+  function handleDeleteRouteClick(e) {
+    console.log("Delete route button clicked!");
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const button = e.currentTarget;
+    const routeSlug = button.dataset.routeSlug;
+    const routeName = button.dataset.routeName;
+    
+    console.log("Route data:", { routeSlug, routeName });
+    
+    // Store route data
+    pendingDeleteRoute = {
+      routeSlug: routeSlug,
+      routeName: routeName
+    };
+    
+    // Update modal content
+    const deleteRouteNameEl = document.getElementById("delete-route-name-display");
+    if (deleteRouteNameEl) deleteRouteNameEl.textContent = routeName;
+    
+    // Show the modal
+    const modalElement = document.getElementById("deleteRouteModal");
+    if (modalElement) {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        try {
+          let modal = bootstrap.Modal.getInstance(modalElement);
+          if (!modal) {
+            modal = new bootstrap.Modal(modalElement);
+          }
+          console.log("Modal instance created:", modal);
+          modal.show();
+        } catch (error) {
+          console.error("Error showing modal:", error);
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle delete route confirmation
+   */
+  function handleDeleteRouteConfirm() {
+    if (!pendingDeleteRoute) {
+      return;
+    }
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById("deleteRouteModal"));
+    modal.hide();
+    
+    // Delete the route
+    deleteRoute(pendingDeleteRoute.routeSlug);
+    
+    // Clear pending data
+    pendingDeleteRoute = null;
+  }
+
+  /**
+   * Delete a route via API
+   */
+  function deleteRoute(routeSlug) {
+    showLoading(true);
+    
+    fetch(DELETE_ROUTE_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": CSRF_TOKEN,
+      },
+      body: JSON.stringify({
+        route_slug: routeSlug,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        showLoading(false);
+        
+        if (data.success) {
+          showNotification(data.message, "success");
+          
+          // Remove the route from the UI
+          removeRouteFromUI(data.route);
+        } else {
+          showNotification(data.message, "danger");
+        }
+      })
+      .catch((error) => {
+        showLoading(false);
+        showNotification(
+          "An error occurred while deleting the route. Please try again.",
+          "danger"
+        );
+        console.error("Delete route error:", error);
+      });
+  }
+
+  /**
+   * Remove a deleted route from the UI
+   */
+  function removeRouteFromUI(routeData) {
+    const routeCard = document.querySelector(`.route-card[data-route-slug="${routeData.slug}"]`);
+    
+    if (routeCard) {
+      routeCard.remove();
+      
+      // Check if there are any routes left
+      const routesGrid = document.querySelector(".routes-grid");
+      if (routesGrid && routesGrid.children.length === 0) {
+        // Show empty state or reload page
+        window.location.reload();
+      }
+    }
   }
 
   // Initialize when DOM is ready
