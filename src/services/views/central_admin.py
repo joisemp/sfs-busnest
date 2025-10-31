@@ -2735,9 +2735,6 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['reservations'] = BusReservationRequest.objects.filter(
-            org=self.request.user.profile.org
-        ).select_related('institution', 'created_by').order_by('-created_at')
         
         # Get month filter from query params or default to current month
         from datetime import datetime
@@ -2753,6 +2750,33 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
                 month = datetime.now().month
                 context['current_month'] = f"{year}-{month:02d}"
         else:
+            year = None
+            month = None
+            context['current_month'] = ""
+        
+        # Get reservations with optional filters
+        reservations_query = BusReservationRequest.objects.filter(
+            org=self.request.user.profile.org
+        ).select_related('institution', 'created_by').order_by('-created_at')
+        
+        # Apply month filter if provided
+        if month_param and year and month:
+            reservations_query = reservations_query.filter(
+                created_at__year=year,
+                created_at__month=month
+            )
+        
+        # Apply status filter if provided
+        status_param = self.request.GET.get('status')
+        if status_param and status_param in ['pending', 'approved', 'rejected']:
+            reservations_query = reservations_query.filter(status=status_param)
+        
+        context['reservations'] = reservations_query
+        context['status_filter'] = status_param
+        context['month_filter'] = month_param
+        
+        # Set year and month for driver payments calculation
+        if not year or not month:
             year = datetime.now().year
             month = datetime.now().month
             context['current_month'] = f"{year}-{month:02d}"

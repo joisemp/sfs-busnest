@@ -21,16 +21,45 @@
         <hr>
     </div>
     
+    <!-- Common Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label for="monthFilter" class="form-label">Filter by Month</label>
+                    <input type="month" class="form-control" id="monthFilter" value="{{ current_month }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Filter by Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-primary" id="applyFilters">
+                        <i class="fa-solid fa-filter me-2"></i>Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="resetFilters">
+                        <i class="fa-solid fa-rotate-right me-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Tabs Navigation -->
     <ul class="nav nav-tabs mb-4" id="reservationTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations" type="button" role="tab" aria-controls="reservations" aria-selected="true">
-                <i class="fa-solid fa-bus me-2"></i>Reservations
+                <i class="fa-solid fa-bus me-2"></i>Reservations <span class="badge bg-secondary">{{ reservations.count }}</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="driver-payments-tab" data-bs-toggle="tab" data-bs-target="#driver-payments" type="button" role="tab" aria-controls="driver-payments" aria-selected="false">
-                <i class="fa-solid fa-money-bill me-2"></i>Driver Payments
+                <i class="fa-solid fa-money-bill me-2"></i>Driver Payments <span class="badge bg-secondary">{{ driver_payments|length }}</span>
             </button>
         </li>
     </ul>
@@ -39,7 +68,19 @@
     <div class="tab-content" id="reservationTabsContent">
         <!-- Reservations Tab -->
         <div class="tab-pane fade show active" id="reservations" role="tabpanel" aria-labelledby="reservations-tab">
-            <div class="row">
+            {% if status_filter or month_filter %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-filter me-2"></i>Active Filters: 
+                {% if month_filter %}
+                    <strong>Month: {{ month_filter }}</strong>
+                {% endif %}
+                {% if status_filter %}
+                    {% if month_filter %}, {% endif %}<strong>Status: {{ status_filter|title }}</strong>
+                {% endif %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            <div class="row" id="reservationsList">
         {% for reservation in reservations %}
         <div class="col-12 col-md-6 col-lg-4 mb-3">
             <div class="card">
@@ -74,18 +115,6 @@
         
         <!-- Driver Payments Tab -->
         <div class="tab-pane fade" id="driver-payments" role="tabpanel" aria-labelledby="driver-payments-tab">
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="monthFilter" class="form-label">Select Month</label>
-                    <input type="month" class="form-control" id="monthFilter" value="{{ current_month }}">
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary" onclick="filterByMonth()">
-                        <i class="fa-solid fa-filter me-2"></i>Filter
-                    </button>
-                </div>
-            </div>
-            
             <div id="driver-payments-content">
                 {% if driver_payments %}
                 <div class="card shadow-sm">
@@ -163,10 +192,38 @@
 </div>
 
 <script>
-function filterByMonth() {
+// Common filter functionality
+function applyFilters() {
     const month = document.getElementById('monthFilter').value;
-    if (month) {
-        window.location.href = '?month=' + month + '#driver-payments';
+    const status = document.getElementById('statusFilter').value;
+    const activeTab = document.querySelector('.nav-link.active').id;
+    
+    let url = '?';
+    if (month) url += 'month=' + month + '&';
+    if (status) url += 'status=' + status + '&';
+    
+    // Preserve active tab
+    if (activeTab === 'driver-payments-tab') {
+        url += '#driver-payments';
+    } else {
+        url += '#reservations';
+    }
+    
+    window.location.href = url;
+}
+
+function resetFilters() {
+    const activeTab = document.querySelector('.nav-link.active').id;
+    
+    // Reset form fields
+    document.getElementById('monthFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    
+    // Redirect with active tab preserved
+    if (activeTab === 'driver-payments-tab') {
+        window.location.href = '?#driver-payments';
+    } else {
+        window.location.href = '?#reservations';
     }
 }
 
@@ -185,10 +242,34 @@ function showDriverDetails(driverId) {
         });
 }
 
-// Auto-show driver payments tab if URL has hash
-if (window.location.hash === '#driver-payments') {
-    const driverPaymentsTab = new bootstrap.Tab(document.getElementById('driver-payments-tab'));
-    driverPaymentsTab.show();
+// Attach event listeners
+document.getElementById('applyFilters').addEventListener('click', applyFilters);
+document.getElementById('resetFilters').addEventListener('click', resetFilters);
+
+// Auto-show correct tab based on URL hash
+window.addEventListener('DOMContentLoaded', function() {
+    const hash = window.location.hash;
+    if (hash === '#driver-payments') {
+        const driverPaymentsTab = new bootstrap.Tab(document.getElementById('driver-payments-tab'));
+        driverPaymentsTab.show();
+    }
+});
+
+// Filter reservations by status on client side
+function filterReservationsByStatus(status) {
+    const reservationCards = document.querySelectorAll('#reservationsList > div');
+    reservationCards.forEach(card => {
+        if (!status) {
+            card.style.display = '';
+        } else {
+            const badge = card.querySelector('.badge');
+            if (badge && badge.textContent.toLowerCase() === status.toLowerCase()) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        }
+    });
 }
 </script>
 
