@@ -58,10 +58,14 @@
             {% endif %}
           </td>
           <td>
+            {% if person.is_central_admin %}
+            Central Admin
+            {% endif %}
             {% if person.is_institution_admin %}
-            Institution Admin [{{person.institution}}]
-            {% elif person.is_central_admin %}
-            Central admin
+            {% if person.is_central_admin %}, {% endif %}Institution Admin [{{person.institution}}]
+            {% endif %}
+            {% if person.is_driver %}
+            {% if person.is_central_admin or person.is_institution_admin %}, {% endif %}Driver
             {% endif %}
           </td>
           <td>

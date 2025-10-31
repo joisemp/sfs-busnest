@@ -35,7 +35,8 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for creating a user profile in the central admin interface.
     Validates that the email is unique among all users.
-    Fields: email, first_name, last_name, is_central_admin, is_institution_admin
+    Requires at least one role (central admin, institution admin, or driver) to be selected.
+    Fields: email, first_name, last_name, is_central_admin, is_driver, is_institution_admin
     """
     email = forms.EmailField(required=True)
 
@@ -52,15 +53,44 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             raise ValidationError("A user with this email already exists.")
         return email
     
+    def clean(self):
+        """
+        Validates that at least one role is selected.
+        """
+        cleaned_data = super().clean()
+        is_central_admin = cleaned_data.get('is_central_admin')
+        is_institution_admin = cleaned_data.get('is_institution_admin')
+        is_driver = cleaned_data.get('is_driver')
+        
+        if not (is_central_admin or is_institution_admin or is_driver):
+            raise ValidationError("Please select at least one role: Central Admin, Institution Admin, or Driver.")
+        
+        return cleaned_data
+    
     
 class PeopleUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for updating a user profile in the central admin interface.
-    Fields: first_name, last_name, is_central_admin, is_institution_admin
+    Requires at least one role (central admin, institution admin, or driver) to be selected.
+    Fields: first_name, last_name, is_central_admin, is_driver, is_institution_admin
     """
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name', 'is_central_admin', 'is_institution_admin']  
+        fields = ['first_name', 'last_name', 'is_central_admin', 'is_driver', 'is_institution_admin']
+    
+    def clean(self):
+        """
+        Validates that at least one role is selected.
+        """
+        cleaned_data = super().clean()
+        is_central_admin = cleaned_data.get('is_central_admin')
+        is_institution_admin = cleaned_data.get('is_institution_admin')
+        is_driver = cleaned_data.get('is_driver')
+        
+        if not (is_central_admin or is_institution_admin or is_driver):
+            raise ValidationError("Please select at least one role: Central Admin, Institution Admin, or Driver.")
+        
+        return cleaned_data  
 
 
 class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

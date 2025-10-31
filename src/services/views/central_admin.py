@@ -900,18 +900,20 @@ class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVi
                 reverse('core:confirm_password_reset', kwargs={'uidb64': uid, 'token': token})
             )
             
-            subject = "Welcome to SFS Busnest"
-            message = (
-            f"Hello,\n\n"
-            f"Welcome to our BusNest! You have been added to the system by "
-            f"{self.request.user.profile.first_name} {self.request.user.profile.last_name}. "
-            f"Please set your password using the link below.\n\n"
-            f"{reset_link}\n\n"
-            f"Best regards,\nSFSBusNest Team"
-            )
-            recipient_list = [f"{user.email}"]
-            
-            send_email_task.delay(subject, message, recipient_list)
+            # Only send email if the user is not a driver
+            if not userprofile.is_driver:
+                subject = "Welcome to SFS Busnest"
+                message = (
+                f"Hello,\n\n"
+                f"Welcome to our BusNest! You have been added to the system by "
+                f"{self.request.user.profile.first_name} {self.request.user.profile.last_name}. "
+                f"Please set your password using the link below.\n\n"
+                f"{reset_link}\n\n"
+                f"Best regards,\nSFSBusNest Team"
+                )
+                recipient_list = [f"{user.email}"]
+                
+                send_email_task.delay(subject, message, recipient_list)
             
             return redirect(self.success_url)
         except Exception as e:

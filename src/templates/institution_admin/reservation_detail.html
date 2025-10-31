@@ -196,7 +196,6 @@
                         <thead>
                             <tr>
                                 <th>Bus Registration</th>
-                                <th>Default Driver</th>
                                 <th>Assigned Driver</th>
                                 <th>Capacity</th>
                                 <th>Assigned By</th>
@@ -208,7 +207,6 @@
                             {% for assignment in reservation.bus_assignments.all %}
                             <tr>
                                 <td><strong>{{ assignment.bus.registration_no }}</strong></td>
-                                <td>{{ assignment.bus.driver }}</td>
                                 <td>
                                     {% if assignment.driver %}
                                         {{ assignment.driver.profile.first_name }} {{ assignment.driver.profile.last_name }}
