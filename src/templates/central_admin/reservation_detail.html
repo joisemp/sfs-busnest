@@ -202,7 +202,8 @@
                         <thead>
                             <tr>
                                 <th>Bus Registration</th>
-                                <th>Driver</th>
+                                <th>Default Driver</th>
+                                <th>Assigned Driver</th>
                                 <th>Capacity</th>
                                 <th>Assigned By</th>
                                 <th>Assigned At</th>
@@ -215,6 +216,13 @@
                             <tr>
                                 <td><strong>{{ assignment.bus.registration_no }}</strong></td>
                                 <td>{{ assignment.bus.driver }}</td>
+                                <td>
+                                    {% if assignment.driver %}
+                                        {{ assignment.driver.profile.first_name }} {{ assignment.driver.profile.last_name }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ assignment.bus.capacity }} seats</td>
                                 <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.email }}</td>
                                 <td>{{ assignment.assigned_at|date:"d M Y, g:i a" }}</td>

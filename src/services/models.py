@@ -998,15 +998,17 @@ class BusReservationAssignment(models.Model):
     """
     Represents a bus assignment to a reservation request.
     Multiple buses can be assigned to a single reservation request if needed.
+    Each bus assignment must have an assigned driver (User with is_driver=True).
     
     Fields:
-        reservation_request, bus, assigned_by, assigned_at, notes
+        reservation_request, bus, driver (required), assigned_by, assigned_at, notes
     Methods:
         __str__: Returns a string representation of the bus assignment.
     """
     reservation_request = models.ForeignKey(BusReservationRequest, on_delete=models.CASCADE, related_name='bus_assignments')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='reservation_assignments')
-    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='driver_assignments', limit_choices_to={'profile__is_driver': True}, help_text="Driver assigned to this bus")
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bus_assignment_actions')
     assigned_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)
     

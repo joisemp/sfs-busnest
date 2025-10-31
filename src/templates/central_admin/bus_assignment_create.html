@@ -53,6 +53,7 @@
                         <thead>
                             <tr>
                                 <th>Bus Registration</th>
+                                <th>Assigned Driver</th>
                                 <th>Capacity</th>
                                 <th>Assigned By</th>
                                 <th>Assigned At</th>
@@ -63,6 +64,13 @@
                             {% for assignment in reservation.bus_assignments.all %}
                             <tr>
                                 <td>{{ assignment.bus.registration_no }}</td>
+                                <td>
+                                    {% if assignment.driver %}
+                                        {{ assignment.driver.profile.first_name }} {{ assignment.driver.profile.last_name }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ assignment.bus.capacity }}</td>
                                 <td>{{ assignment.assigned_by.get_full_name }}</td>
                                 <td>{{ assignment.assigned_at|date:"d M Y, g:i A" }}</td>
@@ -92,6 +100,19 @@
                             </div>
                         {% endif %}
                         <small class="form-text text-muted">Select an available bus to assign to this reservation</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.driver.label_tag }}
+                        {{ form.driver }}
+                        {% if form.driver.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.driver.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.driver.help_text }}</small>
                     </div>
                 </div>
 

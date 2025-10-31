@@ -298,11 +298,12 @@ class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for assigning buses to approved reservation requests.
     Filters buses to show only available buses from the organization.
-    Fields: bus, notes
+    Requires assigning a driver user (with is_driver=True) to the bus assignment.
+    Fields: bus, driver (required), notes
     """
     class Meta:
         model = BusReservationAssignment
-        fields = ['bus', 'notes']
+        fields = ['bus', 'driver', 'notes']
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional notes about this bus assignment...'}),
         }
@@ -310,6 +311,7 @@ class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """
         Filters the bus queryset to show only available buses from the organization.
+        Filters the driver queryset to show only driver users from the organization.
         """
         org = kwargs.pop('org', None)
         reservation_request = kwargs.pop('reservation_request', None)
@@ -323,7 +325,16 @@ class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             if reservation_request:
                 already_assigned_bus_ids = reservation_request.bus_assignments.values_list('bus_id', flat=True)
                 self.fields['bus'].queryset = self.fields['bus'].queryset.exclude(id__in=already_assigned_bus_ids)
+            
+            # Filter to show only driver users from the organization
+            self.fields['driver'].queryset = User.objects.filter(
+                profile__org=org, 
+                profile__is_driver=True
+            ).order_by('profile__first_name', 'profile__last_name')
         
         self.fields['bus'].label = "Select Bus"
+        self.fields['driver'].label = "Assign Driver"
+        self.fields['driver'].required = True
+        self.fields['driver'].help_text = "Select a driver for this bus assignment"
         self.fields['notes'].label = "Assignment Notes"
         self.fields['notes'].required = False
