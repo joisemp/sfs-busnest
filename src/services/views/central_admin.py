@@ -68,6 +68,7 @@ from services.models import (
     StudentPassFile,
     BusReservationRequest,
     BusReservationAssignment,
+    TripExpense,
     log_user_activity
 )
 
@@ -89,7 +90,8 @@ from services.forms.central_admin import (
     BusRequestStatusForm, 
     BusRequestCommentForm,
     StopTransferForm,
-    BusAssignmentForm
+    BusAssignmentForm,
+    TripExpenseForm
 )
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
@@ -2719,6 +2721,7 @@ class BusRecordExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
 class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     """
     ReservationListView displays the list of reservations for central admin users.
+    Also provides driver payment summary by month in a separate tab.
     
     This view inherits from:
         - LoginRequiredMixin: Ensures that the user is authenticated.
@@ -2735,6 +2738,58 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
         context['reservations'] = BusReservationRequest.objects.filter(
             org=self.request.user.profile.org
         ).select_related('institution', 'created_by').order_by('-created_at')
+        
+        # Get month filter from query params or default to current month
+        from datetime import datetime
+        month_param = self.request.GET.get('month')
+        if month_param:
+            try:
+                filter_date = datetime.strptime(month_param, '%Y-%m')
+                year = filter_date.year
+                month = filter_date.month
+                context['current_month'] = month_param
+            except ValueError:
+                year = datetime.now().year
+                month = datetime.now().month
+                context['current_month'] = f"{year}-{month:02d}"
+        else:
+            year = datetime.now().year
+            month = datetime.now().month
+            context['current_month'] = f"{year}-{month:02d}"
+        
+        # Calculate driver payments for the selected month
+        from django.db.models import Sum, Count, Q
+        from core.models import User
+        
+        # Get all trip expenses for the month
+        trip_expenses = TripExpense.objects.filter(
+            bus_assignment__reservation_request__org=self.request.user.profile.org,
+            recorded_at__year=year,
+            recorded_at__month=month
+        ).select_related('bus_assignment__driver__profile')
+        
+        # Aggregate by driver
+        driver_payments = {}
+        for expense in trip_expenses:
+            driver = expense.bus_assignment.driver
+            if driver.id not in driver_payments:
+                driver_payments[driver.id] = {
+                    'driver_id': driver.id,
+                    'driver_name': f"{driver.profile.first_name} {driver.profile.last_name}",
+                    'driver_email': driver.email,
+                    'trip_count': 0,
+                    'total_bonus': 0,
+                    'total_expenses': 0,
+                }
+            driver_payments[driver.id]['trip_count'] += 1
+            driver_payments[driver.id]['total_bonus'] += float(expense.driver_bonus)
+            driver_payments[driver.id]['total_expenses'] += float(expense.total_expense)
+        
+        context['driver_payments'] = list(driver_payments.values())
+        context['total_trips'] = sum(p['trip_count'] for p in driver_payments.values())
+        context['total_bonus'] = sum(p['total_bonus'] for p in driver_payments.values())
+        context['total_expenses'] = sum(p['total_expenses'] for p in driver_payments.values())
+        
         return context
 
 class ReservationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
@@ -2870,6 +2925,138 @@ class BusAssignmentDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
         
         messages.success(request, f"Bus {bus_reg_no} has been removed from this reservation.")
         return redirect('central_admin:reservation_detail', slug=reservation_slug)
+
+
+class TripExpenseCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View to add trip expenses for a bus assignment.
+    Allows recording fuel cost, toll charges, maintenance, driver bonus, and other expenses.
+    """
+    model = TripExpense
+    form_class = TripExpenseForm
+    template_name = 'central_admin/trip_expense_form.html'
+    
+    def get_bus_assignment(self):
+        """Get the bus assignment for this expense."""
+        return get_object_or_404(
+            BusReservationAssignment,
+            id=self.kwargs['assignment_id'],
+            reservation_request__org=self.request.user.profile.org
+        )
+    
+    def get_context_data(self, **kwargs):
+        """Add bus assignment to context."""
+        context = super().get_context_data(**kwargs)
+        context['bus_assignment'] = self.get_bus_assignment()
+        context['is_update'] = False
+        return context
+    
+    def form_valid(self, form):
+        """Save the trip expense with the bus assignment and recorded_by user."""
+        form.instance.bus_assignment = self.get_bus_assignment()
+        form.instance.recorded_by = self.request.user
+        
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f"Trip expenses recorded successfully! Total: ₹{form.instance.total_expense}"
+        )
+        return response
+    
+    def get_success_url(self):
+        """Redirect back to the reservation detail page."""
+        return reverse('central_admin:reservation_detail', 
+                      kwargs={'slug': self.get_bus_assignment().reservation_request.slug})
+
+
+class TripExpenseUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View to update trip expenses for a bus assignment.
+    """
+    model = TripExpense
+    form_class = TripExpenseForm
+    template_name = 'central_admin/trip_expense_form.html'
+    
+    def get_object(self):
+        """Get the trip expense to update."""
+        return get_object_or_404(
+            TripExpense,
+            id=self.kwargs['pk'],
+            bus_assignment__reservation_request__org=self.request.user.profile.org
+        )
+    
+    def get_context_data(self, **kwargs):
+        """Add bus assignment to context."""
+        context = super().get_context_data(**kwargs)
+        context['bus_assignment'] = self.object.bus_assignment
+        context['is_update'] = True
+        return context
+    
+    def form_valid(self, form):
+        """Save the updated trip expense."""
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f"Trip expenses updated successfully! Total: ₹{form.instance.total_expense}"
+        )
+        return response
+    
+    def get_success_url(self):
+        """Redirect back to the reservation detail page."""
+        return reverse('central_admin:reservation_detail', 
+                      kwargs={'slug': self.object.bus_assignment.reservation_request.slug})
+
+
+class DriverPaymentDetailsView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    View to display detailed trip information for a specific driver in a given month.
+    Returns HTML fragment for modal display.
+    """
+    template_name = 'central_admin/driver_payment_details.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        driver_id = self.kwargs.get('driver_id')
+        
+        # Get driver
+        driver = get_object_or_404(
+            User,
+            id=driver_id,
+            profile__org=self.request.user.profile.org,
+            profile__is_driver=True
+        )
+        context['driver'] = driver
+        
+        # Get month filter
+        from datetime import datetime
+        month_param = self.request.GET.get('month')
+        if month_param:
+            try:
+                filter_date = datetime.strptime(month_param, '%Y-%m')
+                year = filter_date.year
+                month = filter_date.month
+            except ValueError:
+                year = datetime.now().year
+                month = datetime.now().month
+        else:
+            year = datetime.now().year
+            month = datetime.now().month
+        
+        # Get all trip expenses for this driver in the selected month
+        trip_expenses = TripExpense.objects.filter(
+            bus_assignment__driver=driver,
+            bus_assignment__reservation_request__org=self.request.user.profile.org,
+            recorded_at__year=year,
+            recorded_at__month=month
+        ).select_related(
+            'bus_assignment__bus',
+            'bus_assignment__reservation_request__institution'
+        ).order_by('-recorded_at')
+        
+        context['trip_expenses'] = trip_expenses
+        context['month_year'] = f"{datetime(year, month, 1).strftime('%B %Y')}"
+        
+        return context
 
 
 class StopTransferManagementView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin, TemplateView):

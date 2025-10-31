@@ -16,7 +16,7 @@ Direct Registrations:
 """
 
 from django.contrib import admin
-from services.models import Institution, Bus, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile, ScheduleGroup
+from services.models import Institution, Bus, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile, ScheduleGroup, TripExpense
 
 
 @admin.register(Organisation)
@@ -58,3 +58,11 @@ admin.site.register(ReceiptFile)
 admin.site.register(ExportedFile)
 
 admin.site.register(ScheduleGroup)
+
+
+@admin.register(TripExpense)
+class TripExpenseAdmin(admin.ModelAdmin):
+    list_display = ('bus_assignment', 'total_expense', 'driver_bonus', 'recorded_by', 'recorded_at')
+    list_filter = ('recorded_at',)
+    search_fields = ('bus_assignment__bus__registration_no', 'bus_assignment__reservation_request__event_name')
+    readonly_fields = ('total_expense', 'recorded_at', 'updated_at')

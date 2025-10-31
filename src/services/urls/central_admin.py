@@ -185,4 +185,11 @@ urlpatterns = [
      path('reservations/<slug:slug>/reject/', central_admin.ReservationRejectView.as_view(), name='reservation_reject'),
      path('reservations/<slug:slug>/assign-bus/', central_admin.BusAssignmentCreateView.as_view(), name='bus_assignment_create'),
      path('reservations/bus-assignment/<int:assignment_id>/delete/', central_admin.BusAssignmentDeleteView.as_view(), name='bus_assignment_delete'),
+     
+     # Trip Expenses
+     path('reservations/bus-assignment/<int:assignment_id>/add-expense/', central_admin.TripExpenseCreateView.as_view(), name='trip_expense_create'),
+     path('reservations/trip-expense/<int:pk>/update/', central_admin.TripExpenseUpdateView.as_view(), name='trip_expense_update'),
+     
+     # Driver Payments
+     path('driver-payments/<int:driver_id>/details/', central_admin.DriverPaymentDetailsView.as_view(), name='driver_payment_details'),
 ]

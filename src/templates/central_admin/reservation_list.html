@@ -15,16 +15,31 @@
     <div class="section-header">
         <div class="d-flex justify-content-between">
             <div>
-                <h2>Reservation</h2>
+                <h2>Reservations & Payments</h2>
             </div>
-            <!-- <div class="button">
-                <a href="#" class="btn btn-primary me-2 me-md-0 me-2"><i
-                        class="fa-solid fa-plus me-md-2 me-0"></i>Create</a>
-            </div> -->
         </div>
         <hr>
     </div>
-    <div class="row">
+    
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="reservationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations" type="button" role="tab" aria-controls="reservations" aria-selected="true">
+                <i class="fa-solid fa-bus me-2"></i>Reservations
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="driver-payments-tab" data-bs-toggle="tab" data-bs-target="#driver-payments" type="button" role="tab" aria-controls="driver-payments" aria-selected="false">
+                <i class="fa-solid fa-money-bill me-2"></i>Driver Payments
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="reservationTabsContent">
+        <!-- Reservations Tab -->
+        <div class="tab-pane fade show active" id="reservations" role="tabpanel" aria-labelledby="reservations-tab">
+            <div class="row">
         {% for reservation in reservations %}
         <div class="col-12 col-md-6 col-lg-4 mb-3">
             <div class="card">
@@ -54,7 +69,127 @@
             </div>
         </div>
         {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Driver Payments Tab -->
+        <div class="tab-pane fade" id="driver-payments" role="tabpanel" aria-labelledby="driver-payments-tab">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="monthFilter" class="form-label">Select Month</label>
+                    <input type="month" class="form-control" id="monthFilter" value="{{ current_month }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary" onclick="filterByMonth()">
+                        <i class="fa-solid fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+            
+            <div id="driver-payments-content">
+                {% if driver_payments %}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fa-solid fa-users me-2"></i>Driver Payment Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Driver Name</th>
+                                        <th>Total Trips</th>
+                                        <th>Total Bonus</th>
+                                        <th>Total Expenses</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in driver_payments %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ payment.driver_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ payment.driver_email }}</small>
+                                        </td>
+                                        <td>{{ payment.trip_count }}</td>
+                                        <td><span class="badge bg-success">₹{{ payment.total_bonus }}</span></td>
+                                        <td><span class="badge bg-info">₹{{ payment.total_expenses }}</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showDriverDetails({{ payment.driver_id }})">
+                                                <i class="fa-solid fa-eye me-1"></i>View Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-secondary fw-bold">
+                                        <td>TOTAL</td>
+                                        <td>{{ total_trips }}</td>
+                                        <td>₹{{ total_bonus }}</td>
+                                        <td>₹{{ total_expenses }}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fa-solid fa-info-circle me-2"></i>No driver payment data available for the selected month.
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
 </section>
+
+<!-- Driver Details Modal -->
+<div class="modal fade" id="driverDetailsModal" tabindex="-1" aria-labelledby="driverDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="driverDetailsModalLabel">Driver Trip Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="driverDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterByMonth() {
+    const month = document.getElementById('monthFilter').value;
+    if (month) {
+        window.location.href = '?month=' + month + '#driver-payments';
+    }
+}
+
+function showDriverDetails(driverId) {
+    const month = document.getElementById('monthFilter').value;
+    fetch(`{% url 'central_admin:driver_payment_details' 0 %}`.replace('/0/', `/${driverId}/`) + (month ? `?month=${month}` : ''))
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('driverDetailsContent').innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error loading driver details:', error);
+            alert('Failed to load driver details');
+        });
+}
+
+// Auto-show driver payments tab if URL has hash
+if (window.location.hash === '#driver-payments') {
+    const driverPaymentsTab = new bootstrap.Tab(document.getElementById('driver-payments-tab'));
+    driverPaymentsTab.show();
+}
+</script>
+
 {% endblock content %}

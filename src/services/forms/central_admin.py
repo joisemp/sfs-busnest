@@ -26,7 +26,7 @@ Forms:
 
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -367,4 +367,48 @@ class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         self.fields['driver'].required = True
         self.fields['driver'].help_text = "Select a driver for this bus assignment"
         self.fields['notes'].label = "Assignment Notes"
+        self.fields['notes'].required = False
+
+
+class TripExpenseForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for recording trip expenses for a bus assignment.
+    Captures fuel cost, toll charges, maintenance, driver bonus, and other expenses.
+    Total expense is auto-calculated.
+    Fields: fuel_cost, toll_charges, maintenance_cost, driver_bonus, other_expenses, notes
+    """
+    class Meta:
+        model = TripExpense
+        fields = ['fuel_cost', 'toll_charges', 'maintenance_cost', 'driver_bonus', 'other_expenses', 'notes']
+        widgets = {
+            'fuel_cost': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'toll_charges': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'maintenance_cost': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'driver_bonus': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'other_expenses': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Additional notes about the expenses...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Customizes field labels and help text.
+        """
+        super().__init__(*args, **kwargs)
+        
+        self.fields['fuel_cost'].label = "Fuel Cost (₹)"
+        self.fields['fuel_cost'].help_text = "Total fuel cost for the trip"
+        
+        self.fields['toll_charges'].label = "Toll Charges (₹)"
+        self.fields['toll_charges'].help_text = "Toll and tax charges"
+        
+        self.fields['maintenance_cost'].label = "Maintenance Cost (₹)"
+        self.fields['maintenance_cost'].help_text = "Any maintenance expenses during the trip"
+        
+        self.fields['driver_bonus'].label = "Driver Bonus (₹)"
+        self.fields['driver_bonus'].help_text = "Bonus amount to be paid to the driver"
+        
+        self.fields['other_expenses'].label = "Other Expenses (₹)"
+        self.fields['other_expenses'].help_text = "Any other miscellaneous expenses"
+        
+        self.fields['notes'].label = "Expense Notes"
         self.fields['notes'].required = False

@@ -1020,3 +1020,106 @@ class BusReservationAssignment(models.Model):
         String representation of the BusReservationAssignment.
         """
         return f"{self.bus.registration_no} assigned to {self.reservation_request}"
+
+
+class TripExpense(models.Model):
+    """
+    Represents expenses incurred for a bus assignment trip.
+    Tracks fuel costs, toll charges, maintenance expenses, driver bonus, and other costs.
+    
+    Fields:
+        bus_assignment: Link to the BusReservationAssignment
+        fuel_cost: Cost of fuel for the trip
+        toll_charges: Toll/tax charges during the trip
+        maintenance_cost: Any maintenance expenses during the trip
+        driver_bonus: Bonus amount to be paid to the driver
+        other_expenses: Any other miscellaneous expenses
+        total_expense: Auto-calculated total of all expenses
+        notes: Optional notes about the expenses
+        recorded_by: User who recorded the expenses
+        recorded_at: Timestamp when expenses were recorded
+        updated_at: Timestamp when expenses were last updated
+    
+    Methods:
+        save: Override to auto-calculate total_expense
+        __str__: Returns a string representation of the trip expense
+    """
+    bus_assignment = models.OneToOneField(
+        BusReservationAssignment, 
+        on_delete=models.CASCADE, 
+        related_name='trip_expense'
+    )
+    fuel_cost = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Fuel cost for the trip"
+    )
+    toll_charges = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Toll and tax charges"
+    )
+    maintenance_cost = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Maintenance expenses during the trip"
+    )
+    driver_bonus = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Bonus amount to be paid to the driver"
+    )
+    other_expenses = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Other miscellaneous expenses"
+    )
+    total_expense = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        editable=False,
+        help_text="Total expense (auto-calculated)"
+    )
+    notes = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="Additional notes about the expenses"
+    )
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='trip_expenses_recorded'
+    )
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-recorded_at']
+        verbose_name = 'Trip Expense'
+        verbose_name_plural = 'Trip Expenses'
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-calculate total_expense.
+        """
+        self.total_expense = (
+            self.fuel_cost + 
+            self.toll_charges + 
+            self.maintenance_cost + 
+            self.driver_bonus + 
+            self.other_expenses
+        )
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        """
+        String representation of the TripExpense.
+        """
+        return f"Expenses for {self.bus_assignment.bus.registration_no} - {self.bus_assignment.reservation_request}"

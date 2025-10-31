@@ -196,6 +196,33 @@
                     </div>
                 </div>
                 
+                <!-- Trip Expenses Summary -->
+                {% if reservation.bus_assignments.all %}
+                <div class="alert alert-info">
+                    <h6 class="mb-2"><i class="fa-solid fa-indian-rupee-sign me-2"></i>Trip Expenses Summary</h6>
+                    <div class="row">
+                        {% with total_fuel=0 total_toll=0 total_maintenance=0 total_bonus=0 total_other=0 total_all=0 %}
+                        {% for assignment in reservation.bus_assignments.all %}
+                            {% if assignment.trip_expense %}
+                                {% with total_fuel=total_fuel|add:assignment.trip_expense.fuel_cost %}{% endwith %}
+                                {% with total_toll=total_toll|add:assignment.trip_expense.toll_charges %}{% endwith %}
+                                {% with total_maintenance=total_maintenance|add:assignment.trip_expense.maintenance_cost %}{% endwith %}
+                                {% with total_bonus=total_bonus|add:assignment.trip_expense.driver_bonus %}{% endwith %}
+                                {% with total_other=total_other|add:assignment.trip_expense.other_expenses %}{% endwith %}
+                                {% with total_all=total_all|add:assignment.trip_expense.total_expense %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="col-md-2"><small class="text-muted">Fuel:</small> <strong>₹{{ total_fuel }}</strong></div>
+                        <div class="col-md-2"><small class="text-muted">Toll:</small> <strong>₹{{ total_toll }}</strong></div>
+                        <div class="col-md-2"><small class="text-muted">Maintenance:</small> <strong>₹{{ total_maintenance }}</strong></div>
+                        <div class="col-md-2"><small class="text-muted">Driver Bonus:</small> <strong>₹{{ total_bonus }}</strong></div>
+                        <div class="col-md-2"><small class="text-muted">Other:</small> <strong>₹{{ total_other }}</strong></div>
+                        <div class="col-md-2"><small class="text-muted">Total:</small> <strong class="text-primary fs-5">₹{{ total_all }}</strong></div>
+                        {% endwith %}
+                    </div>
+                </div>
+                {% endif %}
+                
                 {% if reservation.bus_assignments.all %}
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -206,6 +233,7 @@
                                 <th>Capacity</th>
                                 <th>Assigned By</th>
                                 <th>Assigned At</th>
+                                <th>Expenses</th>
                                 <th>Notes</th>
                                 <th>Action</th>
                             </tr>
@@ -224,6 +252,18 @@
                                 <td>{{ assignment.bus.capacity }} seats</td>
                                 <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.email }}</td>
                                 <td>{{ assignment.assigned_at|date:"d M Y, g:i a" }}</td>
+                                <td>
+                                    {% if assignment.trip_expense %}
+                                        <span class="badge bg-success">₹{{ assignment.trip_expense.total_expense }}</span>
+                                        <a href="{% url 'central_admin:trip_expense_update' assignment.trip_expense.id %}" class="btn btn-sm btn-outline-primary" title="Edit Expenses">
+                                            <i class="fa-solid fa-edit"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'central_admin:trip_expense_create' assignment.id %}" class="btn btn-sm btn-outline-success" title="Add Expenses">
+                                            <i class="fa-solid fa-plus"></i> Add
+                                        </a>
+                                    {% endif %}
+                                </td>
                                 <td>{{ assignment.notes|default:"-" }}</td>
                                 <td>
                                     <form method="post" action="{% url 'central_admin:bus_assignment_delete' assignment.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to remove this bus assignment?');">
