@@ -12,6 +12,7 @@ Each view is documented with its purpose, attributes, and methods. The views lev
 """
 
 import threading
+import logging
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from core.models import UserProfile
@@ -94,7 +95,7 @@ from services.forms.central_admin import (
     TripExpenseForm
 )
 
-from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
+from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass, export_filtered_tickets_to_excel
 from services.utils.transfer_stop import move_stop_and_update_tickets
 from datetime import datetime
 
@@ -1677,6 +1678,44 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['query_params'] = query_dict.urlencode()
         
         return context
+
+
+class TicketFilterExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to handle ticket export requests from the filter page for central admin users.
+    This view accepts POST requests to initiate the export of filtered ticket data to an Excel file.
+    It extracts filtering parameters from the request exactly as TicketFilterView does,
+    triggers an asynchronous Celery task (export_filtered_tickets_to_excel) to perform the export,
+    and returns a JSON response indicating that the export request has been received.
+    """
+    def post(self, request, *args, **kwargs):
+        logger = logging.getLogger(__name__)
+        registration_slug = self.kwargs.get('registration_slug')
+        
+        logger.info(f"TicketFilterExportView POST request - registration: {registration_slug}")
+        logger.info(f"GET parameters: {request.GET.dict()}")
+        
+        # Extract filters exactly as TicketFilterView.get_queryset() does
+        filters = {
+            'start_date': request.GET.get('start_date'),
+            'end_date': request.GET.get('end_date'),
+            'institution': request.GET.get('institution'),
+            'ticket_type': request.GET.get('ticket_type'),
+            'student_group': request.GET.get('student_group'),
+            'pickup_bus': request.GET.get('pickup_bus'),
+            'drop_bus': request.GET.get('drop_bus'),
+            'pickup_schedule': request.GET.get('pickup_schedule'),
+            'drop_schedule': request.GET.get('drop_schedule'),
+        }
+
+        logger.info(f"Filters being sent to Celery task: {filters}")
+        
+        # Trigger the new dedicated Celery task
+        export_filtered_tickets_to_excel.apply_async(
+            args=[request.user.id, registration_slug, filters]
+        )
+
+        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
 
 
 class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):

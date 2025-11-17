@@ -139,6 +139,7 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
      path('registrations/<slug:registration_slug>/tickets/export/', central_admin.TicketExportView.as_view(), name='ticket_export'),
      path('registrations/<slug:registration_slug>/tickets/filter/', central_admin.TicketFilterView.as_view(), name='ticket_filter'),
+     path('registrations/<slug:registration_slug>/tickets/filter/export/', central_admin.TicketFilterExportView.as_view(), name='ticket_filter_export'),
      
      path('registrations/<slug:registration_slug>/schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),

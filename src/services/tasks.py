@@ -43,6 +43,7 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
+from django.utils.dateparse import parse_date
 from datetime import timedelta, datetime
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -682,10 +683,17 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
     Returns:
         str: Success message after export and email.
     """
+    logger = logging.getLogger(__name__)
+    logger.info(f"Export task started for user {user_id}, registration {registration_slug}")
+    logger.info(f"Search term: {search_term}")
+    logger.info(f"Filters received: {filters}")
+    
     user = User.objects.get(id=user_id)
     registration = get_object_or_404(Registration, slug=registration_slug)
 
     queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
+    initial_count = queryset.count()
+    logger.info(f"Initial queryset count: {initial_count}")
 
     if search_term:
         queryset = queryset.filter(
@@ -698,30 +706,51 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
     if filters:
         if filters.get('institution'):
-            queryset = queryset.filter(institution_id=filters['institution'])
+            queryset = queryset.filter(institution__slug=filters['institution'])
+            logger.info(f"Applied institution filter: {filters['institution']}")
         if filters.get('pickup_points'):
             queryset = queryset.filter(pickup_point_id__in=filters['pickup_points'])
+            logger.info(f"Applied pickup_points filter: {filters['pickup_points']}")
         if filters.get('drop_points'):
             queryset = queryset.filter(drop_point_id__in=filters['drop_points'])
+            logger.info(f"Applied drop_points filter: {filters['drop_points']}")
         if filters.get('schedule'):
             queryset = queryset.filter(schedule_id=filters['schedule'])
+            logger.info(f"Applied schedule filter: {filters['schedule']}")
         if filters.get('pickup_buses'):
             queryset = queryset.filter(pickup_bus_record_id__in=filters['pickup_buses'])
+            logger.info(f"Applied pickup_buses filter: {filters['pickup_buses']}")
         if filters.get('drop_buses'):
             queryset = queryset.filter(drop_bus_record_id__in=filters['drop_buses'])
+            logger.info(f"Applied drop_buses filter: {filters['drop_buses']}")
         if filters.get('student_group'):
             queryset = queryset.filter(student_group_id=filters['student_group'])
+            logger.info(f"Applied student_group filter: {filters['student_group']}")
         if filters.get('pickup_schedule'):
             queryset = queryset.filter(pickup_schedule_id=filters['pickup_schedule'])
+            logger.info(f"Applied pickup_schedule filter: {filters['pickup_schedule']}")
         if filters.get('drop_schedule'):
             queryset = queryset.filter(drop_schedule_id=filters['drop_schedule'])
+            logger.info(f"Applied drop_schedule filter: {filters['drop_schedule']}")
+        if filters.get('start_date'):
+            queryset = queryset.filter(created_at__date__gte=parse_date(filters['start_date']))
+            logger.info(f"Applied start_date filter: {filters['start_date']}")
+        if filters.get('end_date'):
+            queryset = queryset.filter(created_at__date__lte=parse_date(filters['end_date']))
+            logger.info(f"Applied end_date filter: {filters['end_date']}")
+        if filters.get('ticket_type'):
+            queryset = queryset.filter(ticket_type=filters['ticket_type'])
+            logger.info(f"Applied ticket_type filter: {filters['ticket_type']}")
+    
+    final_count = queryset.count()
+    logger.info(f"Final queryset count after filters: {final_count}")
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Tickets"
 
     headers = [
-        'TICKET ID', 'STUDENT ID', 'STUDENT NAME', 'CLASS', 'SECTION', 'STUDENT EMAIL', 'CONTACT NO', 
+        'TICKET ID', 'TICKET TYPE', 'STUDENT ID', 'STUDENT NAME', 'CLASS', 'SECTION', 'STUDENT EMAIL', 'CONTACT NO', 
         'ALTERNATIVE NO', 'PICKUP POINT', 'DROP POINT', 'PICKUP BUS', 'DROP BUS', 
         'PICKUP SCHEDULE', 'DROP SCHEDULE', 'INSTITUTION', 'STATUS', 'CREATED AT'
     ]
@@ -739,6 +768,7 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
         ws.append([
             ticket.ticket_id,
+            ticket.get_ticket_type_display().upper(),
             ticket.student_id,
             ticket.student_name.upper(),
             std_class.strip().upper(),
@@ -770,6 +800,142 @@ def export_tickets_to_excel(user_id, registration_slug, search_term='', filters=
 
     send_export_email(user, exported_file)
     return f"Excel export completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
+
+
+@shared_task(name='export_filtered_tickets_to_excel')
+def export_filtered_tickets_to_excel(user_id, registration_slug, filters=None):
+    """
+    Exports tickets filtered by the ticket filter view to an Excel file and emails the user a download link.
+    This task uses the exact same filtering logic as TicketFilterView.
+    
+    Args:
+        user_id (int): ID of the user requesting the export.
+        registration_slug (str): Registration slug.
+        filters (dict, optional): Filters from the ticket filter view:
+            - start_date: Filter by creation date (>=)
+            - end_date: Filter by creation date (<=)
+            - institution: Institution slug
+            - ticket_type: Ticket type (one_way/two_way)
+            - student_group: Student group ID
+            - pickup_bus: Pickup bus record ID
+            - drop_bus: Drop bus record ID
+            - pickup_schedule: Pickup schedule ID
+            - drop_schedule: Drop schedule ID
+    Returns:
+        str: Success message after export and email.
+    """
+    logger = logging.getLogger(__name__)
+    logger.info(f"Filter export task started for user {user_id}, registration {registration_slug}")
+    logger.info(f"Filters received: {filters}")
+    
+    user = User.objects.get(id=user_id)
+    registration = get_object_or_404(Registration, slug=registration_slug)
+
+    # Base queryset - matches TicketFilterView.get_queryset()
+    queryset = Ticket.objects.filter(org=user.profile.org, registration=registration).order_by('-created_at')
+    initial_count = queryset.count()
+    logger.info(f"Initial queryset count: {initial_count}")
+
+    # Apply filters exactly as in TicketFilterView
+    if filters:
+        start_date = filters.get('start_date')
+        end_date = filters.get('end_date')
+        institution_slug = filters.get('institution')
+        ticket_type = filters.get('ticket_type')
+        student_group_id = filters.get('student_group')
+        pickup_bus = filters.get('pickup_bus')
+        drop_bus = filters.get('drop_bus')
+        pickup_schedule = filters.get('pickup_schedule')
+        drop_schedule = filters.get('drop_schedule')
+
+        if start_date:
+            queryset = queryset.filter(created_at__date__gte=parse_date(start_date))
+            logger.info(f"Applied start_date filter: {start_date}, count: {queryset.count()}")
+        if end_date:
+            queryset = queryset.filter(created_at__date__lte=parse_date(end_date))
+            logger.info(f"Applied end_date filter: {end_date}, count: {queryset.count()}")
+        if institution_slug:
+            queryset = queryset.filter(institution__slug=institution_slug)
+            logger.info(f"Applied institution filter: {institution_slug}, count: {queryset.count()}")
+        if ticket_type:
+            queryset = queryset.filter(ticket_type=ticket_type)
+            logger.info(f"Applied ticket_type filter: {ticket_type}, count: {queryset.count()}")
+        if student_group_id:
+            queryset = queryset.filter(student_group_id=student_group_id)
+            logger.info(f"Applied student_group filter: {student_group_id}, count: {queryset.count()}")
+        if pickup_bus:
+            queryset = queryset.filter(pickup_bus_record_id=pickup_bus)
+            logger.info(f"Applied pickup_bus filter: {pickup_bus}, count: {queryset.count()}")
+        if drop_bus:
+            queryset = queryset.filter(drop_bus_record_id=drop_bus)
+            logger.info(f"Applied drop_bus filter: {drop_bus}, count: {queryset.count()}")
+        if pickup_schedule:
+            queryset = queryset.filter(pickup_schedule_id=pickup_schedule)
+            logger.info(f"Applied pickup_schedule filter: {pickup_schedule}, count: {queryset.count()}")
+        if drop_schedule:
+            queryset = queryset.filter(drop_schedule_id=drop_schedule)
+            logger.info(f"Applied drop_schedule filter: {drop_schedule}, count: {queryset.count()}")
+
+    final_count = queryset.count()
+    logger.info(f"Final queryset count after filters: {final_count}")
+
+    # Create Excel file
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Filtered Tickets"
+
+    headers = [
+        'TICKET ID', 'TICKET TYPE', 'STUDENT ID', 'STUDENT NAME', 'CLASS', 'SECTION', 'STUDENT EMAIL', 'CONTACT NO', 
+        'ALTERNATIVE NO', 'PICKUP POINT', 'DROP POINT', 'PICKUP BUS', 'DROP BUS', 
+        'PICKUP SCHEDULE', 'DROP SCHEDULE', 'INSTITUTION', 'STATUS', 'CREATED AT'
+    ]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    for ticket in queryset:
+        # Safely split student group name into class and section
+        student_group_name = str(ticket.student_group.name)
+        if '-' in student_group_name:
+            std_class, section = student_group_name.split('-', 1)
+        else:
+            std_class, section = student_group_name, ''
+
+        ws.append([
+            ticket.ticket_id,
+            ticket.get_ticket_type_display().upper(),
+            ticket.student_id,
+            ticket.student_name.upper(),
+            std_class.strip().upper(),
+            section.strip().upper(),
+            ticket.student_email,
+            ticket.contact_no.upper(),
+            ticket.alternative_contact_no.upper(),
+            (ticket.pickup_point.name.upper() if ticket.pickup_point else '-----'),
+            (ticket.drop_point.name.upper() if ticket.drop_point else '-----'),
+            (ticket.pickup_bus_record.label.upper() if ticket.pickup_bus_record else '-----'),
+            (ticket.drop_bus_record.label.upper() if ticket.drop_bus_record else '-----'),
+            (ticket.pickup_schedule.name.upper() if ticket.pickup_schedule else '-----'),
+            (ticket.drop_schedule.name.upper() if ticket.drop_schedule else '-----'),
+            (ticket.institution.name.upper() if ticket.institution else '-----'),
+            'CONFIRMED' if ticket.status else 'PENDING',
+            ticket.created_at.strftime('%Y-%m-%d %H:%M:%S').upper()
+        ])
+
+    file_stream = BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+
+    unique_slug = slugify(f"{registration_slug}-filtered-{uuid4()}")
+    exported_file = ExportedFile.objects.create(
+        user=user,
+        file=ContentFile(file_stream.read(), f"{registration_slug}_filtered_export.xlsx"),
+        slug=unique_slug
+    )
+
+    send_export_email(user, exported_file)
+    logger.info(f"Export completed successfully. File slug: {unique_slug}")
+    return f"Filtered Excel export completed for {user.profile.first_name} {user.profile.last_name} ({user.email})"
 
 
 @shared_task(name='generate_student_pass')
