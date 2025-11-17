@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/people_create/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <a href="{% url 'central_admin:reservation_detail' slug=bus_assignment.reservation_request.slug %}" class="btn btn-outline-dark btn-sm mb-3">
+            <i class="fa-solid fa-arrow-left me-2"></i>Back to Reservation
+        </a>
+    </div>
+    <div class="gear d-flex justify-content-between">
+        <div>
+            <h2>{% if is_update %}Update{% else %}Add{% endif %} Trip Expenses</h2>
+            <p class="text-muted mb-0">
+                <strong>Bus:</strong> {{ bus_assignment.bus.registration_no }} | 
+                <strong>Driver:</strong> {{ bus_assignment.driver.profile.first_name }} {{ bus_assignment.driver.profile.last_name }}
+            </p>
+            <p class="text-muted">
+                <strong>Reservation:</strong> {{ bus_assignment.reservation_request.institution.name }} - {{ bus_assignment.reservation_request.event_name }}
+            </p>
+        </div>
+    </div>
+    <hr>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post" id="expense-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.fuel_cost.label_tag }}
+                            {{ form.fuel_cost }}
+                            {% if form.fuel_cost.help_text %}
+                            <small class="form-text text-muted">{{ form.fuel_cost.help_text }}</small>
+                            {% endif %}
+                            {% if form.fuel_cost.errors %}
+                            <div class="text-danger">{{ form.fuel_cost.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.toll_charges.label_tag }}
+                            {{ form.toll_charges }}
+                            {% if form.toll_charges.help_text %}
+                            <small class="form-text text-muted">{{ form.toll_charges.help_text }}</small>
+                            {% endif %}
+                            {% if form.toll_charges.errors %}
+                            <div class="text-danger">{{ form.toll_charges.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.maintenance_cost.label_tag }}
+                            {{ form.maintenance_cost }}
+                            {% if form.maintenance_cost.help_text %}
+                            <small class="form-text text-muted">{{ form.maintenance_cost.help_text }}</small>
+                            {% endif %}
+                            {% if form.maintenance_cost.errors %}
+                            <div class="text-danger">{{ form.maintenance_cost.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.driver_bonus.label_tag }}
+                            {{ form.driver_bonus }}
+                            {% if form.driver_bonus.help_text %}
+                            <small class="form-text text-muted">{{ form.driver_bonus.help_text }}</small>
+                            {% endif %}
+                            {% if form.driver_bonus.errors %}
+                            <div class="text-danger">{{ form.driver_bonus.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.other_expenses.label_tag }}
+                            {{ form.other_expenses }}
+                            {% if form.other_expenses.help_text %}
+                            <small class="form-text text-muted">{{ form.other_expenses.help_text }}</small>
+                            {% endif %}
+                            {% if form.other_expenses.errors %}
+                            <div class="text-danger">{{ form.other_expenses.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Total Expense</label>
+                            <div class="form-control bg-light" id="total-display">₹ 0.00</div>
+                            <small class="form-text text-muted">Auto-calculated from all fields above</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes }}
+                        {% if form.notes.help_text %}
+                        <small class="form-text text-muted">{{ form.notes.help_text }}</small>
+                        {% endif %}
+                        {% if form.notes.errors %}
+                        <div class="text-danger">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-save me-2"></i>{% if is_update %}Update{% else %}Save{% endif %} Expenses
+                        </button>
+                        <a href="{% url 'central_admin:reservation_detail' slug=bus_assignment.reservation_request.slug %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fa-solid fa-info-circle me-2"></i>Expense Guide</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <strong><i class="fa-solid fa-gas-pump text-primary me-2"></i>Fuel Cost:</strong>
+                        <p class="mb-0 text-muted small">Total fuel expenses for the trip</p>
+                    </li>
+                    <li class="mb-2">
+                        <strong><i class="fa-solid fa-road text-primary me-2"></i>Toll Charges:</strong>
+                        <p class="mb-0 text-muted small">Toll gates and tax charges</p>
+                    </li>
+                    <li class="mb-2">
+                        <strong><i class="fa-solid fa-wrench text-primary me-2"></i>Maintenance:</strong>
+                        <p class="mb-0 text-muted small">Any repairs or maintenance during trip</p>
+                    </li>
+                    <li class="mb-2">
+                        <strong><i class="fa-solid fa-gift text-primary me-2"></i>Driver Bonus:</strong>
+                        <p class="mb-0 text-muted small">Additional payment to the driver</p>
+                    </li>
+                    <li class="mb-2">
+                        <strong><i class="fa-solid fa-ellipsis text-primary me-2"></i>Other Expenses:</strong>
+                        <p class="mb-0 text-muted small">Parking, refreshments, etc.</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-calculate total expense
+function calculateTotal() {
+    const fuelCost = parseFloat(document.getElementById('id_fuel_cost').value) || 0;
+    const tollCharges = parseFloat(document.getElementById('id_toll_charges').value) || 0;
+    const maintenanceCost = parseFloat(document.getElementById('id_maintenance_cost').value) || 0;
+    const driverBonus = parseFloat(document.getElementById('id_driver_bonus').value) || 0;
+    const otherExpenses = parseFloat(document.getElementById('id_other_expenses').value) || 0;
+    
+    const total = fuelCost + tollCharges + maintenanceCost + driverBonus + otherExpenses;
+    document.getElementById('total-display').textContent = '₹ ' + total.toFixed(2);
+}
+
+// Add event listeners to all expense fields
+document.getElementById('id_fuel_cost').addEventListener('input', calculateTotal);
+document.getElementById('id_toll_charges').addEventListener('input', calculateTotal);
+document.getElementById('id_maintenance_cost').addEventListener('input', calculateTotal);
+document.getElementById('id_driver_bonus').addEventListener('input', calculateTotal);
+document.getElementById('id_other_expenses').addEventListener('input', calculateTotal);
+
+// Calculate on page load
+calculateTotal();
+</script>
+
+{% endblock content %}

@@ -15,7 +15,7 @@ Forms:
 
 from django import forms
 from config.mixins import form_mixin
-from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule
+from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule, BusReservationRequest
 
 
 class ReceiptForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -81,3 +81,48 @@ class BulkStudentGroupUpdateForm(forms.Form):
     Field: file (Excel file upload)
     """
     file = forms.FileField(label="Upload Excel file", required=True)
+
+
+class BusReservationRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for creating bus reservation requests in the institution admin interface.
+    Fields: date, booked_by, contact_number, from_location, to_location, 
+            departure_time, arrival_time, requested_capacity, purpose, notes
+    """
+    departure_datetime = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        help_text="Departure date and time",
+        label="Departure Date & Time"
+    )
+    arrival_datetime = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        help_text="Arrival date and time",
+        label="Arrival Date & Time"
+    )
+    
+    class Meta:
+        model = BusReservationRequest
+        fields = [
+            'booked_by', 'contact_number', 'from_location', 'to_location',
+            'requested_capacity', 'purpose', 'notes'
+        ]
+        widgets = {
+            'purpose': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def clean(self):
+        """
+        Validate that arrival datetime is after departure datetime.
+        """
+        cleaned_data = super().clean()
+        departure_datetime = cleaned_data.get('departure_datetime')
+        arrival_datetime = cleaned_data.get('arrival_datetime')
+        
+        if departure_datetime and arrival_datetime:
+            if arrival_datetime <= departure_datetime:
+                raise forms.ValidationError(
+                    "Arrival date and time must be after departure date and time."
+                )
+        
+        return cleaned_data

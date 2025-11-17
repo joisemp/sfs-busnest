@@ -37,6 +37,10 @@ URL Patterns (detailed):
 - registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/: List all stops for a route.
 - registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/update/: Update a stop.
 - registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/: Delete a stop.
+- registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/transfer/: Transfer a stop (form-based).
+- registrations/<slug:registration_slug>/stops/transfer-management/: Drag-and-drop stop transfer interface.
+- registrations/<slug:registration_slug>/stops/transfer-api/: API endpoint for stop transfer operations.
+- registrations/<slug:registration_slug>/stops/update-name-api/: API endpoint for updating stop names inline.
 - registrations/<slug:registration_slug>/faq/create/: Create a new FAQ for a registration.
 - registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/: Delete an FAQ.
 - registrations/<slug:registration_slug>/tickets/: List all tickets for a registration.
@@ -119,12 +123,23 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/delete/', central_admin.StopDeleteView.as_view(), name='stop_delete'),
      path('registrations/<slug:registration_slug>/routes/<slug:route_slug>/stops/<slug:stop_slug>/transfer/', central_admin.StopTransferView.as_view(), name='stop_transfer'),
      
+     # Drag-and-drop stop transfer management
+     path('registrations/<slug:registration_slug>/stops/transfer-management/', central_admin.StopTransferManagementView.as_view(), name='stop_transfer_management'),
+     path('registrations/<slug:registration_slug>/stops/transfer-api/', central_admin.TransferStopAPIView.as_view(), name='transfer_stop_api'),
+     path('registrations/<slug:registration_slug>/stops/update-name-api/', central_admin.UpdateStopNameAPIView.as_view(), name='update_stop_name_api'),
+     path('registrations/<slug:registration_slug>/stops/add-stop-api/', central_admin.AddStopAPIView.as_view(), name='add_stop_api'),
+     path('registrations/<slug:registration_slug>/stops/delete-stop-api/', central_admin.DeleteStopAPIView.as_view(), name='delete_stop_api'),
+     path('registrations/<slug:registration_slug>/routes/create-route-api/', central_admin.CreateRouteAPIView.as_view(), name='create_route_api'),
+     path('registrations/<slug:registration_slug>/routes/delete-route-api/', central_admin.DeleteRouteAPIView.as_view(), name='delete_route_api'),
+     path('registrations/<slug:registration_slug>/routes/manage-schedules-api/', central_admin.ManageRouteSchedulesAPIView.as_view(), name='manage_route_schedules_api'),
+     
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),
      
      path('registrations/<slug:registration_slug>/tickets/', central_admin.TicketListView.as_view(), name='ticket_list'),
      path('registrations/<slug:registration_slug>/tickets/export/', central_admin.TicketExportView.as_view(), name='ticket_export'),
      path('registrations/<slug:registration_slug>/tickets/filter/', central_admin.TicketFilterView.as_view(), name='ticket_filter'),
+     path('registrations/<slug:registration_slug>/tickets/filter/export/', central_admin.TicketFilterExportView.as_view(), name='ticket_filter_export'),
      
      path('registrations/<slug:registration_slug>/schedules/', central_admin.ScheduleListView.as_view(), name='schedule_list'),
      path('registrations/<slug:registration_slug>/schedules/create/', central_admin.ScheduleCreateView.as_view(), name='schedule_create'),
@@ -167,5 +182,16 @@ urlpatterns = [
 
      path('reservations/', ReservationListView.as_view(), name='reservation'),
 
-     path('reservations-detail/', ReservationDetailView.as_view(), name='reservation_detail'),
+     path('reservations/<slug:slug>/', ReservationDetailView.as_view(), name='reservation_detail'),
+     path('reservations/<slug:slug>/approve/', central_admin.ReservationApproveView.as_view(), name='reservation_approve'),
+     path('reservations/<slug:slug>/reject/', central_admin.ReservationRejectView.as_view(), name='reservation_reject'),
+     path('reservations/<slug:slug>/assign-bus/', central_admin.BusAssignmentCreateView.as_view(), name='bus_assignment_create'),
+     path('reservations/bus-assignment/<int:assignment_id>/delete/', central_admin.BusAssignmentDeleteView.as_view(), name='bus_assignment_delete'),
+     
+     # Trip Expenses
+     path('reservations/bus-assignment/<int:assignment_id>/add-expense/', central_admin.TripExpenseCreateView.as_view(), name='trip_expense_create'),
+     path('reservations/trip-expense/<int:pk>/update/', central_admin.TripExpenseUpdateView.as_view(), name='trip_expense_update'),
+     
+     # Driver Payments
+     path('driver-payments/<int:driver_id>/details/', central_admin.DriverPaymentDetailsView.as_view(), name='driver_payment_details'),
 ]

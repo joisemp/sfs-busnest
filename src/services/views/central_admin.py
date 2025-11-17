@@ -12,6 +12,7 @@ Each view is documented with its purpose, attributes, and methods. The views lev
 """
 
 import threading
+import logging
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from core.models import UserProfile
@@ -27,6 +28,7 @@ from django.contrib import messages
 from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
+from django.utils import timezone
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import FileResponse
@@ -65,6 +67,9 @@ from services.models import (
     UserActivity, 
     Notification,
     StudentPassFile,
+    BusReservationRequest,
+    BusReservationAssignment,
+    TripExpense,
     log_user_activity
 )
 
@@ -85,10 +90,12 @@ from services.forms.central_admin import (
     ScheduleGroupForm, 
     BusRequestStatusForm, 
     BusRequestCommentForm,
-    StopTransferForm
+    StopTransferForm,
+    BusAssignmentForm,
+    TripExpenseForm
 )
 
-from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass
+from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass, export_filtered_tickets_to_excel
 from services.utils.transfer_stop import move_stop_and_update_tickets
 from datetime import datetime
 
@@ -117,11 +124,18 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['org'] = self.request.user.profile.org
-        context['active_registrations'] = Registration.objects.filter(org=self.request.user.profile.org).count()
-        context['buses_available'] = Bus.objects.filter(org=self.request.user.profile.org).count()
-        context['institution_count'] = Institution.objects.filter(org=self.request.user.profile.org).count()
-        context['recent_activities'] = UserActivity.objects.filter(org=self.request.user.profile.org).order_by('-timestamp')[:10]
+        org = self.request.user.profile.org
+        context['org'] = org
+        context['active_registrations'] = Registration.objects.filter(org=org).count()
+        context['buses_available'] = Bus.objects.filter(org=org).count()
+        context['institution_count'] = Institution.objects.filter(org=org).count()
+        context['recent_activities'] = UserActivity.objects.filter(org=org).order_by('-timestamp')[:10]
+        
+        # Add ticket statistics
+        context['total_tickets'] = Ticket.objects.filter(org=org).count()
+        context['total_stops'] = Stop.objects.filter(org=org).count()
+        context['total_routes'] = Route.objects.filter(org=org).count()
+        
         return context
 
 
@@ -406,9 +420,24 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
     def get_queryset(self):
         self.noneRecords = self.request.GET.get('noneRecords')
         if self.noneRecords == 'True':
-            queryset = BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]).order_by('label')
+            queryset = BusRecord.objects.filter(
+                org=self.request.user.profile.org, 
+                bus=None, 
+                registration__slug=self.kwargs["registration_slug"]
+            ).order_by('label').annotate(
+                pickup_ticket_count=Count('pickup_tickets', distinct=True),
+                drop_ticket_count=Count('drop_tickets', distinct=True),
+                trip_count=Count('trips', distinct=True)
+            )
         else:
-            queryset = BusRecord.objects.filter(org=self.request.user.profile.org, registration__slug=self.kwargs["registration_slug"]).order_by('label')
+            queryset = BusRecord.objects.filter(
+                org=self.request.user.profile.org, 
+                registration__slug=self.kwargs["registration_slug"]
+            ).order_by('label').annotate(
+                pickup_ticket_count=Count('pickup_tickets', distinct=True),
+                drop_ticket_count=Count('drop_tickets', distinct=True),
+                trip_count=Count('trips', distinct=True)
+            )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -874,18 +903,20 @@ class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVi
                 reverse('core:confirm_password_reset', kwargs={'uidb64': uid, 'token': token})
             )
             
-            subject = "Welcome to SFS Busnest"
-            message = (
-            f"Hello,\n\n"
-            f"Welcome to our BusNest! You have been added to the system by "
-            f"{self.request.user.profile.first_name} {self.request.user.profile.last_name}. "
-            f"Please set your password using the link below.\n\n"
-            f"{reset_link}\n\n"
-            f"Best regards,\nSFSBusNest Team"
-            )
-            recipient_list = [f"{user.email}"]
-            
-            send_email_task.delay(subject, message, recipient_list)
+            # Only send email if the user is not a driver
+            if not userprofile.is_driver:
+                subject = "Welcome to SFS Busnest"
+                message = (
+                f"Hello,\n\n"
+                f"Welcome to our BusNest! You have been added to the system by "
+                f"{self.request.user.profile.first_name} {self.request.user.profile.last_name}. "
+                f"Please set your password using the link below.\n\n"
+                f"{reset_link}\n\n"
+                f"Best regards,\nSFSBusNest Team"
+                )
+                recipient_list = [f"{user.email}"]
+                
+                send_email_task.delay(subject, message, recipient_list)
             
             return redirect(self.success_url)
         except Exception as e:
@@ -969,15 +1000,38 @@ class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
         self.search_term = self.request.GET.get('search', '')
-        queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration)
+        queryset = Route.objects.filter(org=self.request.user.profile.org, registration=registration).annotate(
+            stop_count=Count('stops', distinct=True),
+            pickup_ticket_count=Count('stops__ticket_pickups', distinct=True),
+            drop_ticket_count=Count('stops__ticket_drops', distinct=True)
+        )
         if self.search_term:
             queryset = queryset.filter(name__icontains=self.search_term)
-        return queryset
+        
+        # Natural sorting - convert to list and sort with natural key
+        routes_list = list(queryset)
+        routes_list.sort(key=lambda x: self._natural_sort_key(x.name))
+        return routes_list
+    
+    def _natural_sort_key(self, text):
+        """
+        Generate a key for natural sorting that handles numbers correctly.
+        Converts 'Route 10' to come after 'Route 9' instead of after 'Route 1'.
+        """
+        import re
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', text)]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs['registration_slug'])
         context["search_term"] = self.search_term
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
+        
         return context
     
 
@@ -1144,7 +1198,10 @@ class StopListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         route = Route.objects.get(slug=self.kwargs['route_slug'])
         registration = Registration.objects.get(slug=self.kwargs['registration_slug'])
-        queryset = Stop.objects.filter(registration=registration, route=route)
+        queryset = Stop.objects.filter(registration=registration, route=route).annotate(
+            pickup_ticket_count=Count('ticket_pickups', distinct=True),
+            drop_ticket_count=Count('ticket_drops', distinct=True)
+        )
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -1513,6 +1570,13 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context['search_term'] = self.search_term
         context['selected_pickup_schedule'] = self.selected_pickup_schedule
         context['selected_drop_schedule'] = self.selected_drop_schedule
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
+        
         return context
     
 
@@ -1606,7 +1670,52 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
         context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
         context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
+        
+        # Preserve query parameters for pagination
+        query_dict = self.request.GET.copy()
+        if 'page' in query_dict:
+            query_dict.pop('page')
+        context['query_params'] = query_dict.urlencode()
+        
         return context
+
+
+class TicketFilterExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to handle ticket export requests from the filter page for central admin users.
+    This view accepts POST requests to initiate the export of filtered ticket data to an Excel file.
+    It extracts filtering parameters from the request exactly as TicketFilterView does,
+    triggers an asynchronous Celery task (export_filtered_tickets_to_excel) to perform the export,
+    and returns a JSON response indicating that the export request has been received.
+    """
+    def post(self, request, *args, **kwargs):
+        logger = logging.getLogger(__name__)
+        registration_slug = self.kwargs.get('registration_slug')
+        
+        logger.info(f"TicketFilterExportView POST request - registration: {registration_slug}")
+        logger.info(f"GET parameters: {request.GET.dict()}")
+        
+        # Extract filters exactly as TicketFilterView.get_queryset() does
+        filters = {
+            'start_date': request.GET.get('start_date'),
+            'end_date': request.GET.get('end_date'),
+            'institution': request.GET.get('institution'),
+            'ticket_type': request.GET.get('ticket_type'),
+            'student_group': request.GET.get('student_group'),
+            'pickup_bus': request.GET.get('pickup_bus'),
+            'drop_bus': request.GET.get('drop_bus'),
+            'pickup_schedule': request.GET.get('pickup_schedule'),
+            'drop_schedule': request.GET.get('drop_schedule'),
+        }
+
+        logger.info(f"Filters being sent to Celery task: {filters}")
+        
+        # Trigger the new dedicated Celery task
+        export_filtered_tickets_to_excel.apply_async(
+            args=[request.user.id, registration_slug, filters]
+        )
+
+        return JsonResponse({"message": "Export request received. You will be notified once the export is ready."})
 
 
 class FAQCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -2651,6 +2760,7 @@ class BusRecordExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
 class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     """
     ReservationListView displays the list of reservations for central admin users.
+    Also provides driver payment summary by month in a separate tab.
     
     This view inherits from:
         - LoginRequiredMixin: Ensures that the user is authenticated.
@@ -2661,9 +2771,1175 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
         template_name (str): The template to render for this view.
     """
     template_name = "central_admin/reservation_list.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get month filter from query params or default to current month
+        from datetime import datetime
+        month_param = self.request.GET.get('month')
+        if month_param:
+            try:
+                filter_date = datetime.strptime(month_param, '%Y-%m')
+                year = filter_date.year
+                month = filter_date.month
+                context['current_month'] = month_param
+            except ValueError:
+                year = datetime.now().year
+                month = datetime.now().month
+                context['current_month'] = f"{year}-{month:02d}"
+        else:
+            year = None
+            month = None
+            context['current_month'] = ""
+        
+        # Get reservations with optional filters
+        reservations_query = BusReservationRequest.objects.filter(
+            org=self.request.user.profile.org
+        ).select_related('institution', 'created_by').order_by('-created_at')
+        
+        # Apply month filter if provided
+        if month_param and year and month:
+            reservations_query = reservations_query.filter(
+                created_at__year=year,
+                created_at__month=month
+            )
+        
+        # Apply status filter if provided
+        status_param = self.request.GET.get('status')
+        if status_param and status_param in ['pending', 'approved', 'rejected']:
+            reservations_query = reservations_query.filter(status=status_param)
+        
+        context['reservations'] = reservations_query
+        context['status_filter'] = status_param
+        context['month_filter'] = month_param
+        
+        # Set year and month for driver payments calculation
+        if not year or not month:
+            year = datetime.now().year
+            month = datetime.now().month
+            context['current_month'] = f"{year}-{month:02d}"
+        
+        # Calculate driver payments for the selected month
+        from django.db.models import Sum, Count, Q
+        from core.models import User
+        
+        # Get all trip expenses for the month
+        trip_expenses = TripExpense.objects.filter(
+            bus_assignment__reservation_request__org=self.request.user.profile.org,
+            recorded_at__year=year,
+            recorded_at__month=month
+        ).select_related('bus_assignment__driver__profile')
+        
+        # Aggregate by driver
+        driver_payments = {}
+        for expense in trip_expenses:
+            driver = expense.bus_assignment.driver
+            if driver.id not in driver_payments:
+                driver_payments[driver.id] = {
+                    'driver_id': driver.id,
+                    'driver_name': f"{driver.profile.first_name} {driver.profile.last_name}",
+                    'driver_email': driver.email,
+                    'trip_count': 0,
+                    'total_bonus': 0,
+                    'total_expenses': 0,
+                }
+            driver_payments[driver.id]['trip_count'] += 1
+            driver_payments[driver.id]['total_bonus'] += float(expense.driver_bonus)
+            driver_payments[driver.id]['total_expenses'] += float(expense.total_expense)
+        
+        context['driver_payments'] = list(driver_payments.values())
+        context['total_trips'] = sum(p['trip_count'] for p in driver_payments.values())
+        context['total_bonus'] = sum(p['total_bonus'] for p in driver_payments.values())
+        context['total_expenses'] = sum(p['total_expenses'] for p in driver_payments.values())
+        
+        return context
 
 class ReservationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
     """
     ReservationDetailView displays the details of a specific reservation for central admin users.
     """
     template_name = "central_admin/reservation_detail.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reservation'] = get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=self.request.user.profile.org
+        )
+        return context
+
+
+class ReservationApproveView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to approve a bus reservation request.
+    """
+    def post(self, request, *args, **kwargs):
+        reservation = get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=request.user.profile.org,
+            status='pending'
+        )
+        
+        reservation.status = 'approved'
+        reservation.approved_by = request.user
+        reservation.approved_at = timezone.now()
+        reservation.save()
+        
+        messages.success(request, f"Reservation #{reservation.reservation_no} has been approved successfully!")
+        return redirect('central_admin:reservation_detail', slug=reservation.slug)
+
+
+class ReservationRejectView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to reject a bus reservation request with a reason.
+    """
+    def post(self, request, *args, **kwargs):
+        reservation = get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=request.user.profile.org,
+            status='pending'
+        )
+        
+        rejection_reason = request.POST.get('rejection_reason', '').strip()
+        
+        if not rejection_reason:
+            messages.error(request, "Rejection reason is required!")
+            return redirect('central_admin:reservation_detail', slug=reservation.slug)
+        
+        reservation.status = 'rejected'
+        reservation.rejected_reason = rejection_reason
+        reservation.save()
+        
+        messages.success(request, f"Reservation #{reservation.reservation_no} has been rejected.")
+        return redirect('central_admin:reservation_detail', slug=reservation.slug)
+
+
+class BusAssignmentCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View to assign a bus to an approved reservation request.
+    Only allows assignment to approved reservations.
+    """
+    model = BusReservationAssignment
+    form_class = BusAssignmentForm
+    template_name = 'central_admin/bus_assignment_create.html'
+    
+    def get_reservation(self):
+        """Get the reservation request for this assignment."""
+        return get_object_or_404(
+            BusReservationRequest,
+            slug=self.kwargs['slug'],
+            org=self.request.user.profile.org,
+            status='approved'
+        )
+    
+    def get_form_kwargs(self):
+        """Pass org and reservation_request to the form."""
+        kwargs = super().get_form_kwargs()
+        kwargs['org'] = self.request.user.profile.org
+        kwargs['reservation_request'] = self.get_reservation()
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        """Add reservation to context."""
+        context = super().get_context_data(**kwargs)
+        context['reservation'] = self.get_reservation()
+        return context
+    
+    def form_valid(self, form):
+        """Save the bus assignment with the reservation and assigned_by user."""
+        form.instance.reservation_request = self.get_reservation()
+        form.instance.assigned_by = self.request.user
+        
+        try:
+            response = super().form_valid(form)
+            messages.success(
+                self.request,
+                f"Bus {form.instance.bus.registration_no} has been assigned successfully!"
+            )
+            return response
+        except IntegrityError:
+            messages.error(self.request, "This bus is already assigned to this reservation!")
+            return redirect('central_admin:reservation_detail', slug=self.kwargs['slug'])
+    
+    def get_success_url(self):
+        """Redirect back to the reservation detail page."""
+        return reverse('central_admin:reservation_detail', kwargs={'slug': self.kwargs['slug']})
+
+
+class BusAssignmentDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to remove a bus assignment from a reservation request.
+    """
+    def post(self, request, *args, **kwargs):
+        assignment = get_object_or_404(
+            BusReservationAssignment,
+            id=self.kwargs['assignment_id'],
+            reservation_request__org=request.user.profile.org
+        )
+        
+        bus_reg_no = assignment.bus.registration_no
+        reservation_slug = assignment.reservation_request.slug
+        
+        assignment.delete()
+        
+        messages.success(request, f"Bus {bus_reg_no} has been removed from this reservation.")
+        return redirect('central_admin:reservation_detail', slug=reservation_slug)
+
+
+class TripExpenseCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    View to add trip expenses for a bus assignment.
+    Allows recording fuel cost, toll charges, maintenance, driver bonus, and other expenses.
+    """
+    model = TripExpense
+    form_class = TripExpenseForm
+    template_name = 'central_admin/trip_expense_form.html'
+    
+    def get_bus_assignment(self):
+        """Get the bus assignment for this expense."""
+        return get_object_or_404(
+            BusReservationAssignment,
+            id=self.kwargs['assignment_id'],
+            reservation_request__org=self.request.user.profile.org
+        )
+    
+    def get_context_data(self, **kwargs):
+        """Add bus assignment to context."""
+        context = super().get_context_data(**kwargs)
+        context['bus_assignment'] = self.get_bus_assignment()
+        context['is_update'] = False
+        return context
+    
+    def form_valid(self, form):
+        """Save the trip expense with the bus assignment and recorded_by user."""
+        form.instance.bus_assignment = self.get_bus_assignment()
+        form.instance.recorded_by = self.request.user
+        
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f"Trip expenses recorded successfully! Total: ₹{form.instance.total_expense}"
+        )
+        return response
+    
+    def get_success_url(self):
+        """Redirect back to the reservation detail page."""
+        return reverse('central_admin:reservation_detail', 
+                      kwargs={'slug': self.get_bus_assignment().reservation_request.slug})
+
+
+class TripExpenseUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    View to update trip expenses for a bus assignment.
+    """
+    model = TripExpense
+    form_class = TripExpenseForm
+    template_name = 'central_admin/trip_expense_form.html'
+    
+    def get_object(self):
+        """Get the trip expense to update."""
+        return get_object_or_404(
+            TripExpense,
+            id=self.kwargs['pk'],
+            bus_assignment__reservation_request__org=self.request.user.profile.org
+        )
+    
+    def get_context_data(self, **kwargs):
+        """Add bus assignment to context."""
+        context = super().get_context_data(**kwargs)
+        context['bus_assignment'] = self.object.bus_assignment
+        context['is_update'] = True
+        return context
+    
+    def form_valid(self, form):
+        """Save the updated trip expense."""
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f"Trip expenses updated successfully! Total: ₹{form.instance.total_expense}"
+        )
+        return response
+    
+    def get_success_url(self):
+        """Redirect back to the reservation detail page."""
+        return reverse('central_admin:reservation_detail', 
+                      kwargs={'slug': self.object.bus_assignment.reservation_request.slug})
+
+
+class DriverPaymentDetailsView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    View to display detailed trip information for a specific driver in a given month.
+    Returns HTML fragment for modal display.
+    """
+    template_name = 'central_admin/driver_payment_details.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        driver_id = self.kwargs.get('driver_id')
+        
+        # Get driver
+        driver = get_object_or_404(
+            User,
+            id=driver_id,
+            profile__org=self.request.user.profile.org,
+            profile__is_driver=True
+        )
+        context['driver'] = driver
+        
+        # Get month filter
+        from datetime import datetime
+        month_param = self.request.GET.get('month')
+        if month_param:
+            try:
+                filter_date = datetime.strptime(month_param, '%Y-%m')
+                year = filter_date.year
+                month = filter_date.month
+            except ValueError:
+                year = datetime.now().year
+                month = datetime.now().month
+        else:
+            year = datetime.now().year
+            month = datetime.now().month
+        
+        # Get all trip expenses for this driver in the selected month
+        trip_expenses = TripExpense.objects.filter(
+            bus_assignment__driver=driver,
+            bus_assignment__reservation_request__org=self.request.user.profile.org,
+            recorded_at__year=year,
+            recorded_at__month=month
+        ).select_related(
+            'bus_assignment__bus',
+            'bus_assignment__reservation_request__institution'
+        ).order_by('-recorded_at')
+        
+        context['trip_expenses'] = trip_expenses
+        context['month_year'] = f"{datetime(year, month, 1).strftime('%B %Y')}"
+        
+        return context
+
+
+class StopTransferManagementView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, RegistrationClosedOnlyAccessMixin, TemplateView):
+    """
+    View to display the drag-and-drop interface for transferring stops between routes.
+    This view provides a visual interface where stops can be dragged from one route to another.
+    
+    Attributes:
+        template_name (str): The template for the stop transfer management page.
+    
+    Methods:
+        get_context_data: Provides registration and all its routes with their stops to the template.
+    """
+    template_name = 'central_admin/stop_transfer_management.html'
+    
+    def get_context_data(self, **kwargs):
+        """
+        Add registration and all routes with their stops to the context.
+        
+        Returns:
+            dict: Context data with registration and routes.
+        """
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs['registration_slug']
+        registration = get_object_or_404(
+            Registration, 
+            slug=registration_slug, 
+            org=self.request.user.profile.org
+        )
+        
+        # Get all routes for this registration with their stops
+        routes = Route.objects.filter(
+            registration=registration,
+            org=self.request.user.profile.org
+        ).prefetch_related('stops', 'schedules')
+        
+        # Natural sorting - convert to list and sort with natural key
+        routes_list = list(routes)
+        routes_list.sort(key=lambda x: self._natural_sort_key(x.name))
+        
+        # Get all schedules for this registration
+        all_schedules = Schedule.objects.filter(
+            registration=registration,
+            org=self.request.user.profile.org
+        )
+        
+        context['registration'] = registration
+        context['routes'] = routes_list
+        context['all_schedules'] = all_schedules
+        
+        return context
+    
+    def _natural_sort_key(self, text):
+        """
+        Generate a key for natural sorting that handles numbers correctly.
+        Converts 'Route 10' to come after 'Route 9' instead of after 'Route 1'.
+        """
+        import re
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', text)]
+
+
+class TransferStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to handle stop transfer between routes.
+    This view processes POST requests to move a stop from one route to another,
+    updates all related tickets, and recalculates trip booking counts.
+    
+    Methods:
+        post: Handles the stop transfer operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to transfer a stop from source route to target route.
+        
+        Request JSON format:
+        {
+            "stop_slug": "stop-slug",
+            "target_route_slug": "target-route-slug"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with updated data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            stop_slug = data.get('stop_slug')
+            target_route_slug = data.get('target_route_slug')
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not stop_slug or not target_route_slug:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Missing required parameters: stop_slug and target_route_slug'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the stop
+            stop = get_object_or_404(
+                Stop,
+                slug=stop_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Get the target route
+            target_route = get_object_or_404(
+                Route,
+                slug=target_route_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if stop is already in target route
+            if stop.route.id == target_route.id:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Stop '{stop.name}' is already in route '{target_route.name}'"
+                }, status=400)
+            
+            # Store source route name for logging
+            source_route_name = stop.route.name
+            
+            # Perform the transfer using the existing utility function
+            move_stop_and_update_tickets(stop, target_route)
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Transferred stop via drag-and-drop",
+                description=f"Moved stop '{stop.name}' from route '{source_route_name}' to route '{target_route.name}' in registration '{registration.name}'"
+            )
+            
+            # Get updated stop count for both routes
+            source_route = Route.objects.get(name=source_route_name, registration=registration)
+            source_stop_count = source_route.stops.count()
+            target_stop_count = target_route.stops.count()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop '{stop.name}' successfully transferred from '{source_route_name}' to '{target_route.name}'. All tickets and trip counts have been updated.",
+                'stop': {
+                    'slug': stop.slug,
+                    'name': stop.name,
+                    'new_route_slug': target_route.slug,
+                    'new_route_name': target_route.name
+                },
+                'source_route': {
+                    'slug': source_route.slug,
+                    'stop_count': source_stop_count
+                },
+                'target_route': {
+                    'slug': target_route.slug,
+                    'stop_count': target_stop_count
+                }
+            })
+            
+        except ValueError as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"Transfer failed: {str(e)}"
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An unexpected error occurred: {str(e)}"
+            }, status=500)
+
+
+class UpdateStopNameAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to update a stop's name in real-time.
+    This view processes POST requests to rename a stop and returns the updated name.
+    
+    Methods:
+        post: Handles the stop name update operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to update a stop's name.
+        
+        Request JSON format:
+        {
+            "stop_slug": "stop-slug",
+            "new_name": "New Stop Name"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with updated stop data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            stop_slug = data.get('stop_slug')
+            new_name = data.get('new_name', '').strip()
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not stop_slug or not new_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop slug and new name are required'
+                }, status=400)
+            
+            # Validate name length
+            if len(new_name) > 200:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name cannot exceed 200 characters'
+                }, status=400)
+            
+            if len(new_name) < 2:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name must be at least 2 characters'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the stop
+            stop = get_object_or_404(
+                Stop,
+                slug=stop_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Store old name for logging
+            old_name = stop.name
+            
+            # Check if name is actually different
+            if old_name == new_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'New name is the same as the current name'
+                }, status=400)
+            
+            # Update the stop name
+            stop.name = new_name
+            stop.save()
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Updated stop name",
+                description=f"Renamed stop from '{old_name}' to '{new_name}' in route '{stop.route.name}' (Registration: '{registration.name}')"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop renamed from '{old_name}' to '{new_name}' successfully",
+                'stop': {
+                    'slug': stop.slug,
+                    'name': stop.name,
+                    'old_name': old_name,
+                    'route_slug': stop.route.slug,
+                    'route_name': stop.route.name
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+class AddStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to add a new stop to a route.
+    This view processes POST requests to create a new stop in a specified route.
+    
+    Methods:
+        post: Handles the stop creation operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to add a new stop to a route.
+        
+        Request JSON format:
+        {
+            "route_slug": "route-slug",
+            "stop_name": "New Stop Name"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with new stop data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            stop_name = data.get('stop_name', '').strip()
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not route_slug or not stop_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Route slug and stop name are required'
+                }, status=400)
+            
+            # Validate name length
+            if len(stop_name) > 200:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name cannot exceed 200 characters'
+                }, status=400)
+            
+            if len(stop_name) < 2:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop name must be at least 2 characters'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the route
+            route = get_object_or_404(
+                Route,
+                slug=route_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if stop with same name already exists in this route
+            if Stop.objects.filter(
+                route=route,
+                name__iexact=stop_name,
+                org=request.user.profile.org
+            ).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': f"A stop with the name '{stop_name}' already exists in this route"
+                }, status=400)
+            
+            # Create the new stop
+            new_stop = Stop.objects.create(
+                name=stop_name,
+                route=route,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Created new stop",
+                description=f"Added stop '{stop_name}' to route '{route.name}' (Registration: '{registration.name}')"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop '{stop_name}' added successfully to route '{route.name}'",
+                'stop': {
+                    'slug': new_stop.slug,
+                    'name': new_stop.name,
+                    'route_slug': route.slug,
+                    'route_name': route.name,
+                    'pickup_count': 0,
+                    'drop_count': 0
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+class DeleteStopAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to delete a stop from a route.
+    This view processes POST requests to delete a stop that has no associated tickets.
+    
+    Methods:
+        post: Handles the stop deletion operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to delete a stop.
+        
+        Request JSON format:
+        {
+            "stop_slug": "stop-slug"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with deleted stop data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            stop_slug = data.get('stop_slug')
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not stop_slug:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Stop slug is required'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the stop
+            stop = get_object_or_404(
+                Stop,
+                slug=stop_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if stop has any associated tickets (pickup or drop)
+            pickup_count = stop.ticket_pickups.count()
+            drop_count = stop.ticket_drops.count()
+            
+            if pickup_count > 0 or drop_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Cannot delete stop '{stop.name}' because it has {pickup_count} pickup(s) and {drop_count} drop(s) associated with it. Please reassign or delete the tickets first."
+                }, status=400)
+            
+            # Store stop info for response
+            stop_name = stop.name
+            route_slug = stop.route.slug
+            route_name = stop.route.name
+            
+            # Delete the stop
+            stop.delete()
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Deleted stop",
+                description=f"Deleted stop '{stop_name}' from route '{route_name}' (Registration: '{registration.name}')"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Stop '{stop_name}' deleted successfully from route '{route_name}'",
+                'stop': {
+                    'slug': stop_slug,
+                    'name': stop_name,
+                    'route_slug': route_slug,
+                    'route_name': route_name
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+class CreateRouteAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to create a new route in a registration.
+    This view processes POST requests to create a route with a given name.
+    
+    Methods:
+        post: Handles the route creation operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to create a new route.
+        
+        Request JSON format:
+        {
+            "route_name": "Route Name"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with created route data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            route_name = data.get('route_name', '').strip()
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not route_name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Route name is required'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Check if route with same name already exists in this registration
+            if Route.objects.filter(
+                name__iexact=route_name,
+                registration=registration,
+                org=request.user.profile.org
+            ).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': f"A route with name '{route_name}' already exists in this registration"
+                }, status=400)
+            
+            # Create the route
+            route = Route.objects.create(
+                name=route_name,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Created route",
+                description=f"Created route '{route.name}' in registration '{registration.name}'"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Route '{route.name}' created successfully",
+                'route': {
+                    'slug': route.slug,
+                    'name': route.name,
+                    'stop_count': 0
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+class DeleteRouteAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    AJAX API endpoint to delete a route from a registration.
+    This view processes POST requests to delete a route that has no associated stops.
+    
+    Methods:
+        post: Handles the route deletion operation and returns JSON response.
+    """
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to delete a route.
+        
+        Request JSON format:
+        {
+            "route_slug": "route-slug"
+        }
+        
+        Returns:
+            JsonResponse: Success or error message with deleted route data.
+        """
+        import json
+        
+        try:
+            # Parse JSON body
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            registration_slug = self.kwargs['registration_slug']
+            
+            if not route_slug:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Route slug is required'
+                }, status=400)
+            
+            # Get the registration
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=request.user.profile.org
+            )
+            
+            # Get the route
+            route = get_object_or_404(
+                Route,
+                slug=route_slug,
+                registration=registration,
+                org=request.user.profile.org
+            )
+            
+            # Check if route has any stops
+            stop_count = route.stops.count()
+            
+            if stop_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Cannot delete route '{route.name}' because it has {stop_count} stop(s) associated with it. Please delete or transfer the stops first."
+                }, status=400)
+            
+            # Check if route has any trips (bus assignments)
+            trip_count = route.trips.count()
+            
+            if trip_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Cannot delete route '{route.name}' because it has {trip_count} trip(s) assigned to it. Please remove bus assignments first."
+                }, status=400)
+            
+            # Store route info for response
+            route_name = route.name
+            route_slug_value = route.slug
+            
+            # Delete the route
+            route.delete()
+            
+            # Log the activity
+            log_user_activity(
+                user=request.user,
+                action=f"Deleted route",
+                description=f"Deleted route '{route_name}' from registration '{registration.name}'"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"Route '{route_name}' deleted successfully",
+                'route': {
+                    'slug': route_slug_value,
+                    'name': route_name
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"An error occurred: {str(e)}"
+            }, status=500)
+
+
+
+
+
+class ManageRouteSchedulesAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            registration_slug = self.kwargs['registration_slug']
+            route_slug = request.GET.get('route_slug')
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            all_schedules = Schedule.objects.filter(registration=registration, org=request.user.profile.org).values('slug', 'name', 'start_time', 'end_time')
+            route_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'route': {'slug': route.slug, 'name': route.name}, 'route_schedules': list(route_schedules), 'all_schedules': list(all_schedules)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def post(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            if schedules.count() != len(schedule_slugs):
+                return JsonResponse({'success': False, 'message': 'One or more schedule slugs are invalid'}, status=400)
+            route.schedules.add(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Added schedules to route', description=f"Added schedules ({schedule_names}) to route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules added to route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def delete(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            route.schedules.remove(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Removed schedules from route', description=f"Removed schedules ({schedule_names}) from route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules removed from route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+
+
+class ManageRouteSchedulesAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            registration_slug = self.kwargs['registration_slug']
+            route_slug = request.GET.get('route_slug')
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            all_schedules = Schedule.objects.filter(registration=registration, org=request.user.profile.org).values('slug', 'name', 'start_time', 'end_time')
+            route_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'route': {'slug': route.slug, 'name': route.name}, 'route_schedules': list(route_schedules), 'all_schedules': list(all_schedules)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def post(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            if schedules.count() != len(schedule_slugs):
+                return JsonResponse({'success': False, 'message': 'One or more schedule slugs are invalid'}, status=400)
+            route.schedules.add(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Added schedules to route', description=f"Added schedules ({schedule_names}) to route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules added to route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def delete(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            route.schedules.remove(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Removed schedules from route', description=f"Removed schedules ({schedule_names}) from route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules removed from route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)

@@ -1,0 +1,64 @@
+{% load expense_filters %}
+
+<div class="driver-info mb-3">
+    <h6>Driver: <strong>{{ driver.profile.first_name }} {{ driver.profile.last_name }}</strong></h6>
+    <p class="text-muted mb-0">Email: {{ driver.email }}</p>
+    <p class="text-muted">Period: {{ month_year }}</p>
+</div>
+
+{% if trip_expenses %}
+<div class="table-responsive">
+    <table class="table table-sm table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Date</th>
+                <th>Bus</th>
+                <th>Institution</th>
+                <th>Event</th>
+                <th>Fuel</th>
+                <th>Toll</th>
+                <th>Maintenance</th>
+                <th>Bonus</th>
+                <th>Other</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expense in trip_expenses %}
+            <tr>
+                <td><small>{{ expense.recorded_at|date:"d M Y" }}</small></td>
+                <td><strong>{{ expense.bus_assignment.bus.registration_no }}</strong></td>
+                <td><small>{{ expense.bus_assignment.reservation_request.institution.name }}</small></td>
+                <td><small>{{ expense.bus_assignment.reservation_request.event_name }}</small></td>
+                <td>₹{{ expense.fuel_cost }}</td>
+                <td>₹{{ expense.toll_charges }}</td>
+                <td>₹{{ expense.maintenance_cost }}</td>
+                <td><strong class="text-success">₹{{ expense.driver_bonus }}</strong></td>
+                <td>₹{{ expense.other_expenses }}</td>
+                <td><strong>₹{{ expense.total_expense }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot class="table-secondary">
+            <tr class="fw-bold">
+                <td colspan="4">TOTAL</td>
+                <td>₹{{ trip_expenses|sum_field:'fuel_cost' }}</td>
+                <td>₹{{ trip_expenses|sum_field:'toll_charges' }}</td>
+                <td>₹{{ trip_expenses|sum_field:'maintenance_cost' }}</td>
+                <td class="text-success">₹{{ trip_expenses|sum_field:'driver_bonus' }}</td>
+                <td>₹{{ trip_expenses|sum_field:'other_expenses' }}</td>
+                <td>₹{{ trip_expenses|sum_field:'total_expense' }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="alert alert-success mt-3">
+    <strong><i class="fa-solid fa-money-bill me-2"></i>Total Amount to Pay Driver:</strong> 
+    <span class="fs-5">₹{% widthratio trip_expenses|sum_field:'driver_bonus' 1 1 %}</span>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No trip expenses recorded for this driver in {{ month_year }}.
+</div>
+{% endif %}

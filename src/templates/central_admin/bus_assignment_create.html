@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Assign Bus{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/form_style/style.css' %}">
+{% endblock %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<section class="form-section">
+    <div class="form-container">
+        <div class="form-header">
+            <h2>Assign Bus to Reservation</h2>
+            <p class="text-muted">Reservation #{{ reservation.reservation_no }}</p>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Reservation Details</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Institution:</strong> {{ reservation.institution.name }}</p>
+                        <p><strong>Date:</strong> {{ reservation.date|date:"d M Y" }}</p>
+                        <p><strong>From:</strong> {{ reservation.from_location }}</p>
+                        <p><strong>To:</strong> {{ reservation.to_location }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Requested Capacity:</strong> {{ reservation.requested_capacity }} seats</p>
+                        <p><strong>Assigned Capacity:</strong> {{ reservation.total_assigned_capacity }} seats</p>
+                        <p><strong>Remaining:</strong> 
+                            {% if reservation.is_capacity_fulfilled %}
+                                <span class="badge bg-success">Fulfilled</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">{{ reservation.requested_capacity|add:"-"|add:reservation.total_assigned_capacity }} seats needed</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if reservation.bus_assignments.all %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Currently Assigned Buses</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Bus Registration</th>
+                                <th>Assigned Driver</th>
+                                <th>Capacity</th>
+                                <th>Assigned By</th>
+                                <th>Assigned At</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in reservation.bus_assignments.all %}
+                            <tr>
+                                <td>{{ assignment.bus.registration_no }}</td>
+                                <td>
+                                    {% if assignment.driver %}
+                                        {{ assignment.driver.profile.first_name }} {{ assignment.driver.profile.last_name }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.bus.capacity }}</td>
+                                <td>{{ assignment.assigned_by.get_full_name }}</td>
+                                <td>{{ assignment.assigned_at|date:"d M Y, g:i A" }}</td>
+                                <td>{{ assignment.notes|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="form-section-group">
+                <h4 class="section-title">Assign New Bus</h4>
+                
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.bus.label_tag }}
+                        {{ form.bus }}
+                        {% if form.bus.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.bus.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Select an available bus to assign to this reservation</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.driver.label_tag }}
+                        {{ form.driver }}
+                        {% if form.driver.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.driver.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.driver.help_text }}</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.notes.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'central_admin:reservation_detail' reservation.slug %}" class="btn-cancel btn-secondary btn">Cancel</a>
+                <button type="submit" class="btn-submit btn btn-primary">Assign Bus</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

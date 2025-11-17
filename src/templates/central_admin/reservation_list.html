@@ -15,47 +15,262 @@
     <div class="section-header">
         <div class="d-flex justify-content-between">
             <div>
-                <h2>Reservation</h2>
-            </div>
-            <div class="button">
-                <a href="#" class="btn btn-primary me-2 me-md-0 me-2"><i
-                        class="fa-solid fa-plus me-md-2 me-0"></i>Create</a>
+                <h2>Reservations & Payments</h2>
             </div>
         </div>
         <hr>
     </div>
-    <div class="row">
+    
+    <!-- Common Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label for="monthFilter" class="form-label">Filter by Month</label>
+                    <input type="month" class="form-control" id="monthFilter" value="{{ current_month }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Filter by Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-primary" id="applyFilters">
+                        <i class="fa-solid fa-filter me-2"></i>Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="resetFilters">
+                        <i class="fa-solid fa-rotate-right me-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="reservationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations" type="button" role="tab" aria-controls="reservations" aria-selected="true">
+                <i class="fa-solid fa-bus me-2"></i>Reservations <span class="badge bg-secondary">{{ reservations.count }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="driver-payments-tab" data-bs-toggle="tab" data-bs-target="#driver-payments" type="button" role="tab" aria-controls="driver-payments" aria-selected="false">
+                <i class="fa-solid fa-money-bill me-2"></i>Driver Payments <span class="badge bg-secondary">{{ driver_payments|length }}</span>
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="reservationTabsContent">
+        <!-- Reservations Tab -->
+        <div class="tab-pane fade show active" id="reservations" role="tabpanel" aria-labelledby="reservations-tab">
+            {% if status_filter or month_filter %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-filter me-2"></i>Active Filters: 
+                {% if month_filter %}
+                    <strong>Month: {{ month_filter }}</strong>
+                {% endif %}
+                {% if status_filter %}
+                    {% if month_filter %}, {% endif %}<strong>Status: {{ status_filter|title }}</strong>
+                {% endif %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            <div class="row" id="reservationsList">
+        {% for reservation in reservations %}
         <div class="col-12 col-md-6 col-lg-4 mb-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">SFS PUBLIC SCHOOL</h5>
-                    <p class="card-text text-muted">Shantharaj</p>
+                    <h5 class="card-title">{{ reservation.institution.name }}</h5>
+                    <p class="card-text text-muted">{{ reservation.booked_by }}</p>
                     <div class="d-flex align-items-center justify-content-end">
-                        <span class="badge text-bg-danger me-2">Danger</span>
-                        <div class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
+                        {% if reservation.status == 'pending' %}
+                        <span class="badge text-bg-warning me-2">Pending</span>
+                        {% elif reservation.status == 'approved' %}
+                        <span class="badge text-bg-success me-2">Approved</span>
+                        {% elif reservation.status == 'rejected' %}
+                        <span class="badge text-bg-danger me-2">Rejected</span>
+                        {% endif %}
+                        <a href="{% url 'central_admin:reservation_detail' reservation.slug %}" class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
                                 class="fa-solid fa-arrow-right ms-2"></i>
-                        </div>
+                        </a>
                     </div>
 
                 </div>
             </div>
         </div>
-
-        <div class="col-12 col-md-6 col-lg-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">SFS PUBLIC SCHOOL</h5>
-                    <p class="card-text text-muted">Shantharaj</p>
-                    <div class="d-flex align-items-center justify-content-end">
-                        <span class="badge text-bg-danger me-2">Danger</span>
-                        <div class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
-                                class="fa-solid fa-arrow-right ms-2"></i>
-                        </div>
-                    </div>
-
-                </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                No reservations found.
             </div>
         </div>
+        {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Driver Payments Tab -->
+        <div class="tab-pane fade" id="driver-payments" role="tabpanel" aria-labelledby="driver-payments-tab">
+            <div id="driver-payments-content">
+                {% if driver_payments %}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fa-solid fa-users me-2"></i>Driver Payment Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Driver Name</th>
+                                        <th>Total Trips</th>
+                                        <th>Total Bonus</th>
+                                        <th>Total Expenses</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in driver_payments %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ payment.driver_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ payment.driver_email }}</small>
+                                        </td>
+                                        <td>{{ payment.trip_count }}</td>
+                                        <td><span class="badge bg-success">₹{{ payment.total_bonus }}</span></td>
+                                        <td><span class="badge bg-info">₹{{ payment.total_expenses }}</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showDriverDetails({{ payment.driver_id }})">
+                                                <i class="fa-solid fa-eye me-1"></i>View Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-secondary fw-bold">
+                                        <td>TOTAL</td>
+                                        <td>{{ total_trips }}</td>
+                                        <td>₹{{ total_bonus }}</td>
+                                        <td>₹{{ total_expenses }}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fa-solid fa-info-circle me-2"></i>No driver payment data available for the selected month.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
 </section>
+
+<!-- Driver Details Modal -->
+<div class="modal fade" id="driverDetailsModal" tabindex="-1" aria-labelledby="driverDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="driverDetailsModalLabel">Driver Trip Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="driverDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Common filter functionality
+function applyFilters() {
+    const month = document.getElementById('monthFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const activeTab = document.querySelector('.nav-link.active').id;
+    
+    let url = '?';
+    if (month) url += 'month=' + month + '&';
+    if (status) url += 'status=' + status + '&';
+    
+    // Preserve active tab
+    if (activeTab === 'driver-payments-tab') {
+        url += '#driver-payments';
+    } else {
+        url += '#reservations';
+    }
+    
+    window.location.href = url;
+}
+
+function resetFilters() {
+    const activeTab = document.querySelector('.nav-link.active').id;
+    
+    // Reset form fields
+    document.getElementById('monthFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    
+    // Redirect with active tab preserved
+    if (activeTab === 'driver-payments-tab') {
+        window.location.href = '?#driver-payments';
+    } else {
+        window.location.href = '?#reservations';
+    }
+}
+
+function showDriverDetails(driverId) {
+    const month = document.getElementById('monthFilter').value;
+    fetch(`{% url 'central_admin:driver_payment_details' 0 %}`.replace('/0/', `/${driverId}/`) + (month ? `?month=${month}` : ''))
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('driverDetailsContent').innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error loading driver details:', error);
+            alert('Failed to load driver details');
+        });
+}
+
+// Attach event listeners
+document.getElementById('applyFilters').addEventListener('click', applyFilters);
+document.getElementById('resetFilters').addEventListener('click', resetFilters);
+
+// Auto-show correct tab based on URL hash
+window.addEventListener('DOMContentLoaded', function() {
+    const hash = window.location.hash;
+    if (hash === '#driver-payments') {
+        const driverPaymentsTab = new bootstrap.Tab(document.getElementById('driver-payments-tab'));
+        driverPaymentsTab.show();
+    }
+});
+
+// Filter reservations by status on client side
+function filterReservationsByStatus(status) {
+    const reservationCards = document.querySelectorAll('#reservationsList > div');
+    reservationCards.forEach(card => {
+        if (!status) {
+            card.style.display = '';
+        } else {
+            const badge = card.querySelector('.badge');
+            if (badge && badge.textContent.toLowerCase() === status.toLowerCase()) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        }
+    });
+}
+</script>
+
 {% endblock content %}

@@ -26,7 +26,7 @@ Forms:
 
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -35,13 +35,14 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for creating a user profile in the central admin interface.
     Validates that the email is unique among all users.
-    Fields: email, first_name, last_name, is_central_admin, is_institution_admin
+    Requires at least one role (central admin, institution admin, or driver) to be selected.
+    Fields: email, first_name, last_name, is_central_admin, is_driver, is_institution_admin
     """
     email = forms.EmailField(required=True)
 
     class Meta:
         model = UserProfile
-        fields = ['email', 'first_name', 'last_name', 'is_central_admin', 'is_institution_admin']  
+        fields = ['email', 'first_name', 'last_name', 'is_central_admin', 'is_driver', 'is_institution_admin']  
     
     def clean_email(self):
         """
@@ -52,15 +53,44 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             raise ValidationError("A user with this email already exists.")
         return email
     
+    def clean(self):
+        """
+        Validates that at least one role is selected.
+        """
+        cleaned_data = super().clean()
+        is_central_admin = cleaned_data.get('is_central_admin')
+        is_institution_admin = cleaned_data.get('is_institution_admin')
+        is_driver = cleaned_data.get('is_driver')
+        
+        if not (is_central_admin or is_institution_admin or is_driver):
+            raise ValidationError("Please select at least one role: Central Admin, Institution Admin, or Driver.")
+        
+        return cleaned_data
+    
     
 class PeopleUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for updating a user profile in the central admin interface.
-    Fields: first_name, last_name, is_central_admin, is_institution_admin
+    Requires at least one role (central admin, institution admin, or driver) to be selected.
+    Fields: first_name, last_name, is_central_admin, is_driver, is_institution_admin
     """
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name', 'is_central_admin', 'is_institution_admin']  
+        fields = ['first_name', 'last_name', 'is_central_admin', 'is_driver', 'is_institution_admin']
+    
+    def clean(self):
+        """
+        Validates that at least one role is selected.
+        """
+        cleaned_data = super().clean()
+        is_central_admin = cleaned_data.get('is_central_admin')
+        is_institution_admin = cleaned_data.get('is_institution_admin')
+        is_driver = cleaned_data.get('is_driver')
+        
+        if not (is_central_admin or is_institution_admin or is_driver):
+            raise ValidationError("Please select at least one role: Central Admin, Institution Admin, or Driver.")
+        
+        return cleaned_data  
 
 
 class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -292,3 +322,93 @@ class StopTransferForm(forms.Form):
         super().__init__(*args, **kwargs)
         if org and registration:
             self.fields['new_route'].queryset = Route.objects.filter(org=org, registration=registration)
+
+
+class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for assigning buses to approved reservation requests.
+    Filters buses to show only available buses from the organization.
+    Requires assigning a driver user (with is_driver=True) to the bus assignment.
+    Fields: bus, driver (required), notes
+    """
+    class Meta:
+        model = BusReservationAssignment
+        fields = ['bus', 'driver', 'notes']
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional notes about this bus assignment...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Filters the bus queryset to show only available buses from the organization.
+        Filters the driver queryset to show only driver users from the organization.
+        """
+        org = kwargs.pop('org', None)
+        reservation_request = kwargs.pop('reservation_request', None)
+        super().__init__(*args, **kwargs)
+        
+        if org:
+            # Filter to show only available buses from the organization
+            self.fields['bus'].queryset = Bus.objects.filter(org=org, is_available=True).order_by('registration_no')
+            
+            # If reservation_request is provided, exclude already assigned buses
+            if reservation_request:
+                already_assigned_bus_ids = reservation_request.bus_assignments.values_list('bus_id', flat=True)
+                self.fields['bus'].queryset = self.fields['bus'].queryset.exclude(id__in=already_assigned_bus_ids)
+            
+            # Filter to show only driver users from the organization
+            self.fields['driver'].queryset = User.objects.filter(
+                profile__org=org, 
+                profile__is_driver=True
+            ).order_by('profile__first_name', 'profile__last_name')
+        
+        self.fields['bus'].label = "Select Bus"
+        self.fields['driver'].label = "Assign Driver"
+        self.fields['driver'].required = True
+        self.fields['driver'].help_text = "Select a driver for this bus assignment"
+        self.fields['notes'].label = "Assignment Notes"
+        self.fields['notes'].required = False
+
+
+class TripExpenseForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for recording trip expenses for a bus assignment.
+    Captures fuel cost, toll charges, maintenance, driver bonus, and other expenses.
+    Total expense is auto-calculated.
+    Fields: fuel_cost, toll_charges, maintenance_cost, driver_bonus, other_expenses, notes
+    """
+    class Meta:
+        model = TripExpense
+        fields = ['fuel_cost', 'toll_charges', 'maintenance_cost', 'driver_bonus', 'other_expenses', 'notes']
+        widgets = {
+            'fuel_cost': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'toll_charges': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'maintenance_cost': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'driver_bonus': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'other_expenses': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Additional notes about the expenses...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Customizes field labels and help text.
+        """
+        super().__init__(*args, **kwargs)
+        
+        self.fields['fuel_cost'].label = "Fuel Cost (₹)"
+        self.fields['fuel_cost'].help_text = "Total fuel cost for the trip"
+        
+        self.fields['toll_charges'].label = "Toll Charges (₹)"
+        self.fields['toll_charges'].help_text = "Toll and tax charges"
+        
+        self.fields['maintenance_cost'].label = "Maintenance Cost (₹)"
+        self.fields['maintenance_cost'].help_text = "Any maintenance expenses during the trip"
+        
+        self.fields['driver_bonus'].label = "Driver Bonus (₹)"
+        self.fields['driver_bonus'].help_text = "Bonus amount to be paid to the driver"
+        
+        self.fields['other_expenses'].label = "Other Expenses (₹)"
+        self.fields['other_expenses'].help_text = "Any other miscellaneous expenses"
+        
+        self.fields['notes'].label = "Expense Notes"
+        self.fields['notes'].required = False
