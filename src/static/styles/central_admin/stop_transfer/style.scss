@@ -111,6 +111,64 @@
             font-size: 0.875rem;
         }
     }
+    
+    // Manage Schedules button styling
+    .manage-schedules-btn {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        
+        &:hover,
+        &:focus {
+            background-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        &:active {
+            transform: translateY(0);
+        }
+        
+        i {
+            font-size: 0.875rem;
+        }
+    }
+    
+    // Route schedules display
+    .route-schedules {
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        margin-top: 0.75rem;
+        
+        small {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .schedules-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            
+            .badge {
+                background-color: rgba(255, 255, 255, 0.2) !important;
+                color: white;
+                font-weight: 500;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                
+                &:hover {
+                    background-color: rgba(255, 255, 255, 0.3) !important;
+                }
+            }
+        }
+    }
 }
 
 // Drop zone

@@ -130,7 +130,7 @@ class Route(models.Model):
     """
     Represents a bus route for an organization and registration.
     Fields:
-        org, registration, name, created_at, updated_at, slug
+        org, registration, name, schedules, created_at, updated_at, slug
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns the route name.
@@ -138,6 +138,7 @@ class Route(models.Model):
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='routes')
     registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
+    schedules = models.ManyToManyField('services.Schedule', related_name='routes', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)

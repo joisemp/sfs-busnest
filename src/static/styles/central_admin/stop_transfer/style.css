@@ -413,6 +413,71 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 .route-header .add-stop-btn i {
   font-size: 0.875rem;
 }
+.route-header .delete-route-btn {
+  background-color: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+}
+.route-header .delete-route-btn:hover, .route-header .delete-route-btn:focus {
+  background-color: rgba(220, 38, 38, 0.2);
+  border-color: rgba(220, 38, 38, 0.5);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+.route-header .delete-route-btn:active {
+  transform: scale(0.95);
+}
+.route-header .delete-route-btn i {
+  font-size: 0.875rem;
+}
+.route-header .manage-schedules-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.route-header .manage-schedules-btn:hover, .route-header .manage-schedules-btn:focus {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.route-header .manage-schedules-btn:active {
+  transform: translateY(0);
+}
+.route-header .manage-schedules-btn i {
+  font-size: 0.875rem;
+}
+.route-header .route-schedules {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 0.75rem;
+}
+.route-header .route-schedules small {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+.route-header .route-schedules .schedules-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.route-header .route-schedules .schedules-list .badge {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: white;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.route-header .route-schedules .schedules-list .badge:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
 
 .drop-zone {
   min-height: 300px;

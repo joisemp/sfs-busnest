@@ -131,6 +131,7 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/stops/delete-stop-api/', central_admin.DeleteStopAPIView.as_view(), name='delete_stop_api'),
      path('registrations/<slug:registration_slug>/routes/create-route-api/', central_admin.CreateRouteAPIView.as_view(), name='create_route_api'),
      path('registrations/<slug:registration_slug>/routes/delete-route-api/', central_admin.DeleteRouteAPIView.as_view(), name='delete_route_api'),
+     path('registrations/<slug:registration_slug>/routes/manage-schedules-api/', central_admin.ManageRouteSchedulesAPIView.as_view(), name='manage_route_schedules_api'),
      
      path('registrations/<slug:registration_slug>/faq/create/', central_admin.FAQCreateView.as_view(), name='faq_create'),
      path('registrations/<slug:registration_slug>/faq/<slug:faq_slug>/delete/', central_admin.FAQDeleteView.as_view(), name='faq_delete'),

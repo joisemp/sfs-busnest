@@ -3115,14 +3115,21 @@ class StopTransferManagementView(LoginRequiredMixin, CentralAdminOnlyAccessMixin
         routes = Route.objects.filter(
             registration=registration,
             org=self.request.user.profile.org
-        ).prefetch_related('stops')
+        ).prefetch_related('stops', 'schedules')
         
         # Natural sorting - convert to list and sort with natural key
         routes_list = list(routes)
         routes_list.sort(key=lambda x: self._natural_sort_key(x.name))
         
+        # Get all schedules for this registration
+        all_schedules = Schedule.objects.filter(
+            registration=registration,
+            org=self.request.user.profile.org
+        )
+        
         context['registration'] = registration
         context['routes'] = routes_list
+        context['all_schedules'] = all_schedules
         
         return context
     
@@ -3769,3 +3776,131 @@ class DeleteRouteAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
 
 
 
+
+
+class ManageRouteSchedulesAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            registration_slug = self.kwargs['registration_slug']
+            route_slug = request.GET.get('route_slug')
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            all_schedules = Schedule.objects.filter(registration=registration, org=request.user.profile.org).values('slug', 'name', 'start_time', 'end_time')
+            route_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'route': {'slug': route.slug, 'name': route.name}, 'route_schedules': list(route_schedules), 'all_schedules': list(all_schedules)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def post(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            if schedules.count() != len(schedule_slugs):
+                return JsonResponse({'success': False, 'message': 'One or more schedule slugs are invalid'}, status=400)
+            route.schedules.add(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Added schedules to route', description=f"Added schedules ({schedule_names}) to route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules added to route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def delete(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            route.schedules.remove(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Removed schedules from route', description=f"Removed schedules ({schedule_names}) from route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules removed from route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+
+
+class ManageRouteSchedulesAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            registration_slug = self.kwargs['registration_slug']
+            route_slug = request.GET.get('route_slug')
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            all_schedules = Schedule.objects.filter(registration=registration, org=request.user.profile.org).values('slug', 'name', 'start_time', 'end_time')
+            route_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'route': {'slug': route.slug, 'name': route.name}, 'route_schedules': list(route_schedules), 'all_schedules': list(all_schedules)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def post(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            if schedules.count() != len(schedule_slugs):
+                return JsonResponse({'success': False, 'message': 'One or more schedule slugs are invalid'}, status=400)
+            route.schedules.add(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Added schedules to route', description=f"Added schedules ({schedule_names}) to route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules added to route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    def delete(self, request, *args, **kwargs):
+        import json
+        try:
+            data = json.loads(request.body)
+            route_slug = data.get('route_slug')
+            schedule_slugs = data.get('schedule_slugs', [])
+            registration_slug = self.kwargs['registration_slug']
+            if not route_slug:
+                return JsonResponse({'success': False, 'message': 'Route slug is required'}, status=400)
+            if not schedule_slugs or not isinstance(schedule_slugs, list):
+                return JsonResponse({'success': False, 'message': 'Schedule slugs must be provided as a list'}, status=400)
+            registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+            route = get_object_or_404(Route, slug=route_slug, registration=registration, org=request.user.profile.org)
+            schedules = Schedule.objects.filter(slug__in=schedule_slugs, registration=registration, org=request.user.profile.org)
+            route.schedules.remove(*schedules)
+            schedule_names = ', '.join([s.name for s in schedules])
+            log_user_activity(user=request.user, action=f'Removed schedules from route', description=f"Removed schedules ({schedule_names}) from route '{route.name}' in registration '{registration.name}'")
+            updated_schedules = route.schedules.all().values('slug', 'name', 'start_time', 'end_time')
+            return JsonResponse({'success': True, 'message': f"Schedules removed from route '{route.name}' successfully", 'route': {'slug': route.slug, 'name': route.name}, 'schedules': list(updated_schedules)})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)

@@ -75,6 +75,12 @@
                                 title="Add new stop to this route">
                             <i class="fa-solid fa-plus me-1"></i>Add Stop
                         </button>
+                        <button class="btn btn-sm btn-light manage-schedules-btn" 
+                                data-route-slug="{{ route.slug }}"
+                                data-route-name="{{ route.name }}"
+                                title="Manage schedules for this route">
+                            <i class="fa-solid fa-clock me-1"></i>Schedules
+                        </button>
                         {% if route.stops.count == 0 %}
                         <button class="btn btn-sm btn-outline-light delete-route-btn" 
                                 data-route-slug="{{ route.slug }}"
@@ -85,6 +91,21 @@
                         {% endif %}
                     </div>
                 </div>
+                <!-- Schedules Display -->
+                {% if route.schedules.all %}
+                <div class="route-schedules mt-2" data-route-slug="{{ route.slug }}">
+                    <small class="text-muted d-block mb-1">
+                        <i class="fa-solid fa-clock me-1"></i>Active Schedules:
+                    </small>
+                    <div class="schedules-list">
+                        {% for schedule in route.schedules.all %}
+                        <span class="badge bg-info me-1 mb-1">
+                            {{ schedule.name }} ({{ schedule.start_time|time:"g:i A" }} - {{ schedule.end_time|time:"g:i A" }})
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
             <!-- Drop Zone -->
@@ -379,6 +400,76 @@
     </div>
 </div>
 
+<!-- Manage Schedules Modal -->
+<div class="modal fade" id="manageSchedulesModal" tabindex="-1" aria-labelledby="manageSchedulesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="manageSchedulesModalLabel">
+                    <i class="fa-solid fa-clock me-2"></i>Manage Schedules
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">
+                        <strong>Route:</strong> <span id="manage-schedule-route-name" class="text-primary"></span>
+                    </label>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">
+                        <strong>Current Schedules:</strong>
+                    </label>
+                    <div id="current-schedules-container" class="border rounded p-3 mb-2 bg-light">
+                        <div id="current-schedules-list">
+                            <p class="text-muted mb-0"><i class="fa-solid fa-info-circle me-1"></i>No schedules assigned yet</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">
+                        <strong>All Schedules:</strong>
+                    </label>
+                    <div id="all-schedules-container" class="border rounded p-3 bg-white">
+                        <div id="all-schedules-list">
+                            {% for schedule in all_schedules %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 schedule-item" data-schedule-slug="{{ schedule.slug }}">
+                                <span>
+                                    <i class="fa-solid fa-clock me-2"></i>{{ schedule.name }} 
+                                    ({{ schedule.start_time|time:"g:i A" }} - {{ schedule.end_time|time:"g:i A" }})
+                                </span>
+                                <button class="btn btn-sm btn-success add-schedule-btn" 
+                                        data-schedule-slug="{{ schedule.slug }}"
+                                        data-schedule-name="{{ schedule.name }}"
+                                        data-start-time="{{ schedule.start_time }}"
+                                        data-end-time="{{ schedule.end_time }}"
+                                        title="Add this schedule to route">
+                                    <i class="fa-solid fa-plus me-1"></i>Add
+                                </button>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted mb-0"><i class="fa-solid fa-info-circle me-1"></i>No schedules available</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mb-0">
+                    <i class="fa-solid fa-lightbulb me-2"></i>
+                    <small>Click the "Add" button next to a schedule to assign it to this route. Click the × button next to an assigned schedule to remove it.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block scripts %}
@@ -391,7 +482,9 @@
     const DELETE_STOP_API_URL = "{% url 'central_admin:delete_stop_api' registration_slug=registration.slug %}";
     const CREATE_ROUTE_API_URL = "{% url 'central_admin:create_route_api' registration_slug=registration.slug %}";
     const DELETE_ROUTE_API_URL = "{% url 'central_admin:delete_route_api' registration_slug=registration.slug %}";
+    const MANAGE_SCHEDULES_API_URL = "{% url 'central_admin:manage_route_schedules_api' registration_slug=registration.slug %}";
     const REGISTRATION_SLUG = "{{ registration.slug }}";
 </script>
 <script src="{% static 'js/stop_transfer.js' %}"></script>
+<script src="{% static 'js/schedule_management.js' %}"></script>
 {% endblock scripts %}
