@@ -550,7 +550,7 @@ class TicketExportView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View)
         search_term = request.GET.get('search', '')
         # Always filter by the current user's institution for institution admin
         filters = {
-            'institution': request.user.profile.institution.id,
+            'institution': request.user.profile.institution.slug,
             'pickup_points': request.GET.getlist('pickup_point'),
             'drop_points': request.GET.getlist('drop_point'),
             'schedule': request.GET.get('schedule'),
