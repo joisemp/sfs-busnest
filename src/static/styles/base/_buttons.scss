@@ -1,4 +1,6 @@
-@import "./colors";
+@use "sass:map";
+@use "sass:color";
+@use "./colors" as *;
 // Button Design System - SASS
 
 // Color Palette
@@ -11,13 +13,13 @@ $colors: (
   border: $slate-400
 );
 
-$primary-color: map-get($colors, primary);
-$secondary-color: map-get($colors, secondary);
-$secondary-foreground-color: map-get($colors, secondary-foreground);
-$dark-color: map-get($colors, dark);
-$border-color: map-get($colors, border);
-$link-color: map-get($colors, primary);
-$border-color: map-get($colors, border);
+$primary-color: map.get($colors, primary);
+$secondary-color: map.get($colors, secondary);
+$secondary-foreground-color: map.get($colors, secondary-foreground);
+$dark-color: map.get($colors, dark);
+$border-color: map.get($colors, border);
+$link-color: map.get($colors, primary);
+$border-color: map.get($colors, border);
 
 // Button Sizes
 $btn-sizes: (
@@ -66,12 +68,12 @@ $btn-variants: (
 
 // Button Mixin
 @mixin button($variant, $size: base) {
-  $bg: map-get(map-get($btn-variants, $variant), background);
-  $color: map-get(map-get($btn-variants, $variant), color);
-  $border: map-get(map-get($btn-variants, $variant), border);
+  $bg: map.get(map.get($btn-variants, $variant), background);
+  $color: map.get(map.get($btn-variants, $variant), color);
+  $border: map.get(map.get($btn-variants, $variant), border);
 
-  padding: map-get(map-get($btn-sizes, $size), padding);
-  font-size: map-get(map-get($btn-sizes, $size), font-size);
+  padding: map.get(map.get($btn-sizes, $size), padding);
+  font-size: map.get(map.get($btn-sizes, $size), font-size);
   background-color: $bg;
   color: $color;
   border: 1px solid $border;
@@ -101,8 +103,8 @@ $btn-variants: (
   &:hover,
   &:focus,
   &:active {
-    background-color: darken($primary-color, 10%);
-    border-color: darken($primary-color, 10%);
+    background-color: color.scale($primary-color, $lightness: -17%);
+    border-color: color.scale($primary-color, $lightness: -17%);
   }
 }
 
@@ -139,6 +141,6 @@ $btn-variants: (
   &:hover,
   &:focus,
   &:active {
-    color: darken($primary-color, 10%);
+    color: color.scale($primary-color, $lightness: -17%);
   }
 }
