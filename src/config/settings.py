@@ -114,7 +114,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOW_USER_REGISTRATION = False
+ALLOW_USER_REGISTRATION = True
 
 MAINTENANCE_MODE = False
 

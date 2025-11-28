@@ -26,9 +26,9 @@
 <section id="ticket-list">
   <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
     {% if not search_term %}
-    <div>
+    <!-- <div>
       <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></button>
-    </div>
+    </div> -->
     <div>
       {% if filters %}
       <a href="{% url 'central_admin:ticket_list' registration_slug=registration.slug %}" class="btn btn-primary">Clear
@@ -56,7 +56,7 @@
         </div>
       </div>
       {% endif %}
-      <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+      <!-- <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
         <div class="offcanvas-header">
           <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -227,7 +227,7 @@
             </div>
 
             <!-- Pickup Schedule Filter -->
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
+            <!-- <div class="bg-light border rounded mb-2" style="overflow: hidden;">
               <div class="accordion accordion-flush" id="accordionFlushExample">
                 <div class="accordion-item">
                   <h2 class="accordion-header">
@@ -255,7 +255,7 @@
             </div>
 
             <!-- Drop Schedule Filter -->
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
+            <!-- <div class="bg-light border rounded mb-2" style="overflow: hidden;">
               <div class="accordion accordion-flush" id="accordionFlushExample">
                 <div class="accordion-item">
                   <h2 class="accordion-header">
@@ -280,12 +280,12 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div> -->
 
             <!-- Submit Button -->
-            <div class="d-flex justify-content-end">
+            <!-- <div class="d-flex justify-content-end">
               <button type="submit" class="btn btn-primary">Apply Filters</button>
-            </div>
+            </div> -->
           </form>
         </div>
       </div>
