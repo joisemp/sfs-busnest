@@ -1,4 +1,4 @@
-@import '../../logged_out_user_navbar';
+@use '../../logged_out_user_navbar' as *;
 
 .container {
     padding-top: 2rem;

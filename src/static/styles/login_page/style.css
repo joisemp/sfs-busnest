@@ -20,8 +20,8 @@
   opacity: 0.9;
 }
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background-color: rgb(41.1374407583, 30.5592417062, 217.4407582938);
-  border-color: rgb(41.1374407583, 30.5592417062, 217.4407582938);
+  background-color: rgb(41.1656398104, 30.5801895735, 217.5898104265);
+  border-color: rgb(41.1656398104, 30.5801895735, 217.5898104265);
 }
 
 .btn-secondary {
@@ -79,7 +79,7 @@
   font-weight: 500;
 }
 .link:hover, .link:focus, .link:active {
-  color: rgb(41.1374407583, 30.5592417062, 217.4407582938);
+  color: rgb(41.1656398104, 30.5801895735, 217.5898104265);
 }
 
 .bg-light {

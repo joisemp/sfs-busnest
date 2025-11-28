@@ -15,286 +15,50 @@
     <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
       class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
   </div>
-  <div class="gear d-flex justify-content-between">
-    <div>
-      <h2>Ticket List</h2>
+  <div class="heading-buttons">
+    <!-- Title and Actions Row -->
+    <div class="d-flex flex-column justify-content-between align-items-start gap-3">
+      <!-- Title -->
+      <div>
+        <h2 class="mb-0">Ticket List</h2>
+      </div>
+
+      <!-- Search and Filter functionality -->
+      <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2 w-100 w-lg-auto">
+        {% if not search_term %}
+          {% if filters %}
+          <a href="{% url 'central_admin:ticket_list' registration_slug=registration.slug %}"
+            class="btn btn-primary">Clear Filters</a>
+          {% else %}
+          <form method="get" class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+            <div class="d-flex gap-2 flex-grow-1">
+              <input class="form-control" type="search" placeholder="Search" name="search" aria-label="Search">
+              <button class="btn btn-secondary flex-shrink-0" type="submit">
+                <span class="d-none d-md-inline">Search</span>
+                <i class="fa-solid fa-magnifying-glass ms-md-2"></i>
+              </button>
+            </div>
+          </form>
+          <button class="btn btn-primary flex-shrink-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
+            aria-controls="offcanvasRight">
+            Filter
+            <i class="fa-solid fa-filter ms-2"></i>
+          </button>
+          {% endif %}
+        {% else %}
+        <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()">
+          <i class="fa-solid fa-xmark me-2"></i>Clear search
+        </button>
+        {% endif %}
+      </div>
     </div>
   </div>
-  <hr>
+
 </div>
-
+<hr>
 <section id="ticket-list">
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
-    {% if not search_term %}
-    <!-- <div>
-      <button onclick="exportData()" type="button" class="btn btn-success p-2 ms-1">Export data<i class="fa-solid fa-file-excel ms-2"></i></button>
-    </div> -->
-    <div>
-      {% if filters %}
-      <a href="{% url 'central_admin:ticket_list' registration_slug=registration.slug %}" class="btn btn-primary">Clear
-        Filters</a>
-      {% else %}
-      <div class="d-flex flex-wrap">
-        <div>
-          <form role="search">
-            <div class="d-flex">
-              <form method="get">
-                <div class="search">
-                  <input class="form-control me-2" type="search" placeholder="Search" name="search" aria-label="Search">
-                </div>
-                <div class="button ms-2">
-                  <button class="btn btn-secondary" type="submit">Search<i
-                      class="fa-solid fa-magnifying-glass ms-2"></i></button>
-                </div>
-              </form>
-            </div>
-          </form>
-        </div>
-        <div>
-          <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
-            aria-controls="offcanvasRight">Filter <i class="fa-solid fa-filter ms-2"></i></button>
-        </div>
-      </div>
-      {% endif %}
-      <!-- <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-        <div class="offcanvas-header">
-          <h5 class="offcanvas-title" id="offcanvasRightLabel">Filters</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-          <form method="GET">
+  <!-- Ticket table -->
 
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#insitution-collapse" aria-expanded="false" aria-controls="insitution-collapse">
-                      <label class="form-label fw-bold">Institutions</label>
-                    </button>
-                  </h2>
-                  <div id="insitution-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="institutions" class="form-check">
-                      <label class="form-check-label">
-                        <input type="radio" name="institution" value="" class="form-check-input"> All
-                      </label><br>
-                      {% for institution in institutions %}
-                      <label class="form-check-label">
-                        <input type="radio" name="institution" value="{{ institution.id }}" class="form-check-input">
-                        {{ institution.name }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#pickup-collapse" aria-expanded="false" aria-controls="pickup-collapse">
-                      <label class="form-label fw-bold">Pickup Point</label>
-                    </button>
-                  </h2>
-                  <div id="pickup-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="pickup_points" class="form-check">
-                      <label class="form-check-label">
-                        <input type="checkbox" name="pickup_point" value="" class="form-check-input"> All
-                      </label><br>
-                      {% for stop in pickup_points %}
-                      <label class="form-check-label">
-                        <input type="checkbox" name="pickup_point" value="{{ stop.id }}" class="form-check-input">
-                        {{ stop.name }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#drop-point-collapse" aria-expanded="false" aria-controls="drop-point-collapse">
-                      <label class="form-label fw-bold">Drop Point</label>
-                    </button>
-                  </h2>
-                  <div id="drop-point-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="drop_points" class="form-check">
-                      <label class="form-check-label">
-                        <input type="checkbox" name="drop_point" value="" class="form-check-input"> All
-                      </label><br>
-                      {% for stop in drop_points %}
-                      <label class="form-check-label">
-                        <input type="checkbox" name="drop_point" value="{{ stop.id }}" class="form-check-input">
-                        {{ stop.name }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#pickup-bus-collapse" aria-expanded="false" aria-controls="pickup-bus-collapse">
-                      <label class="form-label fw-bold">Pickup Buses</label>
-                    </button>
-                  </h2>
-                  <div id="pickup-bus-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="pickup_bus" class="form-check">
-                      <label class="form-check-label">
-                        <input type="checkbox" name="pickup_bus" value="" class="form-check-input"> All
-                      </label><br>
-                      {% for bus in bus_records %}
-                      <label class="form-check-label">
-                        <input type="checkbox" name="pickup_bus" value="{{ bus.id }}" class="form-check-input">
-                        {{ bus.label }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#drop-bus-collapse" aria-expanded="false" aria-controls="drop-bus-collapse">
-                      <label class="form-label fw-bold">Drop Buses</label>
-                    </button>
-                  </h2>
-                  <div id="drop-bus-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="drop_bus" class="form-check">
-                      <label class="form-check-label">
-                        <input type="checkbox" name="drop_bus" value="" class="form-check-input"> All
-                      </label><br>
-                      {% for bus in bus_records %}
-                      <label class="form-check-label">
-                        <input type="checkbox" name="drop_bus" value="{{ bus.id }}" class="form-check-input">
-                        {{ bus.label }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#std-groups-collapse" aria-expanded="false" aria-controls="std-groups-collapse">
-                      <label class="form-label fw-bold">Student Groups</label>
-                    </button>
-                  </h2>
-                  <div id="std-groups-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="student_groups" class="form-check">
-                      <label class="form-check-label">
-                        <input type="checkbox" name="student_group" value="" class="form-check-input"> All
-                      </label><br>
-                      {% for group in student_groups %}
-                      <label class="form-check-label">
-                        <input type="checkbox" name="student_group" value="{{ group.id }}" class="form-check-input">
-                        {{ group.name }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Pickup Schedule Filter -->
-            <!-- <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#pickup-schedule-collapse" aria-expanded="false" aria-controls="pickup-schedule-collapse">
-                      <label class="form-label fw-bold">Pickup Schedule</label>
-                    </button>
-                  </h2>
-                  <div id="pickup-schedule-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="pickup_schedules" class="form-check">
-                      <label class="form-check-label">
-                        <input type="radio" name="pickup_schedule" value="" class="form-check-input" {% if not selected_pickup_schedule %}checked{% endif %}> All
-                      </label><br>
-                      {% for schedule in schedules %}
-                      <label class="form-check-label">
-                        <input type="radio" name="pickup_schedule" value="{{ schedule.id }}" class="form-check-input" {% if schedule.id|stringformat:'s' == selected_pickup_schedule %}checked{% endif %}>
-                        {{ schedule.name }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Drop Schedule Filter -->
-            <!-- <div class="bg-light border rounded mb-2" style="overflow: hidden;">
-              <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#drop-schedule-collapse" aria-expanded="false" aria-controls="drop-schedule-collapse">
-                      <label class="form-label fw-bold">Drop Schedule</label>
-                    </button>
-                  </h2>
-                  <div id="drop-schedule-collapse" class="accordion-collapse collapse p-3"
-                    data-bs-parent="#accordionFlushExample">
-                    <div id="drop_schedules" class="form-check">
-                      <label class="form-check-label">
-                        <input type="radio" name="drop_schedule" value="" class="form-check-input" {% if not selected_drop_schedule %}checked{% endif %}> All
-                      </label><br>
-                      {% for schedule in schedules %}
-                      <label class="form-check-label">
-                        <input type="radio" name="drop_schedule" value="{{ schedule.id }}" class="form-check-input" {% if schedule.id|stringformat:'s' == selected_drop_schedule %}checked{% endif %}>
-                        {{ schedule.name }}
-                      </label><br>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div> -->
-
-            <!-- Submit Button -->
-            <!-- <div class="d-flex justify-content-end">
-              <button type="submit" class="btn btn-primary">Apply Filters</button>
-            </div> -->
-          </form>
-        </div>
-      </div>
-    </div>
-    {% else %}
-    <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()"><i
-        class="fa-solid fa-xmark me-2"></i>Clear search</button>
-    {% endif %}
-  </div>
   {% if tickets %}
   <div class="table-responsive">
     <table class="table">
@@ -375,28 +139,6 @@
                       <small>Registered on: {{ticket.created_at}}</small>
                     </div>
                   </div>
-                  <!--
-                  <div class="modal-footer">
-                    <div class="btn-group dropup">
-                      <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <span class="me-2">Action</span>
-                      </button>
-                      <ul class="dropdown-menu shadow-lg">
-                        <li class="p-3"><a class="dropdown-item" href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i class="fa-solid fa-user me-2"></i>Update student info</a></li>
-                        <li class="p-3"><a class="dropdown-item"
-                            href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=pickup"><i
-                              class="fa-solid fa-location-dot me-2"></i>Change pickup bus/stop</a></li>
-                        <li class="p-3"><a class="dropdown-item"
-                            href="{% url 'central_admin:bus_search' registration_code=ticket.registration.code ticket_id=ticket.ticket_id %}?changeType=drop"><i
-                              class="fa-solid fa-flag me-2"></i>Change drop bus/stop</a></li>
-                        <li class="p-3"><a class="dropdown-item text-danger"
-                            href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
-                              class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
-                      </ul>
-                    </div>
-                  </div>
-                  -->
                 </div>
               </div>
             </div>
@@ -422,7 +164,9 @@
             </a>
           </li>
           <li class="page-item">
-            <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+            <a class="page-link"
+              href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.previous_page_number }}"
+              aria-label="Previous">
               <span aria-hidden="true">&laquo;</span>
             </a>
           </li>
@@ -452,12 +196,16 @@
 
             {% if page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+              <a class="page-link"
+                href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.next_page_number }}"
+                aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
               </a>
             </li>
             <li class="page-item">
-              <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+              <a class="page-link"
+                href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.paginator.num_pages }}"
+                aria-label="Last">
                 <span aria-hidden="true">&raquo;&raquo;</span>
               </a>
             </li>
@@ -484,6 +232,8 @@
   {% endif %}
 
 </section>
+
+
 
 {% endblock content %}
 

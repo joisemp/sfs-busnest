@@ -1,4 +1,11 @@
-@import '../../sidebar_navbar_base';
+@use '../../sidebar_navbar_base' as *;
+
+#section-header{
+   .heading-buttons{
+        display: flex !important;
+        justify-content: space-between !important;
+   }
+}
 
 #ticket-list{
     #offcanvasRightLabel{

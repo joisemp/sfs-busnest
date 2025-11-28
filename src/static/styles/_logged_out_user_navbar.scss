@@ -1,4 +1,7 @@
-@import './base';
+@use './base' as *;
+
+// Forward base modules so importing files can access variables
+@forward './base';
 
 header{
     .navbar{
