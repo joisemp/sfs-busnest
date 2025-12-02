@@ -22,7 +22,18 @@ class ReceiptForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing student payment receipts in the institution admin interface.
     Fields: registration, receipt_id, student_id, student_group
+    
+    The student_group field is filtered to show only groups belonging to the specified institution.
     """
+    
+    def __init__(self, *args, **kwargs):
+        institution = kwargs.pop('institution', None)
+        super().__init__(*args, **kwargs)
+        
+        if institution:
+            # Filter student groups to only show groups from the institution
+            self.fields['student_group'].queryset = StudentGroup.objects.filter(institution=institution)
+    
     class Meta:
         model = Receipt
         fields = ['registration', 'receipt_id', 'student_id', 'student_group']
@@ -42,7 +53,18 @@ class TicketForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing student tickets in the institution admin interface.
     Fields: institution, student_group, student_name, student_email, contact_no, alternative_contact_no, status
+    
+    The student_group field is filtered to show only groups belonging to the specified institution.
     """
+    
+    def __init__(self, *args, **kwargs):
+        institution = kwargs.pop('institution', None)
+        super().__init__(*args, **kwargs)
+        
+        if institution:
+            # Filter student groups to only show groups from the institution
+            self.fields['student_group'].queryset = StudentGroup.objects.filter(institution=institution)
+    
     class Meta:
         model = Ticket
         fields = ['institution', 'student_group', 'student_name', 'student_email', 'contact_no', 'alternative_contact_no', 'status']

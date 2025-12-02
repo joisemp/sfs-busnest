@@ -173,6 +173,14 @@ class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Updat
     template_name = 'institution_admin/ticket_update.html'
     slug_url_kwarg = 'ticket_slug'
 
+    def get_form_kwargs(self):
+        """
+        Add institution to form kwargs to filter student groups.
+        """
+        kwargs = super().get_form_kwargs()
+        kwargs['institution'] = self.request.user.profile.institution
+        return kwargs
+
     def form_valid(self, form):
         """
         Updates the ticket and its related receipt's institution if needed.
@@ -283,6 +291,14 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Crea
     template_name = 'institution_admin/receipt_create.html'
     model = Receipt
     form_class = ReceiptForm
+    
+    def get_form_kwargs(self):
+        """
+        Add institution to form kwargs to filter student groups.
+        """
+        kwargs = super().get_form_kwargs()
+        kwargs['institution'] = self.request.user.profile.institution
+        return kwargs
     
     def form_valid(self, form):
         """
