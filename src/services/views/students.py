@@ -18,7 +18,7 @@ from django.views.generic import FormView, ListView, CreateView, TemplateView, V
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from services.forms.students import StopSelectForm, ValidateStudentForm, TicketForm, BusRequestForm
-from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip
+from services.models import Registration, ScheduleGroup, Ticket, Schedule, Receipt, BusRequest, BusRecord, Trip, Stop, Route
 from config.mixins.access_mixin import RegistrationOpenCheckMixin
 from services.tasks import send_email_task
 from services.utils.utils import get_filtered_bus_records
@@ -106,11 +106,76 @@ class StopSelectFormView(RegistrationOpenCheckMixin, FormView):
     
     def get_form(self, form_class=None):
         """
-        Customizes the form's queryset for stops based on registration.
+        Customizes the form's queryset for stops based on selected schedule group.
+        Only shows stops that are available in routes for the selected schedule group's schedules.
         """
         form = super().get_form(form_class)
         registration = self.get_registration()
-        form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        
+        # Get the selected schedule group from session
+        schedule_group_id = self.request.session.get('schedule_group_id')
+        
+        if schedule_group_id:
+            schedule_group = get_object_or_404(ScheduleGroup, id=schedule_group_id)
+            
+            # Get pickup and drop flags from session
+            pickup = self.request.session.get('pickup')
+            drop = self.request.session.get('drop')
+            
+            # Determine which schedules to filter by
+            schedule_ids = []
+            if schedule_group.allow_one_way:
+                if pickup:
+                    schedule_ids.append(int(pickup))
+                if drop:
+                    schedule_ids.append(int(drop))
+            else:
+                # Two-way booking - include both schedules
+                schedule_ids = [schedule_group.pick_up_schedule.id, schedule_group.drop_schedule.id]
+            
+            # Only filter if we have schedule IDs to filter by
+            if schedule_ids:
+                if schedule_group.allow_one_way:
+                    # One-way allowed: show routes with trips for ANY selected schedule
+                    route_ids = Trip.objects.filter(
+                        schedule_id__in=schedule_ids,
+                        registration=registration,
+                        route__schedules__id__in=schedule_ids  # Additional check: route must be associated with schedule
+                    ).values_list('route_id', flat=True).distinct()
+                else:
+                    # Two-way mandatory: show ONLY routes with trips for BOTH schedules
+                    pickup_schedule_id = schedule_group.pick_up_schedule.id
+                    drop_schedule_id = schedule_group.drop_schedule.id
+                    
+                    # Get routes that have trips with pickup schedule
+                    pickup_route_ids = set(Trip.objects.filter(
+                        schedule_id=pickup_schedule_id,
+                        registration=registration,
+                        route__schedules__id=pickup_schedule_id
+                    ).values_list('route_id', flat=True))
+                    
+                    # Get routes that have trips with drop schedule
+                    drop_route_ids = set(Trip.objects.filter(
+                        schedule_id=drop_schedule_id,
+                        registration=registration,
+                        route__schedules__id=drop_schedule_id
+                    ).values_list('route_id', flat=True))
+                    
+                    # Only routes that have BOTH schedules
+                    route_ids = list(pickup_route_ids.intersection(drop_route_ids))
+                
+                # Filter stops to only those in the relevant routes
+                form.fields['stop'].queryset = Stop.objects.filter(
+                    registration=registration,
+                    route_id__in=route_ids
+                ).order_by('name').distinct()
+            else:
+                # Fallback if no schedules selected
+                form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        else:
+            # Fallback: show all stops if no schedule group selected
+            form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        
         return form
     
     def get_context_data(self, **kwargs):
@@ -182,16 +247,19 @@ class SelectScheduleGroupView(RegistrationOpenCheckMixin, View):
 
         selected_group = ScheduleGroup.objects.get(id=selected_id)
         
-        # Process the selection
-        selection_details = {
-            "selected_group": selected_group,
-            "pickup": pickup,
-            "drop": drop
-        }
+        # Store schedule group ID in session
+        self.request.session['schedule_group_id'] = selected_group.id
         
-        self.request.session['schedule_group_id'] = selection_details['selected_group'].id
-        self.request.session['pickup'] = selection_details['pickup']
-        self.request.session['drop'] = selection_details['drop']
+        # Store actual schedule IDs (not checkbox values) for filtering
+        if pickup:
+            self.request.session['pickup'] = selected_group.pick_up_schedule.id
+        else:
+            self.request.session['pickup'] = None
+            
+        if drop:
+            self.request.session['drop'] = selected_group.drop_schedule.id
+        else:
+            self.request.session['drop'] = None
 
         if pickup and drop:
             return HttpResponseRedirect(reverse('students:pickup_stop_select', kwargs={'registration_code': registration_code}))
@@ -549,11 +617,36 @@ class PickupStopSelectFormView(RegistrationOpenCheckMixin, FormView):
     
     def get_form(self, form_class=None):
         """
-        Customizes the form's queryset for stops based on registration.
+        Customizes the form's queryset for pickup stops based on selected schedule group.
+        Only shows stops that are available in routes for the pickup schedule.
         """
         form = super().get_form(form_class)
         registration = self.get_registration()
-        form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        
+        # Get the selected schedule group from session
+        schedule_group_id = self.request.session.get('schedule_group_id')
+        pickup_schedule_id = self.request.session.get('pickup')
+        
+        if schedule_group_id and pickup_schedule_id:
+            schedule_group = get_object_or_404(ScheduleGroup, id=schedule_group_id)
+            
+            # Get all routes that have trips for the pickup schedule
+            # AND are associated with the pickup schedule in route.schedules
+            route_ids = Trip.objects.filter(
+                schedule_id=int(pickup_schedule_id),
+                registration=registration,
+                route__schedules__id=int(pickup_schedule_id)  # Additional check: route must be associated with schedule
+            ).values_list('route_id', flat=True).distinct()
+            
+            # Filter stops to only those in the relevant routes
+            form.fields['stop'].queryset = Stop.objects.filter(
+                registration=registration,
+                route_id__in=route_ids
+            ).order_by('name').distinct()
+        else:
+            # Fallback: show all stops if no schedule group selected
+            form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        
         return form
     
     def get_context_data(self, **kwargs):
@@ -647,11 +740,36 @@ class DropStopSelectFormView(RegistrationOpenCheckMixin, FormView):
     
     def get_form(self, form_class=None):
         """
-        Customizes the form's queryset for stops based on registration.
+        Customizes the form's queryset for drop stops based on selected schedule group.
+        Only shows stops that are available in routes for the drop schedule.
         """
         form = super().get_form(form_class)
         registration = self.get_registration()
-        form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        
+        # Get the selected schedule group from session
+        schedule_group_id = self.request.session.get('schedule_group_id')
+        drop_schedule_id = self.request.session.get('drop')
+        
+        if schedule_group_id and drop_schedule_id:
+            schedule_group = get_object_or_404(ScheduleGroup, id=schedule_group_id)
+            
+            # Get all routes that have trips for the drop schedule
+            # AND are associated with the drop schedule in route.schedules
+            route_ids = Trip.objects.filter(
+                schedule_id=int(drop_schedule_id),
+                registration=registration,
+                route__schedules__id=int(drop_schedule_id)  # Additional check: route must be associated with schedule
+            ).values_list('route_id', flat=True).distinct()
+            
+            # Filter stops to only those in the relevant routes
+            form.fields['stop'].queryset = Stop.objects.filter(
+                registration=registration,
+                route_id__in=route_ids
+            ).order_by('name').distinct()
+        else:
+            # Fallback: show all stops if no schedule group selected
+            form.fields['stop'].queryset = registration.stops.all().order_by('name')
+        
         return form
     
     def get_context_data(self, **kwargs):
