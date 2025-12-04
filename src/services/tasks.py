@@ -847,6 +847,8 @@ def export_filtered_tickets_to_excel(user_id, registration_slug, filters=None):
         drop_bus = filters.get('drop_bus')
         pickup_schedule = filters.get('pickup_schedule')
         drop_schedule = filters.get('drop_schedule')
+        pickup_stop = filters.get('pickup_stop')
+        drop_stop = filters.get('drop_stop')
 
         if start_date:
             queryset = queryset.filter(created_at__date__gte=parse_date(start_date))
@@ -875,6 +877,12 @@ def export_filtered_tickets_to_excel(user_id, registration_slug, filters=None):
         if drop_schedule:
             queryset = queryset.filter(drop_schedule_id=drop_schedule)
             logger.info(f"Applied drop_schedule filter: {drop_schedule}, count: {queryset.count()}")
+        if pickup_stop:
+            queryset = queryset.filter(pickup_point_id=pickup_stop)
+            logger.info(f"Applied pickup_stop filter: {pickup_stop}, count: {queryset.count()}")
+        if drop_stop:
+            queryset = queryset.filter(drop_point_id=drop_stop)
+            logger.info(f"Applied drop_stop filter: {drop_stop}, count: {queryset.count()}")
 
     final_count = queryset.count()
     logger.info(f"Final queryset count after filters: {final_count}")
@@ -978,6 +986,10 @@ def generate_student_pass(user_id, registration_slug, filters=None):
             queryset = queryset.filter(ticket_type=filters['ticket_type'])
         if filters.get('student_group'):
             queryset = queryset.filter(student_group_id=filters['student_group'])
+        if filters.get('pickup_stop'):
+            queryset = queryset.filter(pickup_point_id=filters['pickup_stop'])
+        if filters.get('drop_stop'):
+            queryset = queryset.filter(drop_point_id=filters['drop_stop'])
 
     # Generate the PDF using the filtered queryset
     students = queryset.order_by('institution__name', 'student_group__name').values(
