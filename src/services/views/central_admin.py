@@ -1632,6 +1632,8 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         drop_bus = self.request.GET.get('drop_bus')
         pickup_schedule = self.request.GET.get('pickup_schedule')
         drop_schedule = self.request.GET.get('drop_schedule')
+        pickup_stop = self.request.GET.get('pickup_stop')
+        drop_stop = self.request.GET.get('drop_stop')
 
         if start_date:
             queryset = queryset.filter(created_at__date__gte=parse_date(start_date))
@@ -1651,6 +1653,10 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
             queryset = queryset.filter(pickup_schedule_id=pickup_schedule)
         if drop_schedule:
             queryset = queryset.filter(drop_schedule_id=drop_schedule)
+        if pickup_stop:
+            queryset = queryset.filter(pickup_point_id=pickup_stop)
+        if drop_stop:
+            queryset = queryset.filter(drop_point_id=drop_stop)
 
         return queryset
 
@@ -1670,6 +1676,9 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
         context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
         context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
+        context['stops'] = Stop.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('name')
+        context['selected_pickup_stop'] = self.request.GET.get('pickup_stop', '')
+        context['selected_drop_stop'] = self.request.GET.get('drop_stop', '')
         
         # Preserve query parameters for pagination
         query_dict = self.request.GET.copy()
@@ -1706,6 +1715,8 @@ class TicketFilterExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vi
             'drop_bus': request.GET.get('drop_bus'),
             'pickup_schedule': request.GET.get('pickup_schedule'),
             'drop_schedule': request.GET.get('drop_schedule'),
+            'pickup_stop': request.GET.get('pickup_stop'),
+            'drop_stop': request.GET.get('drop_stop'),
         }
 
         logger.info(f"Filters being sent to Celery task: {filters}")
@@ -2515,6 +2526,8 @@ class GenerateStudentPassView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, V
             'institution': request.GET.get('institution'),
             'ticket_type': request.GET.get('ticket_type'),
             'student_group': request.GET.get('student_group'),
+            'pickup_stop': request.GET.get('pickup_stop'),
+            'drop_stop': request.GET.get('drop_stop'),
         }
 
         # Trigger the Celery task
