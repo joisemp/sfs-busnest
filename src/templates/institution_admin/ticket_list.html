@@ -193,6 +193,7 @@
           <th scope="col" class="font">Pickup time</th>
           <th scope="col" class="font">Drop time</th>
           <th scope="col" class="font">Ticket ID</th>
+          <th scope="col" class="font">Payment Status</th>
           <th scope="col" class="font">Action</th>
         </tr>
       </thead>
@@ -230,6 +231,17 @@
           </td>
           <td>{{ticket.ticket_id}}</td>
           <td>
+            {% if ticket.has_payment_due %}
+              <span class="badge bg-danger">
+                <i class="fa-solid fa-exclamation-triangle me-1"></i>Payment Due
+              </span>
+            {% else %}
+              <span class="badge bg-success">
+                <i class="fa-solid fa-check me-1"></i>Up to Date
+              </span>
+            {% endif %}
+          </td>
+          <td>
 
             <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal"
               data-bs-target="#manageModal{{ticket.id}}">
@@ -263,6 +275,9 @@
                         <span class="me-2">Action</span>
                       </button>
                       <ul class="dropdown-menu shadow-lg">
+                        <li class="p-3"><a class="dropdown-item"
+                            href="{% url 'institution_admin:payment_create' registration_slug=ticket.registration.slug %}?ticket={{ ticket.slug }}"><i
+                              class="fa-solid fa-dollar-sign me-2"></i>Record Payment</a></li>
                         <li class="p-3"><a class="dropdown-item"
                             href="{% url 'institution_admin:ticket_update' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
                               class="fa-solid fa-user me-2"></i>Update student info</a></li>

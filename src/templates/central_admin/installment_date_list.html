@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-sm btn-dark me-3">
+        <i class="fa-solid fa-arrow-left me-2"></i>Go Back
+    </a>
+    <h3 class="mb-0">Installment Dates - {{ registration.name }}</h3>
+</div>
+
+<div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'central_admin:installment_date_create' registration_slug=registration.slug %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus me-2"></i>Add Installment Date
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <td class="text-muted">Title</td>
+                <td class="text-muted">Due Date</td>
+                <td class="text-muted">Description</td>
+                <td class="text-muted">Action</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for installment in installment_dates %}
+            <tr>
+                <td>{{ installment.title }}</td>
+                <td>{{ installment.due_date|date:"d M, Y" }}</td>
+                <td>{{ installment.description|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'central_admin:installment_date_update' registration_slug=registration.slug slug=installment.slug %}"
+                        class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'central_admin:installment_date_delete' registration_slug=registration.slug slug=installment.slug %}"
+                        class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center text-muted">No installment dates found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination-container d-md-flex justify-content-md-between align-items-center mt-3">
+    <div class="text-muted mb-3 mb-md-0">
+        {% if is_paginated %}
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} installment dates
+        {% endif %}
+    </div>
+    <div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-md-end">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;&laquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock content %}

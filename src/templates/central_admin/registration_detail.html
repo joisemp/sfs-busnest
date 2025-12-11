@@ -43,13 +43,13 @@
 
                 <div class="card stop-frequency">
                     <div class="card-body">
-                        <h5 class="card-title">Generate Student Pass</h5>
+                        <h5 class="card-title">Manage Installment Dates</h5>
                         <div>
                             <p class="text-muted">
-                                A student pass for transportation or campus access, ensuring secure and efficient management.
+                                Set up payment installment schedules with due dates to track student payments effectively.
                             </p>
-                            <a class="btn btn-secondary" href="{% url 'central_admin:ticket_filter' registration_slug=registration.slug %}">
-                                Let's go<i class="fa-solid fa-arrow-right ms-2"></i>
+                            <a class="btn btn-secondary" href="{% url 'central_admin:installment_date_list' registration_slug=registration.slug %}">
+                                Manage Installments<i class="fa-solid fa-arrow-right ms-2"></i>
                             </a>
                         </div>
                     </div>
