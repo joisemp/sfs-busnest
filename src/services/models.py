@@ -41,6 +41,7 @@ Signals:
 import os
 from uuid import uuid4
 from django.db import models
+from django.db.models import functions
 from django.forms import ValidationError
 from django.utils.text import slugify
 from django.core.validators import RegexValidator
@@ -402,8 +403,7 @@ class BusRecord(models.Model):
         related_trips = self.trips.all()
         if related_trips.exists():
             self.min_required_capacity = max(trip.booking_count for trip in related_trips)
-        
-        super().save(*args, **kwargs)  # Save again to update min_required_capacity
+            super().save(update_fields=['min_required_capacity'])  # Update only min_required_capacity
 
     def __str__(self):
         """
@@ -528,6 +528,141 @@ class Ticket(models.Model):
         String representation of the Ticket.
         """
         return f"Ticket for {self.student_name}"
+    
+    def get_total_paid_amount(self):
+        """
+        Returns the total amount paid for this ticket across all payments.
+        """
+        return self.payments.aggregate(models.Sum('amount'))['amount__sum'] or 0
+    
+    def get_pending_installments(self):
+        """
+        Returns installment dates for this ticket's registration that have no payment recorded.
+        """
+        paid_installment_ids = self.payments.values_list('installment_date_id', flat=True)
+        return self.registration.installment_dates.exclude(
+            id__in=paid_installment_ids
+        ).filter(due_date__lte=models.functions.Now())
+    
+    def has_payment_due(self):
+        """
+        Returns True if there are pending installments with due dates that have passed.
+        """
+        return self.get_pending_installments().exists()
+
+class InstallmentDate(models.Model):
+    """
+    Represents an installment due date for a registration cycle.
+    Fields:
+        org, registration, title, due_date, description, slug, created_at, updated_at
+    Methods:
+        save: Generates a unique slug if not present.
+        __str__: Returns installment description.
+    """
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='installment_dates')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='installment_dates')
+    title = models.CharField(max_length=100, default='Installment', help_text="Installment title (e.g., 'First Installment', 'Mid-term Payment')")
+    due_date = models.DateField(help_text="Date by which payment should be made")
+    description = models.CharField(max_length=255, blank=True, help_text="Optional description of installment")
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['due_date']
+    
+    def save(self, *args, **kwargs):
+        """
+        Save the InstallmentDate instance, generating a unique slug if not present.
+        """
+        if not self.slug:
+            base_slug = slugify(f"{self.registration.slug}-{self.title}-{self.due_date}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        """
+        String representation of the InstallmentDate.
+        """
+        return f"{self.title} - {self.registration.name} (Due: {self.due_date})"
+
+class Payment(models.Model):
+    """
+    Represents a payment record for a ticket.
+    Fields:
+        org, registration, ticket, institution, installment_date, payment_id, amount, payment_date, payment_mode, transaction_reference, notes, recorded_by, slug, created_at, updated_at
+    Methods:
+        save: Generates unique payment_id and slug if not present.
+        __str__: Returns payment details.
+    """
+    PAYMENT_MODES = (
+        ('cash', 'Cash'),
+        ('cheque', 'Cheque'),
+        ('online', 'Online Transfer'),
+        ('upi', 'UPI'),
+        ('card', 'Card'),
+        ('other', 'Other'),
+    )
+    
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='payments')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='payments')
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='payments')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='payments')
+    installment_date = models.ForeignKey(
+        InstallmentDate, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='payments',
+        help_text="Associated installment (if applicable)"
+    )
+    payment_id = models.CharField(max_length=100, unique=True, db_index=True, help_text="Unique payment identifier")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Payment amount")
+    payment_date = models.DateField(help_text="Date when payment was received")
+    payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODES, default='cash')
+    transaction_reference = models.CharField(
+        max_length=255, 
+        blank=True, 
+        help_text="Transaction ID, cheque number, or other reference"
+    )
+    notes = models.TextField(blank=True, help_text="Additional notes about the payment")
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='payments_recorded'
+    )
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-payment_date', '-created_at']
+        unique_together = [['ticket', 'installment_date']]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['ticket', 'installment_date'],
+                name='unique_ticket_installment_payment',
+                violation_error_message='A payment already exists for this ticket and installment.'
+            )
+        ]
+    
+    def save(self, *args, **kwargs):
+        """
+        Save the Payment instance, generating unique payment_id and slug if not present.
+        """
+        if not self.payment_id:
+            self.payment_id = generate_unique_code(self, no_of_char=16, unique_field='payment_id')
+        if not self.slug:
+            base_slug = slugify(f"{self.ticket.ticket_id}-payment-{self.payment_id}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        """
+        String representation of the Payment.
+        """
+        return f"Payment {self.payment_id} - {self.ticket.student_name} - ₹{self.amount}"
 
 class StudentGroup(models.Model):
     """

@@ -148,6 +148,11 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/schedule-groups/', central_admin.ScheduleGroupListView.as_view(), name='schedule_group_list'),
      path('registrations/<slug:registration_slug>/schedule-groups/create/', central_admin.ScheduleGroupCreateView.as_view(), name='schedule_group_create'),
      
+     path('registrations/<slug:registration_slug>/installments/', central_admin.InstallmentDateListView.as_view(), name='installment_date_list'),
+     path('registrations/<slug:registration_slug>/installments/create/', central_admin.InstallmentDateCreateView.as_view(), name='installment_date_create'),
+     path('registrations/<slug:registration_slug>/installments/<slug:slug>/update/', central_admin.InstallmentDateUpdateView.as_view(), name='installment_date_update'),
+     path('registrations/<slug:registration_slug>/installments/<slug:slug>/delete/', central_admin.InstallmentDateDeleteView.as_view(), name='installment_date_delete'),
+     
      path('registrations/<slug:registration_slug>/bus-records/', central_admin.BusRecordListView.as_view(), name='bus_record_list'),
      path('registrations/<slug:registration_slug>/bus-records/create/', central_admin.BusRecordCreateView.as_view(), name='bus_record_create'),
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/update/', central_admin.BusRecordUpdateView.as_view(), name='bus_record_update'),
@@ -194,4 +199,7 @@ urlpatterns = [
      
      # Driver Payments
      path('driver-payments/<int:driver_id>/details/', central_admin.DriverPaymentDetailsView.as_view(), name='driver_payment_details'),
+     
+     # Payments
+     path('registrations/<slug:registration_slug>/payments/', central_admin.PaymentListView.as_view(), name='payment_list'),
 ]

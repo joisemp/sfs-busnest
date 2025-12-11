@@ -82,5 +82,10 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/bulk-update-student-group/', institution_admin.BulkStudentGroupUpdateView.as_view(), name='bulk_update_student_group'),
      path('registrations/<slug:registration_slug>/bulk-update-student-group/confirm/', institution_admin.BulkStudentGroupUpdateConfirmView.as_view(), name='bulk_update_student_group_confirm'),
      
+     path('registrations/<slug:registration_slug>/payments/', institution_admin.PaymentListView.as_view(), name='payment_list'),
+     path('registrations/<slug:registration_slug>/payments/add/', institution_admin.PaymentCreateView.as_view(), name='payment_create'),
+     path('registrations/<slug:registration_slug>/payments/<slug:slug>/', institution_admin.PaymentDetailView.as_view(), name='payment_detail'),
+     path('registrations/<slug:registration_slug>/payments/<slug:slug>/delete/', institution_admin.PaymentDeleteView.as_view(), name='payment_delete'),
+     
      path('export/<slug:registration_slug>/', institution_admin.TicketExportView.as_view(), name='ticket_export'),
 ]

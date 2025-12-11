@@ -1265,3 +1265,246 @@ class ReservationDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
         messages.success(request, "Reservation deleted successfully!")
         return super().delete(request, *args, **kwargs)
 
+
+class PaymentListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list all payments for the current user's institution.
+    
+    Attributes:
+        model (Payment): The Payment model to query.
+        template_name (str): Template for displaying payments list.
+        context_object_name (str): Context variable name for payments.
+        paginate_by (int): Number of payments per page.
+    """
+    model = None  # Will be imported dynamically
+    template_name = 'institution_admin/payment_list.html'
+    context_object_name = 'payments'
+    paginate_by = 50
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Import Payment model here to avoid circular import
+        from services.models import Payment
+        self.model = Payment
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Returns payments filtered by institution and registration.
+        """
+        queryset = self.model.objects.filter(
+            institution=self.request.user.profile.institution
+        ).select_related('ticket', 'registration', 'installment_date', 'recorded_by')
+        
+        # Filter by registration if provided
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            queryset = queryset.filter(registration__slug=registration_slug)
+        
+        # Filter by ticket if provided in query params
+        ticket_slug = self.request.GET.get('ticket')
+        if ticket_slug:
+            queryset = queryset.filter(ticket__slug=ticket_slug)
+        
+        return queryset.order_by('-payment_date', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        """
+        Adds registration info to context.
+        """
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            context['registration'] = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=self.request.user.profile.org
+            )
+        return context
+
+
+class PaymentCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    """
+    View to record a new payment for a ticket.
+    
+    Attributes:
+        model (Payment): The Payment model.
+        template_name (str): Template for payment creation form.
+        form_class: PaymentForm from institution_admin forms.
+    """
+    model = None  # Will be imported dynamically
+    template_name = 'institution_admin/payment_form.html'
+    form_class = None  # Will be set in dispatch
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Import Payment model and form here to avoid circular import
+        from services.models import Payment
+        from services.forms.institution_admin import PaymentForm
+        self.model = Payment
+        self.form_class = PaymentForm
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        """
+        Passes institution, registration, and ticket to the form.
+        """
+        kwargs = super().get_form_kwargs()
+        kwargs['institution'] = self.request.user.profile.institution
+        
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            registration = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=self.request.user.profile.org
+            )
+            kwargs['registration'] = registration
+        
+        # Get ticket from URL and pass to form for validation
+        ticket_slug = self.request.GET.get('ticket') or self.request.POST.get('ticket_slug')
+        if ticket_slug:
+            try:
+                from services.models import Ticket
+                ticket = Ticket.objects.get(
+                    slug=ticket_slug,
+                    institution=self.request.user.profile.institution
+                )
+                kwargs['ticket'] = ticket
+            except Ticket.DoesNotExist:
+                pass
+
+        
+        return kwargs
+    
+    def get_initial(self):
+        """
+        Ticket is no longer in the form - it will be set from URL in form_valid.
+        """
+        initial = super().get_initial()
+        return initial
+    
+    def form_valid(self, form):
+        """
+        Sets the ticket, org, registration, institution, and recorded_by before saving.
+        Ticket is obtained from URL parameter.
+        """
+        payment = form.save(commit=False)
+        
+        # Get ticket from URL parameter
+        ticket_slug = self.request.GET.get('ticket') or self.request.POST.get('ticket_slug')
+        if not ticket_slug:
+            messages.error(self.request, "Ticket parameter is required.")
+            return self.form_invalid(form)
+            
+        try:
+            payment.ticket = Ticket.objects.get(
+                slug=ticket_slug,
+                institution=self.request.user.profile.institution
+            )
+        except Ticket.DoesNotExist:
+            messages.error(self.request, "Invalid ticket specified.")
+            return self.form_invalid(form)
+        
+        payment.org = self.request.user.profile.org
+        payment.institution = self.request.user.profile.institution
+        payment.registration = payment.ticket.registration
+        payment.recorded_by = self.request.user
+        payment.save()
+        
+        messages.success(self.request, f"Payment {payment.payment_id} recorded successfully!")
+        return redirect('institution_admin:payment_list', registration_slug=payment.registration.slug)
+    
+    def get_context_data(self, **kwargs):
+        """
+        Adds registration info to context.
+        """
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            context['registration'] = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=self.request.user.profile.org
+            )
+        
+        # Pass ticket to context if provided in URL
+        ticket_slug = self.request.GET.get('ticket')
+        if ticket_slug:
+            try:
+                ticket = Ticket.objects.get(
+                    slug=ticket_slug,
+                    institution=self.request.user.profile.institution
+                )
+                context['ticket'] = ticket
+            except Ticket.DoesNotExist:
+                pass
+        
+        return context
+
+
+class PaymentDetailView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DetailView):
+    """
+    View to display details of a single payment.
+    
+    Attributes:
+        model (Payment): The Payment model.
+        template_name (str): Template for payment details.
+        context_object_name (str): Context variable name for payment.
+        slug_field (str): The field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    """
+    model = None  # Will be imported dynamically
+    template_name = 'institution_admin/payment_detail.html'
+    context_object_name = 'payment'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Import Payment model here to avoid circular import
+        from services.models import Payment
+        self.model = Payment
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Ensures institution admins can only view their institution's payments.
+        """
+        return self.model.objects.filter(
+            institution=self.request.user.profile.institution
+        ).select_related('ticket', 'registration', 'installment_date', 'recorded_by')
+
+
+class PaymentDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    View to delete a payment record.
+    
+    Attributes:
+        model (Payment): The Payment model.
+        slug_field (str): The field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    """
+    model = None  # Will be imported dynamically
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Import Payment model here to avoid circular import
+        from services.models import Payment
+        self.model = Payment
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Ensures institution admins can only delete their institution's payments.
+        """
+        return self.model.objects.filter(
+            institution=self.request.user.profile.institution
+        )
+    
+    def get_success_url(self):
+        """
+        Redirects to payment list after successful deletion.
+        """
+        registration_slug = self.object.registration.slug
+        messages.success(self.request, f"Payment {self.object.payment_id} deleted successfully!")
+        return reverse('institution_admin:payment_list', kwargs={'registration_slug': registration_slug})
+

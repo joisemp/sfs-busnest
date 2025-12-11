@@ -26,7 +26,7 @@ Forms:
 
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense
+from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense, InstallmentDate
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -412,3 +412,17 @@ class TripExpenseForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         
         self.fields['notes'].label = "Expense Notes"
         self.fields['notes'].required = False
+
+
+class InstallmentDateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for managing installment dates for a registration in the central admin interface.
+    Fields: title, due_date, description
+    """
+    
+    class Meta:
+        model = InstallmentDate
+        fields = ['title', 'due_date', 'description']
+        widgets = {
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
+        }

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="container">
+    <h3>Record Payment - {{ registration.name }}{% if ticket %} - {{ ticket.student_name }} ({{ ticket.ticket_id }}){% endif %}</h3>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Hidden field to pass ticket slug -->
+                {% if ticket %}
+                    <input type="hidden" name="ticket_slug" value="{{ ticket.slug }}">
+                {% endif %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                        <strong>Please correct the following errors:</strong>
+                        <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            <li>
+                                {% if field == '__all__' %}
+                                    {{ errors|join:", " }}
+                                {% else %}
+                                    <strong>{{ field|title }}:</strong> {{ errors|join:", " }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.installment_date.id_for_label }}" class="form-label">Installment</label>
+                    {{ form.installment_date }}
+                    {% if form.installment_date.errors %}
+                        <div class="text-danger small mt-1">
+                            <i class="fa-solid fa-exclamation-circle me-1"></i>
+                            {{ form.installment_date.errors|join:", " }}
+                        </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Link this payment to an installment (optional)</small>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.amount.id_for_label }}" class="form-label">Amount (₹) *</label>
+                        {{ form.amount }}
+                        {% if form.amount.errors %}
+                            <div class="text-danger small mt-1">
+                                <i class="fa-solid fa-exclamation-circle me-1"></i>
+                                {{ form.amount.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.payment_date.id_for_label }}" class="form-label">Payment Date *</label>
+                        {{ form.payment_date }}
+                        {% if form.payment_date.errors %}
+                            <div class="text-danger small mt-1">
+                                <i class="fa-solid fa-exclamation-circle me-1"></i>
+                                {{ form.payment_date.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.payment_mode.id_for_label }}" class="form-label">Payment Mode *</label>
+                    {{ form.payment_mode }}
+                    {% if form.payment_mode.errors %}
+                        <div class="text-danger small mt-1">
+                            <i class="fa-solid fa-exclamation-circle me-1"></i>
+                            {{ form.payment_mode.errors|join:", " }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.transaction_reference.id_for_label }}" class="form-label">Transaction Reference</label>
+                    {{ form.transaction_reference }}
+                    {% if form.transaction_reference.errors %}
+                        <div class="text-danger small mt-1">
+                            <i class="fa-solid fa-exclamation-circle me-1"></i>
+                            {{ form.transaction_reference.errors|join:", " }}
+                        </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Transaction ID, cheque number, or other reference</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <div class="text-danger small mt-1">
+                            <i class="fa-solid fa-exclamation-circle me-1"></i>
+                            {{ form.notes.errors|join:", " }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-save me-2"></i>Record Payment
+                    </button>
+                    <a href="{% url 'institution_admin:payment_list' registration_slug=registration.slug %}" class="btn btn-secondary">
+                        <i class="fa-solid fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

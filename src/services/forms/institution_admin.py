@@ -15,7 +15,7 @@ Forms:
 
 from django import forms
 from config.mixins import form_mixin
-from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule, BusReservationRequest
+from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule, BusReservationRequest, Payment, InstallmentDate
 
 
 class ReceiptForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -148,3 +148,64 @@ class BusReservationRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
                 )
         
         return cleaned_data
+
+
+class PaymentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for recording payments for student tickets in the institution admin interface.
+    Fields: installment_date, amount, payment_date, payment_mode, transaction_reference, notes
+    
+    Note: The ticket is obtained from the URL parameter and set in the view, not from the form.
+    """
+    
+    def __init__(self, *args, **kwargs):
+        institution = kwargs.pop('institution', None)
+        registration = kwargs.pop('registration', None)
+        self.ticket = kwargs.pop('ticket', None)  # Store ticket for validation
+        super().__init__(*args, **kwargs)
+        
+        if institution:
+            # Filter tickets to only show tickets from the institution (not used in form anymore)
+            pass
+            
+        if registration:
+            # Filter installment dates to only show those for the registration
+            self.fields['installment_date'].queryset = InstallmentDate.objects.filter(
+                registration=registration
+            ).order_by('due_date')
+        else:
+            self.fields['installment_date'].queryset = InstallmentDate.objects.none()
+    
+    def clean(self):
+        """
+        Validate that no duplicate payment exists for the same ticket and installment.
+        """
+        cleaned_data = super().clean()
+        installment_date = cleaned_data.get('installment_date')
+        
+        # Check if ticket and installment_date combination already exists
+        if self.ticket and installment_date:
+            # Exclude current instance if editing
+            existing_payment = Payment.objects.filter(
+                ticket=self.ticket,
+                installment_date=installment_date
+            )
+            if self.instance and self.instance.pk:
+                existing_payment = existing_payment.exclude(pk=self.instance.pk)
+            
+            if existing_payment.exists():
+                payment = existing_payment.first()
+                raise forms.ValidationError(
+                    f"A payment (ID: {payment.payment_id}) already exists for this ticket and installment date. "
+                    f"Please select a different installment or edit the existing payment."
+                )
+        
+        return cleaned_data
+    
+    class Meta:
+        model = Payment
+        fields = ['installment_date', 'amount', 'payment_date', 'payment_mode', 'transaction_reference', 'notes']
+        widgets = {
+            'payment_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }

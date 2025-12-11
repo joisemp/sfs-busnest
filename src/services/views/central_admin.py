@@ -3956,3 +3956,165 @@ class ManageRouteSchedulesAPIView(LoginRequiredMixin, CentralAdminOnlyAccessMixi
             return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+
+
+class InstallmentDateListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    model = None
+    template_name = 'central_admin/installment_date_list.html'
+    context_object_name = 'installment_dates'
+    paginate_by = 50
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        self.model = InstallmentDate
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        return self.model.objects.filter(registration=registration, org=self.request.user.profile.org).order_by('due_date')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        context['registration'] = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        return context
+
+
+class InstallmentDateCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    model = None
+    template_name = 'central_admin/installment_date_form.html'
+    form_class = None
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        from services.forms.central_admin import InstallmentDateForm
+        self.model = InstallmentDate
+        self.form_class = InstallmentDateForm
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        installment = form.save(commit=False)
+        installment.org = self.request.user.profile.org
+        
+        # Auto-assign registration from URL
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        installment.registration = registration
+        
+        installment.save()
+        log_user_activity(user=self.request.user, action='Created installment date', description=f"Created installment for {installment.registration.name} due on {installment.due_date}")
+        messages.success(self.request, f"Installment date created successfully!")
+        return redirect('central_admin:installment_date_list', registration_slug=installment.registration.slug)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            context['registration'] = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        return context
+
+
+class InstallmentDateUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    model = None
+    template_name = 'central_admin/installment_date_form.html'
+    form_class = None
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        from services.forms.central_admin import InstallmentDateForm
+        self.model = InstallmentDate
+        self.form_class = InstallmentDateForm
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        return self.model.objects.filter(org=self.request.user.profile.org)
+    
+    def form_valid(self, form):
+        installment = form.save()
+        log_user_activity(user=self.request.user, action='Updated installment date', description=f"Updated installment for {installment.registration.name} due on {installment.due_date}")
+        messages.success(self.request, f"Installment date updated successfully!")
+        return redirect('central_admin:installment_date_list', registration_slug=installment.registration.slug)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.object.registration
+        return context
+
+
+class InstallmentDateDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    model = None
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        self.model = InstallmentDate
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        return self.model.objects.filter(org=self.request.user.profile.org)
+    
+    def get_success_url(self):
+        registration_slug = self.object.registration.slug
+        log_user_activity(user=self.request.user, action='Deleted installment date', description=f"Deleted installment for {self.object.registration.name} due on {self.object.due_date}")
+        messages.success(self.request, f"Installment date deleted successfully!")
+        return reverse('central_admin:installment_date_list', kwargs={'registration_slug': registration_slug})
+
+
+class PaymentListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    View to list all payments across all institutions for central admin.
+    
+    Attributes:
+        model (Payment): The Payment model to query.
+        template_name (str): Template for displaying payments list.
+        context_object_name (str): Context variable name for payments.
+        paginate_by (int): Number of payments per page.
+    """
+    model = None  # Will be imported dynamically
+    template_name = 'central_admin/payment_list.html'
+    context_object_name = 'payments'
+    paginate_by = 50
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Import Payment model here to avoid circular import
+        from services.models import Payment
+        self.model = Payment
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Returns payments filtered by organization and registration.
+        """
+        queryset = self.model.objects.filter(
+            org=self.request.user.profile.org
+        ).select_related('ticket', 'registration', 'institution', 'installment_date', 'recorded_by')
+        
+        # Filter by registration
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            queryset = queryset.filter(registration__slug=registration_slug)
+        
+        # Filter by ticket if provided in query params
+        ticket_slug = self.request.GET.get('ticket')
+        if ticket_slug:
+            queryset = queryset.filter(ticket__slug=ticket_slug)
+        
+        return queryset.order_by('-payment_date', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        """
+        Adds registration info to context.
+        """
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            context['registration'] = get_object_or_404(
+                Registration,
+                slug=registration_slug,
+                org=self.request.user.profile.org
+            )
+        return context

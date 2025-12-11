@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between mb-3">
+        <h3>Payment Details</h3>
+        <a href="{% url 'institution_admin:payment_list' registration_slug=payment.registration.slug %}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h5>Payment Information</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Payment ID:</th>
+                            <td>{{ payment.payment_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount:</th>
+                            <td>₹{{ payment.amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Payment Date:</th>
+                            <td>{{ payment.payment_date|date:"d M, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Payment Mode:</th>
+                            <td>{{ payment.get_payment_mode_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Transaction Reference:</th>
+                            <td>{{ payment.transaction_reference|default:"-" }}</td>
+                        </tr>
+                        {% if payment.installment_date %}
+                        <tr>
+                            <th>Installment:</th>
+                            <td>{{ payment.installment_date.title }} (Due: {{ payment.installment_date.due_date|date:"d M, Y" }})</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5>Student & Ticket Information</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Student Name:</th>
+                            <td>{{ payment.ticket.student_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Student ID:</th>
+                            <td>{{ payment.ticket.student_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ticket ID:</th>
+                            <td>{{ payment.ticket.ticket_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Institution:</th>
+                            <td>{{ payment.institution.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Student Group:</th>
+                            <td>{{ payment.ticket.student_group.name }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            {% if payment.notes %}
+            <div class="mb-3">
+                <h5>Notes</h5>
+                <p class="text-muted">{{ payment.notes }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                <h5>Record Information</h5>
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Recorded By:</th>
+                        <td>{{ payment.recorded_by.get_full_name|default:payment.recorded_by.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Recorded At:</th>
+                        <td>{{ payment.created_at|date:"d M, Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated:</th>
+                        <td>{{ payment.updated_at|date:"d M, Y H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a href="{% url 'institution_admin:payment_delete' registration_slug=payment.registration.slug slug=payment.slug %}" class="btn btn-danger">
+                    <i class="fa-solid fa-trash me-2"></i>Delete Payment
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
