@@ -1,17 +1,26 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/payment_list/style.css' %}">
+{% endblock style %}
+
 {% block sidebar %}
-{% include 'central_admin/sidebar.html' %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
 {% endblock sidebar %}
+
 
 {% block content %}
 <div class="d-flex align-items-center mb-3">
     <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-sm btn-dark me-3">
         <i class="fa-solid fa-arrow-left me-2"></i>Go Back
     </a>
+</div>
+
+<div class="mb-3">
     <h3 class="mb-0">Installment Dates - {{ registration.name }}</h3>
 </div>
+
 
 <div class="d-flex justify-content-end mb-3">
     <a href="{% url 'central_admin:installment_date_create' registration_slug=registration.slug %}" class="btn btn-primary">
