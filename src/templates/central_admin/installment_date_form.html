@@ -12,10 +12,13 @@
 
 {% block content %}
 <div class="container">
-    <div class="d-flex align-items-center mb-3">
+    <div class="d-flex  align-items-center mb-3">
         <a href="{% url 'central_admin:installment_date_list' registration_slug=registration.slug %}" class="btn btn-sm btn-dark me-3">
             <i class="fa-solid fa-arrow-left me-2"></i>Go Back
         </a>
+    </div>
+
+    <div class="mb-2">
         <h3 class="mb-0">{% if object %}Edit{% else %}Add{% endif %} Installment Date - {{ registration.name }}</h3>
     </div>
     
