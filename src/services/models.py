@@ -473,9 +473,10 @@ class Ticket(models.Model):
     """
     Represents a student's bus ticket.
     Fields:
-        org, registration, institution, student_group, recipt, ticket_id, student_id, student_name, student_email, contact_no, alternative_contact_no, pickup_bus_record, drop_bus_record, pickup_point, drop_point, pickup_schedule, drop_schedule, ticket_type, status, created_at, updated_at, slug
+        org, registration, institution, student_group, recipt, ticket_id, student_id, student_name, student_email, contact_no, alternative_contact_no, pickup_bus_record, drop_bus_record, pickup_point, drop_point, pickup_schedule, drop_schedule, ticket_type, status, is_terminated, terminated_at, created_at, updated_at, slug
     Methods:
         save: Generates a unique slug and ticket_id if not present.
+        terminate: Soft delete the ticket by marking it as terminated.
         __str__: Returns a string representation of the ticket.
     """
     TICKET_TYPES = ( 
@@ -508,6 +509,8 @@ class Ticket(models.Model):
     drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='drop_tickets')
     ticket_type = models.CharField(max_length=300, choices=TICKET_TYPES, default='twoway')
     status = models.BooleanField(default=False)
+    is_terminated = models.BooleanField(default=False)
+    terminated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -549,6 +552,30 @@ class Ticket(models.Model):
         Returns True if there are pending installments with due dates that have passed.
         """
         return self.get_pending_installments().exists()
+    
+    def terminate(self):
+        """
+        Soft delete the ticket by marking it as terminated and updating trip booking counts.
+        """
+        from django.utils import timezone
+        
+        if not self.is_terminated:
+            self.is_terminated = True
+            self.terminated_at = timezone.now()
+            self.save()
+            
+            # Update trip booking counts
+            if self.pickup_bus_record:
+                trip = self.pickup_bus_record.trips.filter(schedule=self.pickup_schedule).first()
+                if trip:
+                    trip.booking_count = max(0, trip.booking_count - 1)
+                    trip.save()
+
+            if self.drop_bus_record:
+                trip = self.drop_bus_record.trips.filter(schedule=self.drop_schedule).first()
+                if trip:
+                    trip.booking_count = max(0, trip.booking_count - 1)
+                    trip.save()
 
 class InstallmentDate(models.Model):
     """
@@ -999,22 +1026,7 @@ class Notification(models.Model):
         """
         return f'{self.user.email} - {self.action} - {self.timestamp}'
 
-@receiver(post_delete, sender=Ticket)
-def update_trip_booking_count_on_ticket_delete(sender, instance, **kwargs):
-    """
-    Signal to update the booking count of trips associated with a ticket when the ticket is deleted.
-    """
-    if instance.pickup_bus_record:
-        trip = instance.pickup_bus_record.trips.filter(schedule=instance.pickup_schedule).first()
-        if trip:
-            trip.booking_count = max(0, trip.booking_count - 1)
-            trip.save()
-
-    if instance.drop_bus_record:
-        trip = instance.drop_bus_record.trips.filter(schedule=instance.drop_schedule).first()
-        if trip:
-            trip.booking_count = max(0, trip.booking_count - 1)
-            trip.save()
+# Signal handler removed - soft delete is now handled by the terminate() method on Ticket model
 
 
 class StudentPassFile(models.Model):

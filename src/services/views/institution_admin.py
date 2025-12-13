@@ -88,8 +88,12 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
         
-        # Base queryset filtered by registration and institution
-        queryset = Ticket.objects.filter(registration=self.registration, institution=self.request.user.profile.institution).order_by('-created_at')
+        # Base queryset filtered by registration and institution, excluding terminated tickets
+        queryset = Ticket.objects.filter(
+            registration=self.registration, 
+            institution=self.request.user.profile.institution,
+            is_terminated=False
+        ).order_by('-created_at')
         
         # Apply filters based on GET parameters
         pickup_points = self.request.GET.getlist('pickup_point')
@@ -106,7 +110,10 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
                 Q(student_email__icontains=self.search_term) |
                 Q(student_id__icontains=self.search_term) |
                 Q(contact_no__icontains=self.search_term) |
-                Q(alternative_contact_no__icontains=self.search_term)
+                Q(alternative_contact_no__icontains=self.search_term),
+                registration=self.registration,
+                institution=self.request.user.profile.institution,
+                is_terminated=False
             )
 
         # Apply filters based on GET parameters and update the filters flag
@@ -203,22 +210,25 @@ class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Updat
             )
 
 
-class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
     """
-    View to delete a ticket.
+    View to soft delete (terminate) a ticket.
     """
-    model = Ticket
-    template_name = 'institution_admin/ticket_confirm_delete.html'
-    slug_url_kwarg = 'ticket_slug'
+    def get(self, request, registration_slug, ticket_slug):
+        """
+        Display confirmation page for ticket termination.
+        """
+        ticket = get_object_or_404(Ticket, slug=ticket_slug, registration__slug=registration_slug)
+        return render(request, 'institution_admin/ticket_confirm_delete.html', {'object': ticket})
     
-    def get_success_url(self):
+    def post(self, request, registration_slug, ticket_slug):
         """
-        Returns the URL to redirect to after a successful delete.
+        Soft delete the ticket by marking it as terminated.
         """
-        return reverse(
-            'institution_admin:ticket_list', 
-            kwargs={'registration_slug': self.kwargs['registration_slug']}
-            )
+        ticket = get_object_or_404(Ticket, slug=ticket_slug, registration__slug=registration_slug)
+        ticket.terminate()
+        messages.success(request, f'Ticket for {ticket.student_name} has been terminated successfully.')
+        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
 
 
 class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -847,7 +857,8 @@ class BusRequestListView(ListView):
         for request in context["bus_requests"]:
             request.has_ticket = Ticket.objects.filter(
                 registration=registration, 
-                recipt=request.receipt
+                recipt=request.receipt,
+                is_terminated=False
             ).exists()
         return context
 
@@ -896,7 +907,8 @@ class BusRequestOpenListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
         for request in context["bus_requests"]:
             request.has_ticket = Ticket.objects.filter(
                 registration=registration, 
-                recipt=request.receipt
+                recipt=request.receipt,
+                is_terminated=False
             ).exists()
         return context
 
@@ -945,7 +957,8 @@ class BusRequestClosedListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixi
         for request in context["bus_requests"]:
             request.has_ticket = Ticket.objects.filter(
                 registration=registration, 
-                recipt=request.receipt
+                recipt=request.receipt,
+                is_terminated=False
             ).exists()
         return context
 

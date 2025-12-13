@@ -132,7 +132,7 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
         context['recent_activities'] = UserActivity.objects.filter(org=org).order_by('-timestamp')[:10]
         
         # Add ticket statistics
-        context['total_tickets'] = Ticket.objects.filter(org=org).count()
+        context['total_tickets'] = Ticket.objects.filter(org=org, is_terminated=False).count()
         context['total_stops'] = Stop.objects.filter(org=org).count()
         context['total_routes'] = Route.objects.filter(org=org).count()
         
@@ -773,13 +773,15 @@ class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
         # Find tickets that use this trip's schedule and bus record for pickup
         pickup_tickets = Ticket.objects.filter(
             pickup_schedule=trip.schedule,
-            pickup_bus_record=trip.record
+            pickup_bus_record=trip.record,
+            is_terminated=False
         )
         
         # Find tickets that use this trip's schedule and bus record for drop
         drop_tickets = Ticket.objects.filter(
             drop_schedule=trip.schedule,
-            drop_bus_record=trip.record
+            drop_bus_record=trip.record,
+            is_terminated=False
         )
         
         # Get unique tickets (a ticket might appear in both pickup and drop)
@@ -800,12 +802,14 @@ class TripDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView
         # Check for tickets that use this trip's schedule and bus record
         pickup_tickets = Ticket.objects.filter(
             pickup_schedule=trip.schedule,
-            pickup_bus_record=trip.record
+            pickup_bus_record=trip.record,
+            is_terminated=False
         )
         
         drop_tickets = Ticket.objects.filter(
             drop_schedule=trip.schedule,
-            drop_bus_record=trip.record
+            drop_bus_record=trip.record,
+            is_terminated=False
         )
         
         all_tickets = pickup_tickets.union(drop_tickets)
@@ -1503,7 +1507,11 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     def get_queryset(self):
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
-        queryset = Ticket.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('-created_at')
+        queryset = Ticket.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=self.registration,
+            is_terminated=False
+        ).order_by('-created_at')
         institution = self.request.GET.get('institution')
         pickup_points = self.request.GET.getlist('pickup_point')
         drop_points = self.request.GET.getlist('drop_point')
@@ -1521,7 +1529,10 @@ class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
                 Q(student_email__icontains=self.search_term) |
                 Q(student_id__icontains=self.search_term) |
                 Q(contact_no__icontains=self.search_term) |
-                Q(alternative_contact_no__icontains=self.search_term)
+                Q(alternative_contact_no__icontains=self.search_term),
+                org=self.request.user.profile.org,
+                registration=self.registration,
+                is_terminated=False
             )
 
         # Apply filters based on GET parameters and update the filters flag
@@ -1621,7 +1632,11 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         registration_slug = self.kwargs.get('registration_slug')
         self.registration = get_object_or_404(Registration, slug=registration_slug)
 
-        queryset = Ticket.objects.filter(org=self.request.user.profile.org, registration=self.registration)
+        queryset = Ticket.objects.filter(
+            org=self.request.user.profile.org, 
+            registration=self.registration,
+            is_terminated=False
+        )
 
         start_date = self.request.GET.get('start_date')
         end_date = self.request.GET.get('end_date')
@@ -2024,7 +2039,8 @@ class BusRequestListView(ListView):
         for request in context["bus_requests"]:
             request.has_ticket = Ticket.objects.filter(
                 registration=registration, 
-                recipt=request.receipt
+                recipt=request.receipt,
+                is_terminated=False
             ).exists()
         context["search_query"] = self.request.GET.get('search', '').strip()
         return context
@@ -2085,7 +2101,8 @@ class BusRequestOpenListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Li
         for request in context["bus_requests"]:
             request.has_ticket = Ticket.objects.filter(
                 registration=registration, 
-                recipt=request.receipt
+                recipt=request.receipt,
+                is_terminated=False
             ).exists()
         return context
 

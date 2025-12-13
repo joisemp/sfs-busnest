@@ -49,7 +49,7 @@ class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
             self.request.session['student_id'] = receipt.student_id
 
             # Check if a ticket already exists for this receipt
-            if Ticket.objects.filter(recipt_id=receipt.pk).exists():
+            if Ticket.objects.filter(recipt_id=receipt.pk, is_terminated=False).exists():
                 form.add_error(None, "A ticket already exists for this receipt.")
                 return self.form_invalid(form)
 
@@ -452,7 +452,7 @@ class BusBookingView(RegistrationOpenCheckMixin, CreateView):
         receipt = get_object_or_404(Receipt, id=receipt_id)
 
         # Check if a ticket already exists for this receipt
-        if Ticket.objects.filter(recipt=receipt).exists():
+        if Ticket.objects.filter(recipt=receipt, is_terminated=False).exists():
             form.add_error(None, "A ticket already exists for this receipt.")
             return self.form_invalid(form)
 
