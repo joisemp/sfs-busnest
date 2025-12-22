@@ -271,6 +271,39 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   color: #94a3b8;
   font-weight: 502;
 }
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item {
+  margin-bottom: -2px;
+}
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item .nav-link {
+  color: #000000;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item .nav-link i {
+  color: #000000;
+  transition: color 0.3s ease;
+}
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item .nav-link:hover {
+  color: #0d6efd;
+  border-bottom-color: #0d6efd;
+  background-color: #f9fafb;
+}
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item .nav-link:hover i {
+  color: #0d6efd;
+}
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item .nav-link.active {
+  color: #0d6efd;
+  font-weight: 600;
+  border-bottom-color: #0d6efd;
+  background-color: transparent !important;
+}
+#ticket-list .ticket-status-tabs .nav-tabs .nav-item .nav-link.active i {
+  color: #0d6efd;
+}
 
 tbody,
 td,

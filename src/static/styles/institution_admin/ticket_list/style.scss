@@ -23,6 +23,52 @@
             }
         }
     }
+    
+    // Status filter tabs styling
+    .ticket-status-tabs {
+        .nav-tabs {
+            
+            .nav-item {
+                margin-bottom: -2px;
+                
+                .nav-link {
+                    color: #000000;
+                    font-weight: 500;
+                    padding: 0.75rem 1.5rem;
+                    border: none;
+                    border-bottom: 3px solid transparent;
+                    background-color: transparent;
+                    transition: all 0.3s ease;
+                    
+                    i {
+                        color: #000000;
+                        transition: color 0.3s ease;
+                    }
+                    
+                    &:hover {
+                        color: #0d6efd;
+                        border-bottom-color: #0d6efd;
+                        background-color: $gray-50;
+                        
+                        i {
+                            color: #0d6efd;
+                        }
+                    }
+                    
+                    &.active {
+                        color: #0d6efd;
+                        font-weight: 600;
+                        border-bottom-color: #0d6efd;
+                        background-color: transparent !important;
+                        
+                        i {
+                            color: #0d6efd;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 tbody,
