@@ -84,8 +84,8 @@ def clear_test_data():
         print("   ✓ Cleared registrations")
         
         # Clear users except superuser
-        UserProfile.objects.filter(is_central_admin=False, is_institution_admin=False).delete()
-        User.objects.exclude(is_superuser=True).exclude(profile__is_central_admin=True).delete()
+        UserProfile.objects.exclude(role=UserProfile.CENTRAL_ADMIN).delete()
+        User.objects.exclude(is_superuser=True).exclude(profile__role=UserProfile.CENTRAL_ADMIN).delete()
         print("   ✓ Cleared test users")
         
         Institution.objects.all().delete()
@@ -145,7 +145,7 @@ def create_dummy_data():
         user=central_admin_user,
         defaults={
             'org': org,
-            'is_central_admin': True
+            'role': UserProfile.CENTRAL_ADMIN
         }
     )
     print(f"   ✓ Central Admin: {central_admin_user.email}")
@@ -190,7 +190,7 @@ def create_dummy_data():
                 'org': org,
                 'first_name': admin_user.first_name,
                 'last_name': admin_user.last_name,
-                'is_institution_admin': True
+                'role': UserProfile.INSTITUTION_ADMIN
             }
         )
         
@@ -500,7 +500,7 @@ def create_dummy_data():
                     'payment_mode': random.choice(['cash', 'online', 'upi', 'card']),
                     'transaction_reference': f"TXN{random.randint(100000, 999999)}",
                     'notes': f"Payment for {installment.title}",
-                    'recorded_by': User.objects.filter(profile__is_institution_admin=True, 
+                    'recorded_by': User.objects.filter(profile__role=UserProfile.INSTITUTION_ADMIN, 
                                                        profile__institution=ticket.institution).first()
                 }
             )

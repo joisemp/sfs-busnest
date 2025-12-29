@@ -58,15 +58,7 @@
             {% endif %}
           </td>
           <td>
-            {% if person.is_central_admin %}
-            Central Admin
-            {% endif %}
-            {% if person.is_institution_admin %}
-            {% if person.is_central_admin %}, {% endif %}Institution Admin [{{person.institution}}]
-            {% endif %}
-            {% if person.is_driver %}
-            {% if person.is_central_admin or person.is_institution_admin %}, {% endif %}Driver
-            {% endif %}
+            {{ person.get_role_display }}
           </td>
           <td>
             <a href="{% url 'central_admin:people_delete' slug=person.slug %}" class="btn btn-sm text-danger"><i class="fa-solid fa-trash me-2"></i>Delete</a>

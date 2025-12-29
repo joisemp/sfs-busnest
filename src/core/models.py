@@ -48,27 +48,51 @@ class User(AbstractUser):
 class UserProfile(models.Model):
     """
     Represents a user profile associated with a Django User and an Organisation.
+    
     Fields:
         user (OneToOneField): Links to the Django User model. Acts as the primary key.
         org (ForeignKey): References the Organisation the user belongs to. Nullable.
         first_name (CharField): The user's first name.
         last_name (CharField): The user's last name.
-        is_central_admin (BooleanField): Indicates if the user is a central admin.
-        is_institution_admin (BooleanField): Indicates if the user is an institution admin.
-        is_student (BooleanField): Indicates if the user is a student.
+        role (CharField): The single role assigned to this user (central_admin, institution_admin, driver, student).
         slug (SlugField): Unique slug for the profile, auto-generated if not provided.
+    
+    Role Constants:
+        CENTRAL_ADMIN, INSTITUTION_ADMIN, DRIVER, STUDENT: Pre-defined role identifiers.
+    
     Methods:
-        save(*args, **kwargs): Overrides the default save method to auto-generate a unique slug if not set.
-        __str__(): Returns the user's full name as a string.
+        save(*args, **kwargs): Auto-generates unique slug if not set.
+        has_role(role): Check if user has a specific role.
+        set_role(role): Set the user's role.
+        get_role_display_name(): Get human-readable role name.
+    
+    Properties:
+        is_central_admin, is_institution_admin, is_driver, is_student: Backward-compatible role checks.
     """
+    
+    # Role constants
+    CENTRAL_ADMIN = 'central_admin'
+    INSTITUTION_ADMIN = 'institution_admin'
+    DRIVER = 'driver'
+    STUDENT = 'student'
+    
+    ROLE_CHOICES = [
+        (CENTRAL_ADMIN, _('Central Admin')),
+        (INSTITUTION_ADMIN, _('Institution Admin')),
+        (DRIVER, _('Driver')),
+        (STUDENT, _('Student')),
+    ]
+    
     user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, related_name='profile')
     org = models.ForeignKey(Organisation, null=True, on_delete=models.SET_NULL, related_name='org')
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    is_central_admin = models.BooleanField(_('is central admin'), default=False)
-    is_institution_admin = models.BooleanField(_('is institution admin'), default=False)
-    is_driver = models.BooleanField(_('is driver'), default=False)
-    is_student = models.BooleanField(_('is student'), default=False)
+    role = models.CharField(
+        max_length=50,
+        choices=ROLE_CHOICES,
+        default=STUDENT,
+        help_text=_("Role assigned to this user")
+    )
     slug = models.SlugField(unique=True, db_index=True)
     
     def save(self, *args, **kwargs):
@@ -79,6 +103,66 @@ class UserProfile(models.Model):
     
     def __str__(self):
         return f"{str(self.first_name)} {str(self.last_name)}"
+    
+    # Role validation methods
+    def has_role(self, role):
+        """Check if user has a specific role."""
+        return self.role == role
+    
+    def set_role(self, role):
+        """Set the user's role."""
+        if role in dict(self.ROLE_CHOICES):
+            self.role = role
+            self.save()
+    
+    def get_role_display_name(self):
+        """Get human-readable role name."""
+        return self.get_role_display()
+    
+    # Backward-compatible properties for existing code
+    @property
+    def is_central_admin(self):
+        """Check if user has central admin role."""
+        return self.role == self.CENTRAL_ADMIN
+    
+    @is_central_admin.setter
+    def is_central_admin(self, value):
+        """Set central admin role (for backward compatibility)."""
+        if value:
+            self.role = self.CENTRAL_ADMIN
+    
+    @property
+    def is_institution_admin(self):
+        """Check if user has institution admin role."""
+        return self.role == self.INSTITUTION_ADMIN
+    
+    @is_institution_admin.setter
+    def is_institution_admin(self, value):
+        """Set institution admin role (for backward compatibility)."""
+        if value:
+            self.role = self.INSTITUTION_ADMIN
+    
+    @property
+    def is_driver(self):
+        """Check if user has driver role."""
+        return self.role == self.DRIVER
+    
+    @is_driver.setter
+    def is_driver(self, value):
+        """Set driver role (for backward compatibility)."""
+        if value:
+            self.role = self.DRIVER
+    
+    @property
+    def is_student(self):
+        """Check if user has student role."""
+        return self.role == self.STUDENT
+    
+    @is_student.setter
+    def is_student(self, value):
+        """Set student role (for backward compatibility)."""
+        if value:
+            self.role = self.STUDENT
     
 
 @receiver(post_delete, sender=UserProfile)

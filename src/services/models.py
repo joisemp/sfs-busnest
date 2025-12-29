@@ -1155,7 +1155,7 @@ class BusReservationAssignment(models.Model):
     """
     reservation_request = models.ForeignKey(BusReservationRequest, on_delete=models.CASCADE, related_name='bus_assignments')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='reservation_assignments')
-    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='driver_assignments', limit_choices_to={'profile__is_driver': True}, help_text="Driver assigned to this bus")
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='driver_assignments', limit_choices_to={'profile__role': 'driver'}, help_text="Driver assigned to this bus")
     assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bus_assignment_actions')
     assigned_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)

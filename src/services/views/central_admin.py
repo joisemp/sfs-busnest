@@ -198,7 +198,7 @@ class InstitutionCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Cre
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['incharge'].queryset = UserProfile.objects.filter(org=self.request.user.profile.org, is_institution_admin=True)
+        form.fields['incharge'].queryset = UserProfile.objects.filter(org=self.request.user.profile.org, role=UserProfile.INSTITUTION_ADMIN)
         return form
     
     def form_valid(self, form):
@@ -235,7 +235,7 @@ class InstitutionUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Upd
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['incharge'].queryset = UserProfile.objects.filter(org=self.request.user.profile.org, is_institution_admin=True)
+        form.fields['incharge'].queryset = UserProfile.objects.filter(org=self.request.user.profile.org, role=UserProfile.INSTITUTION_ADMIN)
         return form
 
     def form_valid(self, form):
@@ -3116,7 +3116,7 @@ class DriverPaymentDetailsView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, 
             User,
             id=driver_id,
             profile__org=self.request.user.profile.org,
-            profile__is_driver=True
+            profile__role=UserProfile.DRIVER
         )
         context['driver'] = driver
         
