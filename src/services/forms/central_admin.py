@@ -80,12 +80,12 @@ class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing bus details in the central admin interface.
-    Fields: registration_no, driver, capacity, is_available
+    Fields: registration_no, capacity, is_available
     """
     class Meta:
         model = Bus
         fields = [
-            'registration_no', 'driver', 'capacity', 'is_available'
+            'registration_no', 'capacity', 'is_available'
         ]
     def __init__(self,*args,**kwargs):
         """

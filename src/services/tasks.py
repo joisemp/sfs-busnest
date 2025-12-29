@@ -560,9 +560,9 @@ def process_uploaded_bus_excel(user_id, file_path, org_id):
 
             # Process rows
             for row_number, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-                registration, driver, capacity = row
+                registration, capacity = row[:2]  # Only take first 2 columns
 
-                if not registration or not driver or not capacity:
+                if not registration or not capacity:
                     warning_message = f"Row {row_number}: Skipping incomplete row: {row}"
                     logger.warning(warning_message)
                     skipped_rows.append((row_number, row))
@@ -573,18 +573,16 @@ def process_uploaded_bus_excel(user_id, file_path, org_id):
                         org=org,
                         registration_no=registration.strip(),
                         defaults={
-                            'driver': driver.strip(),
                             'capacity': int(capacity)
                         }
                     )
 
                     if created:
-                        logger.info(f"Row {row_number}: Bus created - Registration: {registration}, Driver: {driver}, Capacity: {capacity}")
+                        logger.info(f"Row {row_number}: Bus created - Registration: {registration}, Capacity: {capacity}")
                     else:
-                        bus.driver = driver.strip()
                         bus.capacity = int(capacity)
                         bus.save()
-                        logger.info(f"Row {row_number}: Bus updated - Registration: {registration}, Driver: {driver}, Capacity: {capacity}")
+                        logger.info(f"Row {row_number}: Bus updated - Registration: {registration}, Capacity: {capacity}")
 
                     processed_count += 1
 

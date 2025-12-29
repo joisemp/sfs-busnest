@@ -329,14 +329,13 @@ class Bus(models.Model):
     """
     Represents a bus belonging to an organization.
     Fields:
-        org, registration_no, driver, capacity, is_available, slug
+        org, registration_no, capacity, is_available, slug
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns the bus registration number and capacity.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
     registration_no = models.CharField(max_length=100)
-    driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
     is_available = models.BooleanField(default=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)

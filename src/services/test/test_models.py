@@ -73,18 +73,15 @@ class BusModelTest(TestCase):
     def test_bus_creation(self):
         bus = Bus.objects.create(
             label="School Bus",
-            bus_no="BUS123",
-            driver="John Doe"
+            bus_no="BUS123"
         )
         self.assertEqual(bus.label, "School Bus")
         self.assertEqual(bus.bus_no, "BUS123")
-        self.assertEqual(bus.driver, "John Doe")
 
     def test_bus_slug_generation(self):
         bus = Bus.objects.create(
             label="School Bus",
-            bus_no="BUS123",
-            driver="John Doe"
+            bus_no="BUS123"
         )
         base_slug = slugify(bus.bus_no)
         self.assertTrue(bus.slug.startswith(base_slug))
