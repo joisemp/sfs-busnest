@@ -36,13 +36,21 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     Form for creating a user profile in the central admin interface.
     Validates that the email is unique among all users.
     Requires a role to be selected (central admin, institution admin, or driver).
-    Fields: email, first_name, last_name, role
+    Fields: email, first_name, last_name, role, years_of_experience
     """
     email = forms.EmailField(required=True)
 
     class Meta:
         model = UserProfile
-        fields = ['email', 'first_name', 'last_name', 'role']  
+        fields = ['email', 'first_name', 'last_name', 'role', 'years_of_experience']  
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make years_of_experience not required by default
+        self.fields['years_of_experience'].required = False
+        self.fields['years_of_experience'].widget.attrs.update({
+            'placeholder': 'Enter years (for drivers only)'
+        })
     
     def clean_email(self):
         """
@@ -53,16 +61,52 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             raise ValidationError("A user with this email already exists.")
         return email
     
+    def clean(self):
+        """
+        Validates that years_of_experience is set to None for non-driver roles.
+        """
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        years_of_experience = cleaned_data.get('years_of_experience')
+        
+        # Clear years_of_experience if role is not driver
+        if role != UserProfile.DRIVER:
+            cleaned_data['years_of_experience'] = None
+        
+        return cleaned_data
+    
     
 class PeopleUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for updating a user profile in the central admin interface.
     Requires a role to be selected (central admin, institution admin, or driver).
-    Fields: first_name, last_name, role
+    Fields: first_name, last_name, role, years_of_experience
     """
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name', 'role']  
+        fields = ['first_name', 'last_name', 'role', 'years_of_experience']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make years_of_experience not required by default
+        self.fields['years_of_experience'].required = False
+        self.fields['years_of_experience'].widget.attrs.update({
+            'placeholder': 'Enter years (for drivers only)'
+        })
+    
+    def clean(self):
+        """
+        Validates that years_of_experience is set to None for non-driver roles.
+        """
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        years_of_experience = cleaned_data.get('years_of_experience')
+        
+        # Clear years_of_experience if role is not driver
+        if role != UserProfile.DRIVER:
+            cleaned_data['years_of_experience'] = None
+        
+        return cleaned_data  
 
 
 class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

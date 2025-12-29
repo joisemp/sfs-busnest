@@ -45,6 +45,7 @@
         <tr>
           <td class="text-muted">Name</td>
           <th class="text-muted">Role</th>
+          <th class="text-muted">Experience</th>
           <th class="text-muted">Action</th>
         </tr>
       </thead>
@@ -59,6 +60,13 @@
           </td>
           <td>
             {{ person.get_role_display }}
+          </td>
+          <td>
+            {% if person.role == 'driver' and person.years_of_experience %}
+              {{ person.years_of_experience }} year{{ person.years_of_experience|pluralize }}
+            {% else %}
+              <span class="text-muted">N/A</span>
+            {% endif %}
           </td>
           <td>
             <a href="{% url 'central_admin:people_delete' slug=person.slug %}" class="btn btn-sm text-danger"><i class="fa-solid fa-trash me-2"></i>Delete</a>

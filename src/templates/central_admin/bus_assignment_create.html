@@ -67,6 +67,9 @@
                                 <td>
                                     {% if assignment.driver %}
                                         {{ assignment.driver.profile.first_name }} {{ assignment.driver.profile.last_name }}
+                                        {% if assignment.driver.profile.years_of_experience %}
+                                            <br><small class="text-muted">{{ assignment.driver.profile.years_of_experience }} yrs exp.</small>
+                                        {% endif %}
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}

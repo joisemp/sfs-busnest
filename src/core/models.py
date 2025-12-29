@@ -93,6 +93,11 @@ class UserProfile(models.Model):
         default=STUDENT,
         help_text=_("Role assigned to this user")
     )
+    years_of_experience = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Years of experience (applicable for drivers)")
+    )
     slug = models.SlugField(unique=True, db_index=True)
     
     def save(self, *args, **kwargs):
