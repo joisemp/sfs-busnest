@@ -20,7 +20,7 @@ from django.db import transaction, IntegrityError
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, FileResponse
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Sum
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -424,7 +424,7 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                 org=self.request.user.profile.org, 
                 bus=None, 
                 registration__slug=self.kwargs["registration_slug"]
-            ).order_by('label').annotate(
+            ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
                 pickup_ticket_count=Count('pickup_tickets', distinct=True),
                 drop_ticket_count=Count('drop_tickets', distinct=True),
                 trip_count=Count('trips', distinct=True)
@@ -433,7 +433,7 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
             queryset = BusRecord.objects.filter(
                 org=self.request.user.profile.org, 
                 registration__slug=self.kwargs["registration_slug"]
-            ).order_by('label').annotate(
+            ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
                 pickup_ticket_count=Count('pickup_tickets', distinct=True),
                 drop_ticket_count=Count('drop_tickets', distinct=True),
                 trip_count=Count('trips', distinct=True)
@@ -443,6 +443,12 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        
+        # Calculate total_km for each bus record
+        for record in context['bus_records']:
+            trips = record.trips.all()
+            record.calculated_total_km = sum(trip.route.total_km or 0 for trip in trips)
+        
         if BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]):
             context["blank_records"] = True
         if self.noneRecords:

@@ -53,6 +53,8 @@
           <th class="text-body-secondary">Label</th>
           <th class="text-body-secondary">Registration no</th>
           <th class="text-body-secondary">Capacity</th>
+          <th class="text-body-secondary">Assigned Driver</th>
+          <th class="text-body-secondary">Total Distance</th>
           <th class="text-body-secondary">Statistics</th>
           <th class="text-body-secondary">Action</th>
         </tr>
@@ -73,6 +75,20 @@
             {{record.bus.capacity}}
             {% else %}
             <b>----</b>
+            {% endif %}
+          </td>
+          <td>
+            {% if record.assigned_driver %}
+            <span class="fw-semibold">{{ record.assigned_driver.profile.first_name }} {{ record.assigned_driver.profile.last_name }}</span>
+            {% else %}
+            <span class="text-muted">Not assigned</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if record.calculated_total_km %}
+            <span class="fw-semibold">{{ record.calculated_total_km }} km</span>
+            {% else %}
+            <span class="text-muted">-</span>
             {% endif %}
           </td>
           <td>
