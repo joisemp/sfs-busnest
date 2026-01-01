@@ -61,8 +61,15 @@
       </thead>
       <tbody>
         {% for record in bus_records %}
-        <tr>
-          <td class="fw-semibold">{{record.label}}</td>
+        <tr {% if record.has_full_trip %}class="table-warning" style="border-left: 4px solid #ff9800;"{% endif %}>
+          <td class="fw-semibold">
+            {{record.label}}
+            {% if record.has_full_trip %}
+            <span class="badge bg-warning text-dark ms-2" title="At least one trip is at full capacity">
+              <i class="fas fa-exclamation-triangle me-1"></i>Full
+            </span>
+            {% endif %}
+          </td>
           <td>
             {% if record.bus %}
             {{record.bus.registration_no}}

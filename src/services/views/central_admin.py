@@ -444,10 +444,18 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         
-        # Calculate total_km for each bus record
+        # Calculate total_km and check for fully filled trips for each bus record
         for record in context['bus_records']:
             trips = record.trips.all()
             record.calculated_total_km = sum(trip.route.total_km or 0 for trip in trips)
+            
+            # Check if any trip is at full capacity (100%)
+            record.has_full_trip = False
+            if record.bus:  # Only check if bus is assigned
+                for trip in trips:
+                    if trip.booking_count >= record.bus.capacity:
+                        record.has_full_trip = True
+                        break
         
         if BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]):
             context["blank_records"] = True
