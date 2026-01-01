@@ -84,7 +84,7 @@ class UserRegisterView(CreateView):
             org = org,
             first_name=first_name, 
             last_name=last_name, 
-            is_central_admin=True
+            role=UserProfile.CENTRAL_ADMIN
             )
         
         login(self.request, user)

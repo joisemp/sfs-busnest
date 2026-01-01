@@ -35,14 +35,22 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for creating a user profile in the central admin interface.
     Validates that the email is unique among all users.
-    Requires at least one role (central admin, institution admin, or driver) to be selected.
-    Fields: email, first_name, last_name, is_central_admin, is_driver, is_institution_admin
+    Requires a role to be selected (central admin, institution admin, or driver).
+    Fields: email, first_name, last_name, role, years_of_experience
     """
     email = forms.EmailField(required=True)
 
     class Meta:
         model = UserProfile
-        fields = ['email', 'first_name', 'last_name', 'is_central_admin', 'is_driver', 'is_institution_admin']  
+        fields = ['email', 'first_name', 'last_name', 'role', 'years_of_experience']  
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make years_of_experience not required by default
+        self.fields['years_of_experience'].required = False
+        self.fields['years_of_experience'].widget.attrs.update({
+            'placeholder': 'Enter years (for drivers only)'
+        })
     
     def clean_email(self):
         """
@@ -55,15 +63,15 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     
     def clean(self):
         """
-        Validates that at least one role is selected.
+        Validates that years_of_experience is set to None for non-driver roles.
         """
         cleaned_data = super().clean()
-        is_central_admin = cleaned_data.get('is_central_admin')
-        is_institution_admin = cleaned_data.get('is_institution_admin')
-        is_driver = cleaned_data.get('is_driver')
+        role = cleaned_data.get('role')
+        years_of_experience = cleaned_data.get('years_of_experience')
         
-        if not (is_central_admin or is_institution_admin or is_driver):
-            raise ValidationError("Please select at least one role: Central Admin, Institution Admin, or Driver.")
+        # Clear years_of_experience if role is not driver
+        if role != UserProfile.DRIVER:
+            cleaned_data['years_of_experience'] = None
         
         return cleaned_data
     
@@ -71,24 +79,32 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class PeopleUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for updating a user profile in the central admin interface.
-    Requires at least one role (central admin, institution admin, or driver) to be selected.
-    Fields: first_name, last_name, is_central_admin, is_driver, is_institution_admin
+    Requires a role to be selected (central admin, institution admin, or driver).
+    Fields: first_name, last_name, role, years_of_experience
     """
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name', 'is_central_admin', 'is_driver', 'is_institution_admin']
+        fields = ['first_name', 'last_name', 'role', 'years_of_experience']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make years_of_experience not required by default
+        self.fields['years_of_experience'].required = False
+        self.fields['years_of_experience'].widget.attrs.update({
+            'placeholder': 'Enter years (for drivers only)'
+        })
     
     def clean(self):
         """
-        Validates that at least one role is selected.
+        Validates that years_of_experience is set to None for non-driver roles.
         """
         cleaned_data = super().clean()
-        is_central_admin = cleaned_data.get('is_central_admin')
-        is_institution_admin = cleaned_data.get('is_institution_admin')
-        is_driver = cleaned_data.get('is_driver')
+        role = cleaned_data.get('role')
+        years_of_experience = cleaned_data.get('years_of_experience')
         
-        if not (is_central_admin or is_institution_admin or is_driver):
-            raise ValidationError("Please select at least one role: Central Admin, Institution Admin, or Driver.")
+        # Clear years_of_experience if role is not driver
+        if role != UserProfile.DRIVER:
+            cleaned_data['years_of_experience'] = None
         
         return cleaned_data  
 
@@ -108,12 +124,12 @@ class InstitutionForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing bus details in the central admin interface.
-    Fields: registration_no, driver, capacity, is_available
+    Fields: registration_no, capacity, is_available
     """
     class Meta:
         model = Bus
         fields = [
-            'registration_no', 'driver', 'capacity', 'is_available'
+            'registration_no', 'capacity', 'is_available'
         ]
     def __init__(self,*args,**kwargs):
         """
@@ -127,11 +143,11 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing routes in the central admin interface.
-    Fields: name (with custom widget and label)
+    Fields: name, total_km (with custom widget and label)
     """
     class Meta:
         model = Route
-        fields = ['name']
+        fields = ['name', 'total_km']
 
     # Customizing the 'name' field
     name = forms.CharField(
@@ -142,6 +158,18 @@ class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         }),
         max_length=200,
         required=True
+    )
+    
+    # Customizing the 'total_km' field
+    total_km = forms.DecimalField(
+        label='Total Distance (km)',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter total distance in kilometers',
+            'step': '0.01'
+        }),
+        required=False,
+        help_text='Total distance of the route in kilometers'
     )
 
 
@@ -226,22 +254,85 @@ class ScheduleGroupForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class BusRecordCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for creating bus records in the central admin interface.
-    Fields: label, bus
+    Fields: label, bus, assigned_driver
     """
     class Meta:
         model = BusRecord
-        fields = ['label', 'bus']
+        fields = ['label', 'bus', 'assigned_driver']
+    
+    def __init__(self, *args, **kwargs):
+        org = kwargs.pop('org', None)
+        self.registration = kwargs.pop('registration', None)
+        super().__init__(*args, **kwargs)
+        # Filter assigned_driver to only show users with driver role in the same organization
+        if org:
+            self.fields['assigned_driver'].queryset = User.objects.filter(
+                profile__role=UserProfile.DRIVER,
+                profile__org=org
+            ).select_related('profile')
+        else:
+            self.fields['assigned_driver'].queryset = User.objects.filter(
+                profile__role=UserProfile.DRIVER
+            ).select_related('profile')
+        self.fields['assigned_driver'].label_from_instance = lambda obj: f"{obj.profile.first_name} {obj.profile.last_name}" if hasattr(obj, 'profile') else obj.email
+    
+    def clean_assigned_driver(self):
+        assigned_driver = self.cleaned_data.get('assigned_driver')
+        if assigned_driver and self.registration:
+            # Check if this driver is already assigned to another bus record in this registration
+            existing_assignment = BusRecord.objects.filter(
+                assigned_driver=assigned_driver,
+                registration=self.registration
+            ).first()
+            
+            if existing_assignment:
+                raise ValidationError(
+                    f"This driver is already assigned to bus record '{existing_assignment.label}' in this registration."
+                )
+        return assigned_driver
         
     
 
 class BusRecordUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for updating bus records in the central admin interface.
-    Fields: label, bus
+    Fields: label, bus, assigned_driver
     """
     class Meta:
         model = BusRecord
-        fields = ['label', 'bus']
+        fields = ['label', 'bus', 'assigned_driver']
+    
+    def __init__(self, *args, **kwargs):
+        org = kwargs.pop('org', None)
+        self.registration = kwargs.pop('registration', None)
+        super().__init__(*args, **kwargs)
+        # Filter assigned_driver to only show users with driver role in the same organization
+        if org:
+            self.fields['assigned_driver'].queryset = User.objects.filter(
+                profile__role=UserProfile.DRIVER,
+                profile__org=org
+            ).select_related('profile')
+        else:
+            self.fields['assigned_driver'].queryset = User.objects.filter(
+                profile__role=UserProfile.DRIVER
+            ).select_related('profile')
+        self.fields['assigned_driver'].label_from_instance = lambda obj: f"{obj.profile.first_name} {obj.profile.last_name}" if hasattr(obj, 'profile') else obj.email
+    
+    def clean_assigned_driver(self):
+        assigned_driver = self.cleaned_data.get('assigned_driver')
+        if assigned_driver and self.registration:
+            # Check if this driver is already assigned to another bus record in this registration
+            # Exclude the current instance being updated
+            existing_assignment = BusRecord.objects.filter(
+                assigned_driver=assigned_driver,
+                registration=self.registration
+            ).exclude(pk=self.instance.pk).first()
+            
+            if existing_assignment:
+                raise ValidationError(
+                    f"This driver is already assigned to bus record '{existing_assignment.label}' in this registration."
+                )
+        return assigned_driver
         
     
 class TripCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
@@ -359,7 +450,7 @@ class BusAssignmentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             # Filter to show only driver users from the organization
             self.fields['driver'].queryset = User.objects.filter(
                 profile__org=org, 
-                profile__is_driver=True
+                profile__role=UserProfile.DRIVER
             ).order_by('profile__first_name', 'profile__last_name')
         
         self.fields['bus'].label = "Select Bus"

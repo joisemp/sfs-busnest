@@ -131,7 +131,7 @@ class Route(models.Model):
     """
     Represents a bus route for an organization and registration.
     Fields:
-        org, registration, name, schedules, created_at, updated_at, slug
+        org, registration, name, schedules, total_km, created_at, updated_at, slug
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns the route name.
@@ -140,6 +140,7 @@ class Route(models.Model):
     registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
     schedules = models.ManyToManyField('services.Schedule', related_name='routes', blank=True)
+    total_km = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text='Total distance of the route in kilometers')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -329,14 +330,13 @@ class Bus(models.Model):
     """
     Represents a bus belonging to an organization.
     Fields:
-        org, registration_no, driver, capacity, is_available, slug
+        org, registration_no, capacity, is_available, slug
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns the bus registration number and capacity.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='buses')
     registration_no = models.CharField(max_length=100)
-    driver = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField(blank=False, null=False)
     is_available = models.BooleanField(default=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -360,7 +360,7 @@ class BusRecord(models.Model):
     """
     Represents a bus assigned to a registration.
     Fields:
-        org, bus, registration, label, min_required_capacity, slug
+        org, bus, registration, label, assigned_driver, min_required_capacity, slug
     Methods:
         clean: Validates minimum required capacity.
         save: Generates a unique slug, updates label and min_required_capacity.
@@ -370,6 +370,7 @@ class BusRecord(models.Model):
     bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, blank=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
     label = models.CharField(max_length=20)
+    assigned_driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_bus_records', help_text='Driver assigned to this bus record')
     min_required_capacity = models.PositiveIntegerField(default=0)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
@@ -473,9 +474,10 @@ class Ticket(models.Model):
     """
     Represents a student's bus ticket.
     Fields:
-        org, registration, institution, student_group, recipt, ticket_id, student_id, student_name, student_email, contact_no, alternative_contact_no, pickup_bus_record, drop_bus_record, pickup_point, drop_point, pickup_schedule, drop_schedule, ticket_type, status, created_at, updated_at, slug
+        org, registration, institution, student_group, recipt, ticket_id, student_id, student_name, student_email, contact_no, alternative_contact_no, pickup_bus_record, drop_bus_record, pickup_point, drop_point, pickup_schedule, drop_schedule, ticket_type, status, is_terminated, terminated_at, created_at, updated_at, slug
     Methods:
         save: Generates a unique slug and ticket_id if not present.
+        terminate: Soft delete the ticket by marking it as terminated.
         __str__: Returns a string representation of the ticket.
     """
     TICKET_TYPES = ( 
@@ -508,6 +510,8 @@ class Ticket(models.Model):
     drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='drop_tickets')
     ticket_type = models.CharField(max_length=300, choices=TICKET_TYPES, default='twoway')
     status = models.BooleanField(default=False)
+    is_terminated = models.BooleanField(default=False)
+    terminated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -549,6 +553,30 @@ class Ticket(models.Model):
         Returns True if there are pending installments with due dates that have passed.
         """
         return self.get_pending_installments().exists()
+    
+    def terminate(self):
+        """
+        Soft delete the ticket by marking it as terminated and updating trip booking counts.
+        """
+        from django.utils import timezone
+        
+        if not self.is_terminated:
+            self.is_terminated = True
+            self.terminated_at = timezone.now()
+            self.save()
+            
+            # Update trip booking counts
+            if self.pickup_bus_record:
+                trip = self.pickup_bus_record.trips.filter(schedule=self.pickup_schedule).first()
+                if trip:
+                    trip.booking_count = max(0, trip.booking_count - 1)
+                    trip.save()
+
+            if self.drop_bus_record:
+                trip = self.drop_bus_record.trips.filter(schedule=self.drop_schedule).first()
+                if trip:
+                    trip.booking_count = max(0, trip.booking_count - 1)
+                    trip.save()
 
 class InstallmentDate(models.Model):
     """
@@ -999,22 +1027,7 @@ class Notification(models.Model):
         """
         return f'{self.user.email} - {self.action} - {self.timestamp}'
 
-@receiver(post_delete, sender=Ticket)
-def update_trip_booking_count_on_ticket_delete(sender, instance, **kwargs):
-    """
-    Signal to update the booking count of trips associated with a ticket when the ticket is deleted.
-    """
-    if instance.pickup_bus_record:
-        trip = instance.pickup_bus_record.trips.filter(schedule=instance.pickup_schedule).first()
-        if trip:
-            trip.booking_count = max(0, trip.booking_count - 1)
-            trip.save()
-
-    if instance.drop_bus_record:
-        trip = instance.drop_bus_record.trips.filter(schedule=instance.drop_schedule).first()
-        if trip:
-            trip.booking_count = max(0, trip.booking_count - 1)
-            trip.save()
+# Signal handler removed - soft delete is now handled by the terminate() method on Ticket model
 
 
 class StudentPassFile(models.Model):
@@ -1143,7 +1156,7 @@ class BusReservationAssignment(models.Model):
     """
     reservation_request = models.ForeignKey(BusReservationRequest, on_delete=models.CASCADE, related_name='bus_assignments')
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='reservation_assignments')
-    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='driver_assignments', limit_choices_to={'profile__is_driver': True}, help_text="Driver assigned to this bus")
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='driver_assignments', limit_choices_to={'profile__role': 'driver'}, help_text="Driver assigned to this bus")
     assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bus_assignment_actions')
     assigned_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)

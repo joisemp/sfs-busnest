@@ -41,7 +41,7 @@ class UserProfileModelTests(TestCase):
             user=self.user,
             first_name="John",
             last_name="Doe",
-            is_central_admin=True
+            role=UserProfile.CENTRAL_ADMIN
         )
     
     def test_user_profile_creation(self):
@@ -49,6 +49,7 @@ class UserProfileModelTests(TestCase):
         profile = UserProfile.objects.get(user=self.user)
         self.assertEqual(profile.first_name, "John")
         self.assertEqual(profile.last_name, "Doe")
+        self.assertEqual(profile.role, UserProfile.CENTRAL_ADMIN)
         self.assertTrue(profile.is_central_admin)
         self.assertFalse(profile.is_institution_admin)
         self.assertFalse(profile.is_student)

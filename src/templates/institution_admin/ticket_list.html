@@ -32,7 +32,7 @@
     </div>
     <div>
       {% if filters %}
-      <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}"
+      <a href="{% url 'institution_admin:ticket_list' registration_slug=registration.slug %}?status={{ current_status }}"
         class="btn btn-primary">Clear Filters</a>
       {% else %}
       <div class="d-flex flex-wrap">
@@ -175,6 +175,33 @@
     </form>
 
   </div>
+  </div>
+
+  <!-- Status Filter Tabs -->
+  <div class="ticket-status-tabs mt-4 mb-3">
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_status == 'active' %}active{% endif %}" 
+           href="?status=active{% if query_params_no_status %}&{{ query_params_no_status }}{% endif %}" 
+           role="tab">
+          <i class="fa-solid fa-check-circle me-2"></i>Active Tickets
+        </a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_status == 'all' %}active{% endif %}" 
+           href="?status=all{% if query_params_no_status %}&{{ query_params_no_status }}{% endif %}" 
+           role="tab">
+          <i class="fa-solid fa-list me-2"></i>All Tickets
+        </a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_status == 'terminated' %}active{% endif %}" 
+           href="?status=terminated{% if query_params_no_status %}&{{ query_params_no_status }}{% endif %}" 
+           role="tab">
+          <i class="fa-solid fa-ban me-2"></i>Terminated Tickets
+        </a>
+      </li>
+    </ul>
   </div>
 
   {% if tickets %}
