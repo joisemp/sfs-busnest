@@ -474,6 +474,14 @@ class BusRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Creat
         user_org = self.request.user.profile.org
         form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
         return form
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['org'] = self.request.user.profile.org
+        # Pass the registration to the form for validation
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        kwargs['registration'] = registration
+        return kwargs
 
     @transaction.atomic
     def form_valid(self, form):
@@ -534,6 +542,20 @@ class BusRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Updat
     template_name = 'central_admin/bus_record_update.html'
     slug_field = 'slug'
     slug_url_kwarg = 'bus_record_slug'
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['org'] = self.request.user.profile.org
+        # Pass the registration to the form for validation
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        kwargs['registration'] = registration
+        return kwargs
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        user_org = self.request.user.profile.org
+        form.fields['bus'].queryset = Bus.objects.filter(org=user_org)
+        return form
 
     @transaction.atomic
     def form_valid(self, form):

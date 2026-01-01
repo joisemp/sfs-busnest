@@ -131,7 +131,7 @@ class Route(models.Model):
     """
     Represents a bus route for an organization and registration.
     Fields:
-        org, registration, name, schedules, created_at, updated_at, slug
+        org, registration, name, schedules, total_km, created_at, updated_at, slug
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns the route name.
@@ -140,6 +140,7 @@ class Route(models.Model):
     registration = models.ForeignKey('services.Registration', on_delete=models.CASCADE, related_name='routes')
     name = models.CharField(max_length=200)
     schedules = models.ManyToManyField('services.Schedule', related_name='routes', blank=True)
+    total_km = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text='Total distance of the route in kilometers')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
@@ -359,7 +360,7 @@ class BusRecord(models.Model):
     """
     Represents a bus assigned to a registration.
     Fields:
-        org, bus, registration, label, min_required_capacity, slug
+        org, bus, registration, label, assigned_driver, min_required_capacity, slug
     Methods:
         clean: Validates minimum required capacity.
         save: Generates a unique slug, updates label and min_required_capacity.
@@ -369,6 +370,7 @@ class BusRecord(models.Model):
     bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, null=True, blank=True, related_name='records')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bus_records')
     label = models.CharField(max_length=20)
+    assigned_driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_bus_records', help_text='Driver assigned to this bus record')
     min_required_capacity = models.PositiveIntegerField(default=0)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
