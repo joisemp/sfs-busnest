@@ -29,6 +29,7 @@
           <tr>
             <th scope="col" class="text-muted fw-semibold">Schedule</th>
             <th scope="col" class="text-muted fw-semibold">Route</th>
+            <th scope="col" class="text-muted fw-semibold">Distance (km)</th>
             <th scope="col" class="text-muted fw-semibold">Count</th>
             <th scope="col" class="text-muted fw-semibold">Seat progress</th>
             <th scope="col" class="text-muted fw-semibold">Action</th>
@@ -39,6 +40,7 @@
           <tr>
             <td class="fw-semibold">{{ trip.schedule.name }}</td>
             <td>{{ trip.route }}</td>
+            <td>{{ trip.route.total_km|default:"-" }}</td>
             <td>{{ trip.booking_count }}/{{ bus_record.bus.capacity }}</td>
             <td>
               <div class="bar" style="width:180px;">
@@ -55,6 +57,31 @@
       </table>
   </div>
 
-  <span class="text-muted">Bus total capacity : {{ bus_record.bus.capacity }}</span>
+  <div class="row mt-4">
+    <div class="col-md-4 mb-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body py-3">
+          <h6 class="text-muted text-uppercase small mb-1">Bus Total Capacity</h6>
+          <h4 class="mb-0 fw-bold">{{ bus_record.bus.capacity }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body py-3">
+          <h6 class="text-muted text-uppercase small mb-1">Total Distance</h6>
+          <h4 class="mb-0 fw-bold">{{ total_km }} km</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body py-3">
+          <h6 class="text-muted text-uppercase small mb-1">Assigned Driver</h6>
+          <h4 class="mb-0 fw-bold">{% if bus_record.assigned_driver %}{{ bus_record.assigned_driver.profile.first_name }} {{ bus_record.assigned_driver.profile.last_name }}{% else %}<span class="text-muted">-</span>{% endif %}</h4>
+        </div>
+      </div>
+    </div>
+  </div>
 
 {% endblock content %}

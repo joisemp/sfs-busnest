@@ -696,13 +696,19 @@ class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
     def get_queryset(self):
         bus_record = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
-        queryset = Trip.objects.filter(record=bus_record)
+        queryset = Trip.objects.filter(record=bus_record).select_related('route', 'schedule')
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         context["bus_record"] = BusRecord.objects.get(slug=self.kwargs["bus_record_slug"])
+        
+        # Calculate total km for all trips in this bus record
+        trips = context['trips']
+        total_km = sum(trip.route.total_km or 0 for trip in trips)
+        context['total_km'] = total_km
+        
         return context
     
 
