@@ -2,7 +2,11 @@
 Script to remove duplicate payment records before applying unique constraint.
 """
 import os
+import sys
 import django
+
+# Add parent directory to Python path to find config module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
