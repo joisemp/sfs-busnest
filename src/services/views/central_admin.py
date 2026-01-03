@@ -92,7 +92,8 @@ from services.forms.central_admin import (
     BusRequestCommentForm,
     StopTransferForm,
     BusAssignmentForm,
-    TripExpenseForm
+    TripExpenseForm,
+    AutoAssignDriversForm
 )
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass, export_filtered_tickets_to_excel
@@ -684,6 +685,292 @@ class BusRecordDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Delet
         """
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
+
+class DriverManagementView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
+    """
+    View for managing driver assignments to bus records.
+    Shows form to select assignment strategy.
+    
+    Methods:
+        get_context_data: Displays summary statistics.
+        form_valid: Redirects to confirmation page with selected strategy.
+    """
+    template_name = 'central_admin/driver_management.html'
+    form_class = AutoAssignDriversForm
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        context['registration'] = registration
+        
+        # Get all bus records for assignment/reassignment
+        bus_records_for_assignment = BusRecord.objects.filter(
+            org=self.request.user.profile.org,
+            registration=registration
+        ).select_related('bus', 'assigned_driver__profile').prefetch_related('trips__route').order_by('label')
+        
+        # Get all available drivers from the organization
+        available_drivers = User.objects.filter(
+            profile__org=self.request.user.profile.org,
+            profile__role=UserProfile.DRIVER
+        ).select_related('profile').order_by('profile__first_name')
+        
+        # Sort drivers by experience (descending)
+        drivers_with_experience = []
+        for driver in available_drivers:
+            drivers_with_experience.append({
+                'driver': driver,
+                'experience': driver.profile.years_of_experience or 0
+            })
+        
+        drivers_with_experience.sort(key=lambda x: x['experience'], reverse=True)
+        
+        context['available_drivers'] = drivers_with_experience
+        context['total_bus_records'] = bus_records_for_assignment.count()
+        context['available_driver_count'] = len(drivers_with_experience)
+        
+        return context
+    
+    def form_valid(self, form):
+        strategy = form.cleaned_data['assignment_strategy']
+        return redirect('central_admin:driver_assignment_confirm', 
+                       registration_slug=self.kwargs['registration_slug'],
+                       strategy=strategy)
+
+
+class DriverAssignmentConfirmView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    View for previewing driver assignments before applying.
+    Shows detailed preview of assignments based on selected strategy.
+    
+    Methods:
+        get_context_data: Calculates and displays preview of driver assignments.
+    """
+    template_name = 'central_admin/driver_assignment_confirm.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        strategy = self.kwargs.get('strategy', 'experienced_to_longest')
+        
+        context['registration'] = registration
+        context['selected_strategy'] = strategy
+        
+        # Get all bus records for assignment/reassignment
+        bus_records_for_assignment = BusRecord.objects.filter(
+            org=self.request.user.profile.org,
+            registration=registration
+        ).select_related('bus', 'assigned_driver__profile').prefetch_related('trips__route').order_by('label')
+        
+        # Calculate total distance for each bus record
+        bus_records_with_distance = []
+        for record in bus_records_for_assignment:
+            trips = record.trips.all()
+            total_km = sum(trip.route.total_km or 0 for trip in trips)
+            bus_records_with_distance.append({
+                'record': record,
+                'total_km': total_km,
+                'trip_count': trips.count(),
+                'current_driver': record.assigned_driver
+            })
+        
+        # Get all available drivers from the organization
+        available_drivers = User.objects.filter(
+            profile__org=self.request.user.profile.org,
+            profile__role=UserProfile.DRIVER
+        ).select_related('profile').order_by('profile__first_name')
+        
+        # Sort drivers by experience (descending)
+        drivers_with_experience = []
+        for driver in available_drivers:
+            drivers_with_experience.append({
+                'driver': driver,
+                'experience': driver.profile.years_of_experience or 0
+            })
+        
+        drivers_with_experience.sort(key=lambda x: x['experience'], reverse=True)
+        
+        # Generate preview assignments
+        preview_assignments = self._generate_preview_assignments(
+            bus_records_with_distance,
+            drivers_with_experience,
+            strategy
+        )
+        
+        context['preview_assignments'] = preview_assignments
+        context['total_bus_records'] = len(bus_records_with_distance)
+        context['available_driver_count'] = len(drivers_with_experience)
+        
+        return context
+    
+    def _generate_preview_assignments(self, bus_records_with_distance, drivers_with_experience, strategy):
+        """
+        Generate preview of driver assignments based on strategy.
+        Uses round-robin distribution and prioritizes based on experience and distance.
+        
+        Args:
+            bus_records_with_distance: List of bus records with their total distance
+            drivers_with_experience: List of drivers with their experience
+            strategy: Assignment strategy ('experienced_to_longest' or 'experienced_to_shortest')
+        
+        Returns:
+            List of assignment dictionaries with bus_record, driver, and assignment details
+        """
+        assignments = []
+        
+        if not drivers_with_experience:
+            return assignments
+        
+        # Sort bus records by distance based on strategy
+        if strategy == 'experienced_to_longest':
+            # Sort routes by distance descending (longest first)
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'], reverse=True)
+        else:  # experienced_to_shortest
+            # Sort routes by distance ascending (shortest first)
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'])
+        
+        # Round-robin assignment - each driver assigned only once
+        driver_index = 0
+        for record_data in sorted_records:
+            if driver_index < len(drivers_with_experience):
+                assignments.append({
+                    'bus_record': record_data['record'],
+                    'driver': drivers_with_experience[driver_index]['driver'],
+                    'total_km': record_data['total_km'],
+                    'trip_count': record_data['trip_count'],
+                    'driver_experience': drivers_with_experience[driver_index]['experience'],
+                    'current_driver': record_data.get('current_driver')
+                })
+                driver_index += 1
+            else:
+                # Not enough drivers - keep current assignment or leave unassigned
+                assignments.append({
+                    'bus_record': record_data['record'],
+                    'driver': None,
+                    'total_km': record_data['total_km'],
+                    'trip_count': record_data['trip_count'],
+                    'driver_experience': None,
+                    'current_driver': record_data.get('current_driver')
+                })
+        
+        return assignments
+
+
+class DriverManagementApplyView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for applying driver assignments to bus records.
+    Validates and applies the assignments based on the selected strategy.
+    
+    Methods:
+        post: Applies driver assignments and logs activity.
+    """
+    
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        strategy = request.POST.get('assignment_strategy', 'experienced_to_longest')
+        
+        # Get all bus records for assignment/reassignment
+        bus_records_for_assignment = BusRecord.objects.filter(
+            org=request.user.profile.org,
+            registration=registration
+        ).select_related('bus', 'assigned_driver__profile').prefetch_related('trips__route').order_by('label')
+        
+        # Calculate total distance for each bus record
+        bus_records_with_distance = []
+        for record in bus_records_for_assignment:
+            trips = record.trips.all()
+            total_km = sum(trip.route.total_km or 0 for trip in trips)
+            bus_records_with_distance.append({
+                'record': record,
+                'total_km': total_km
+            })
+        
+        # Get all available drivers from the organization
+        available_drivers = User.objects.filter(
+            profile__org=request.user.profile.org,
+            profile__role=UserProfile.DRIVER
+        ).select_related('profile').order_by('profile__first_name')
+        
+        # Sort drivers by experience (descending)
+        drivers_with_experience = list(available_drivers)
+        drivers_with_experience.sort(
+            key=lambda x: x.profile.years_of_experience or 0,
+            reverse=True
+        )
+        
+        if not drivers_with_experience:
+            messages.warning(request, "No available drivers found for assignment.")
+            return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+        
+        # Sort bus records by distance based on strategy
+        if strategy == 'experienced_to_longest':
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'], reverse=True)
+        else:  # experienced_to_shortest
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'])
+        
+        # Apply assignment - each driver assigned only once
+        assigned_count = 0
+        driver_index = 0
+        
+        for record_data in sorted_records:
+            if driver_index < len(drivers_with_experience):
+                bus_record = record_data['record']
+                driver = drivers_with_experience[driver_index]
+                
+                # Store old driver info for logging
+                old_driver = bus_record.assigned_driver
+                
+                # Check if this driver is already assigned to another bus record in this registration
+                # If yes, clear that assignment first
+                existing_assignment = BusRecord.objects.filter(
+                    registration=registration,
+                    assigned_driver=driver
+                ).exclude(pk=bus_record.pk).first()
+                
+                if existing_assignment:
+                    # Clear the previous assignment
+                    existing_assignment.assigned_driver = None
+                    existing_assignment.save(update_fields=['assigned_driver'])
+                    log_user_activity(
+                        request.user,
+                        f"Cleared driver assignment",
+                        f"Driver {driver.profile.first_name} {driver.profile.last_name} " +
+                        f"removed from bus record {existing_assignment.label} (reassignment)"
+                    )
+                
+                # Assign driver to new bus record
+                bus_record.assigned_driver = driver
+                bus_record.save(update_fields=['assigned_driver'])
+                
+                # Log activity
+                action = "reassigned" if old_driver else "assigned"
+                log_user_activity(
+                    request.user,
+                    f"Auto-{action} driver to bus record",
+                    f"Driver {driver.profile.first_name} {driver.profile.last_name} " +
+                    f"auto-{action} to bus record {bus_record.label} in registration {registration.name}"
+                )
+                
+                assigned_count += 1
+                driver_index += 1
+        
+        unassigned_count = len(sorted_records) - assigned_count
+        
+        if assigned_count > 0:
+            messages.success(
+                request,
+                f"Successfully assigned/reassigned {assigned_count} driver(s) to bus records."
+            )
+        
+        if unassigned_count > 0:
+            messages.warning(
+                request,
+                f"{unassigned_count} bus record(s) could not be assigned due to insufficient available drivers."
+            )
+        
+        return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+
 
 class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """

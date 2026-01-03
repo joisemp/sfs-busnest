@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar/registration_sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<div class="container">
+    <div class="mb-3">
+        <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm">
+            <i class="fa-solid fa-arrow-left me-2"></i>Back to Bus Records
+        </a>
+    </div>
+
+    <h2 class="mb-4">Driver Management</h2>
+    <p class="text-muted">Registration: <strong>{{ registration.name }}</strong></p>
+    <p class="text-info"><i class="fa-solid fa-info-circle me-2"></i>This will assign or reassign drivers to all bus records based on your selected strategy.</p>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Bus Records</h6>
+                    <h3>{{ total_bus_records }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">Available Drivers</h6>
+                    <h3>{{ available_driver_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">Assignment Status</h6>
+                    {% if available_driver_count >= total_bus_records %}
+                    <h3 class="text-success">All can be assigned</h3>
+                    {% else %}
+                    <h3 class="text-warning">{{ available_driver_count }} of {{ total_bus_records }}</h3>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if total_bus_records == 0 %}
+    <div class="alert alert-info">
+        <i class="fa-solid fa-info-circle me-2"></i>No bus records found in this registration.
+    </div>
+    {% elif available_driver_count == 0 %}
+    <div class="alert alert-warning">
+        <i class="fa-solid fa-exclamation-triangle me-2"></i>No available drivers found in the organization.
+    </div>
+    {% else %}
+    <!-- Assignment Strategy Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Select Assignment Strategy</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ form.assignment_strategy.label }}</label>
+                    {% for choice in form.assignment_strategy %}
+                    <div class="form-check">
+                        {{ choice.tag }}
+                        <label class="form-check-label" for="{{ choice.id_for_label }}">
+                            {{ choice.choice_label }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                    {% if form.assignment_strategy.help_text %}
+                    <small class="form-text text-muted">{{ form.assignment_strategy.help_text }}</small>
+                    {% endif %}
+                    {% if form.assignment_strategy.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.assignment_strategy.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-eye me-2"></i>Preview Assignments
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Available Drivers List -->
+    {% if available_drivers %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Available Drivers</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Experience</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for driver_data in available_drivers %}
+                        <tr>
+                            <td>{{ driver_data.driver.profile.first_name }} {{ driver_data.driver.profile.last_name }}</td>
+                            <td>{{ driver_data.driver.email }}</td>
+                            <td>
+                                {% if driver_data.experience > 0 %}
+                                    {{ driver_data.experience }} years
+                                {% else %}
+                                    <span class="text-muted">No experience recorded</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+{% endblock content %}
