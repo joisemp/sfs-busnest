@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Driver Dashboard{% endblock title %}
+
+{% block sidebar %}
+{% include 'drivers/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+{% if has_assignment %}
+<div class="card border-0 mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 text-primary mb-2">Welcome back, {{ profile.first_name }}!</h2>
+        <p class="text-muted mb-0">Here's your driver dashboard. Access your routes, schedules, and important information from this page.</p>
+    </div>
+</div>
+
+<div class="card border-0 mb-4">
+    <div class="card-body p-4">
+        <h3 class="h5 mb-4">Assigned Bus Records</h3>
+        {% for record in bus_records %}
+        <div class="card border mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h5 class="h6 fw-semibold text-primary mb-3">
+                            <i class="fa-solid fa-bus me-2"></i>{{ record.label }}
+                        </h5>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Registration</small>
+                            <span class="fw-semibold">{{ record.registration.name }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Min Required Capacity</small>
+                            <span>{{ record.min_required_capacity }} seats</span>
+                        </div>
+                    </div>
+                    {% if record.bus %}
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-3">Bus Details</h6>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Registration Number</small>
+                            <span class="fw-semibold">{{ record.bus.registration_no }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Capacity</small>
+                            <span>{{ record.bus.capacity }} seats</span>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Status</small>
+                            {% if record.bus.is_available %}
+                            <span class="badge bg-success">Available</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Not Available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6">
+                        <div class="alert alert-warning mb-0">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                            No bus assigned to this record yet
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card border-0">
+    <div class="card-body p-4">
+        <h3 class="h5 mb-4">Quick Links</h3>
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-4">
+                <a href="#" class="card text-decoration-none border h-100 text-dark">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-3">📋</div>
+                        <h4 class="h6 fw-semibold mb-2">My Routes</h4>
+                        <small class="text-muted">View assigned routes</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a href="#" class="card text-decoration-none border h-100 text-dark">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-3">📅</div>
+                        <h4 class="h6 fw-semibold mb-2">Schedule</h4>
+                        <small class="text-muted">Check today's schedule</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <a href="#" class="card text-decoration-none border h-100 text-dark">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-3">👥</div>
+                        <h4 class="h6 fw-semibold mb-2">Students</h4>
+                        <small class="text-muted">View student list</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card border-0">
+    <div class="card-body text-center py-5">
+        <div class="mb-4">
+            <i class="fa-solid fa-bus fs-1 text-muted opacity-50"></i>
+        </div>
+        <h3 class="h5 text-muted mb-3">No Bus Assignment</h3>
+        <p class="text-muted mb-4">You haven't been assigned to any bus yet. Please contact your administrator for bus assignment.</p>
+        <div class="text-muted">
+            <small><i class="fa-solid fa-circle-info me-2"></i>Once assigned, you'll be able to view routes, schedules, and student information.</small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock content %}
