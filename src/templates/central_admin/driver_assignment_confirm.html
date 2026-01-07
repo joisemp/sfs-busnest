@@ -123,6 +123,7 @@
                 <form method="post" action="{% url 'central_admin:driver_management_apply' registration_slug=registration.slug %}">
                     {% csrf_token %}
                     <input type="hidden" name="assignment_strategy" value="{{ selected_strategy }}">
+                    <input type="hidden" name="include_unused_drivers" value="{{ include_unused_drivers|yesno:'true,false' }}">
                     <button type="submit" class="btn btn-success btn-lg">
                         <i class="fa-solid fa-check me-2"></i>Confirm & Apply Assignments
                     </button>

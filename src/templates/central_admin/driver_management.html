@@ -86,6 +86,20 @@
                     </div>
                     {% endif %}
                 </div>
+                
+                <!-- Include Unused Drivers Option (only for rotate strategy) -->
+                <div class="mb-3" id="unused-drivers-option" style="display: none;">
+                    <div class="form-check">
+                        {{ form.include_unused_drivers }}
+                        <label class="form-check-label" for="{{ form.include_unused_drivers.id_for_label }}">
+                            {{ form.include_unused_drivers.label }}
+                        </label>
+                    </div>
+                    {% if form.include_unused_drivers.help_text %}
+                    <small class="form-text text-muted">{{ form.include_unused_drivers.help_text }}</small>
+                    {% endif %}
+                </div>
+                
                 <button type="submit" class="btn btn-primary btn-lg">
                     <i class="fa-solid fa-eye me-2"></i>Preview Assignments
                 </button>
@@ -133,3 +147,32 @@
 </div>
 
 {% endblock content %}
+
+{% block scripts %}
+<script>
+    // Toggle unused drivers option visibility based on selected strategy
+    document.addEventListener('DOMContentLoaded', function() {
+        const strategyInputs = document.querySelectorAll('input[name="assignment_strategy"]');
+        const unusedDriversOption = document.getElementById('unused-drivers-option');
+        
+        if (unusedDriversOption) {
+            function toggleUnusedDriversOption() {
+                const selectedStrategy = document.querySelector('input[name="assignment_strategy"]:checked');
+                if (selectedStrategy && selectedStrategy.value === 'rotate') {
+                    unusedDriversOption.style.display = 'block';
+                } else {
+                    unusedDriversOption.style.display = 'none';
+                }
+            }
+            
+            // Initial check
+            toggleUnusedDriversOption();
+            
+            // Add event listeners to all strategy radio buttons
+            strategyInputs.forEach(input => {
+                input.addEventListener('change', toggleUnusedDriversOption);
+            });
+        }
+    });
+</script>
+{% endblock %}

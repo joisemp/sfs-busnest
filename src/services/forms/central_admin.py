@@ -523,11 +523,12 @@ class AutoAssignDriversForm(form_mixin.BootstrapFormMixin, forms.Form):
     """
     Form for auto-assigning drivers to bus records without assigned drivers.
     Provides options for assignment strategy based on experience and route distance.
-    Fields: assignment_strategy
+    Fields: assignment_strategy, include_unused_drivers
     """
     ASSIGNMENT_STRATEGY_CHOICES = [
         ('experienced_to_longest', 'Assign most experienced drivers to longest distance routes'),
         ('experienced_to_shortest', 'Assign most experienced drivers to shortest distance routes'),
+        ('rotate', 'Rotate drivers circularly - shift each driver to the next bus (like a circular queue)'),
     ]
     
     assignment_strategy = forms.ChoiceField(
@@ -535,4 +536,11 @@ class AutoAssignDriversForm(form_mixin.BootstrapFormMixin, forms.Form):
         widget=forms.RadioSelect,
         initial='experienced_to_longest',
         help_text='Choose how to prioritize driver assignment based on experience and route distance'
+    )
+    
+    include_unused_drivers = forms.BooleanField(
+        required=False,
+        initial=False,
+        label='Include unused drivers in rotation',
+        help_text='If checked, unused drivers (not currently assigned to any bus) will be included in the rotation pool alongside existing drivers'
     )
