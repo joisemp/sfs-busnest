@@ -247,9 +247,9 @@ class Registration(models.Model):
     """
     Represents a registration event or period for an organization.
     Fields:
-        org, name, instructions, status, code, slug
+        org, name, instructions, status, code, is_active, slug
     Methods:
-        save: Generates a unique slug and code if not present.
+        save: Generates a unique slug and code if not present. Ensures only one active registration.
         __str__: Returns the registration name.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='registrations')
@@ -257,17 +257,24 @@ class Registration(models.Model):
     instructions = models.TextField()
     status = models.BooleanField(default=False)
     code = models.CharField(max_length=100, unique=True, null=True)
+    is_active = models.BooleanField(default=False, help_text='Only one registration can be active at a time')
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         """
         Save the Registration instance, generating a unique slug and code if not present.
+        Ensures only one registration can be active per organization at a time.
         """
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
         if not self.code:
             self.code = generate_unique_code(self, unique_field='code')
+        
+        # If setting this registration as active, deactivate all others in the same org
+        if self.is_active:
+            Registration.objects.filter(org=self.org, is_active=True).exclude(pk=self.pk).update(is_active=False)
+        
         super().save(*args, **kwargs)
     
     def __str__(self):

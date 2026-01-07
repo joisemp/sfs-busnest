@@ -215,21 +215,26 @@ class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class RegistrationForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing registrations in the central admin interface.
-    Fields: name, instructions, status (with custom label and switch)
+    Fields: name, instructions, status, is_active (with custom labels and switches)
     """
     class Meta:
         model = Registration
-        fields = ['name', 'instructions', 'status']
+        fields = ['name', 'instructions', 'status', 'is_active']
         labels = {
             'status': 'Open registration',
+            'is_active': 'Active registration',
+        }
+        help_texts = {
+            'is_active': 'Only one registration can be active at a time. Activating this will deactivate all others.',
         }
         
     def __init__(self,*args,**kwargs):
         """
-        Customizes the status field to use a switch widget.
+        Customizes the status and is_active fields to use switch widgets.
         """
         super(RegistrationForm, self).__init__(*args,**kwargs)
         self.fields['status'].is_switch = True
+        self.fields['is_active'].is_switch = True
         
 
 class FAQForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

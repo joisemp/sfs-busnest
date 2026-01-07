@@ -2194,6 +2194,42 @@ class RegistrationDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     slug_field = 'slug'
     slug_url_kwarg = 'registration_slug'
     success_url = reverse_lazy('central_admin:registration_list')
+
+
+class RegistrationToggleActiveView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for toggling the active status of a Registration.
+    
+    Only one registration can be active at a time per organization.
+    When activating a registration, all other registrations in the same org are deactivated.
+    
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users.
+        - View: Base view for handling HTTP requests.
+    """
+    
+    def post(self, request, registration_slug):
+        registration = get_object_or_404(
+            Registration, 
+            slug=registration_slug, 
+            org=request.user.profile.org
+        )
+        
+        # Toggle the active status
+        registration.is_active = not registration.is_active
+        registration.save()  # The save method handles deactivating other registrations
+        
+        log_user_activity(
+            request.user,
+            f"Toggled registration active status: {registration.name}",
+            f"Registration {registration.name} is now {'active' if registration.is_active else 'inactive'}"
+        )
+        
+        status_text = "activated" if registration.is_active else "deactivated"
+        messages.success(request, f"Registration '{registration.name}' has been {status_text} successfully!")
+        
+        return redirect('central_admin:registration_list')
     
     
 class TicketListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
