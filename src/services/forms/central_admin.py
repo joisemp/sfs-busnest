@@ -26,7 +26,7 @@ Forms:
 
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense, InstallmentDate
+from services.models import Institution, Bus, RefuelingRecord, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense, InstallmentDate
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -138,6 +138,31 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         super(BusForm,self).__init__(*args,**kwargs)
         self.fields['is_available'].label="Available for service"
         self.fields['is_available'].is_switch = True
+
+
+class RefuelingRecordForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for managing refueling records in the central admin interface.
+    Fields: refuel_date, fuel_amount, fuel_cost, odometer_reading, fuel_type, notes
+    """
+    class Meta:
+        model = RefuelingRecord
+        fields = [
+            'refuel_date', 'fuel_amount', 'fuel_cost', 'odometer_reading', 'fuel_type', 'notes'
+        ]
+        widgets = {
+            'refuel_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Customizes field labels and help text.
+        """
+        super(RefuelingRecordForm, self).__init__(*args, **kwargs)
+        self.fields['fuel_amount'].label = "Fuel Amount (Liters/kWh)"
+        self.fields['fuel_cost'].label = "Total Cost (₹)"
+        self.fields['odometer_reading'].label = "Odometer Reading (km)"
 
 
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

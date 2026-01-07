@@ -16,7 +16,7 @@ Direct Registrations:
 """
 
 from django.contrib import admin
-from services.models import Institution, Bus, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile, ScheduleGroup, TripExpense
+from services.models import Institution, Bus, RefuelingRecord, Organisation, Route, Stop, Registration, Schedule, Ticket, RouteFile, ReceiptFile, ExportedFile, ScheduleGroup, TripExpense
 
 
 @admin.register(Organisation)
@@ -31,6 +31,14 @@ class InstitutionAdmin(admin.ModelAdmin):
 @admin.register(Bus)
 class BusAdmin(admin.ModelAdmin):
     list_display = ('registration_no', 'capacity')
+
+
+@admin.register(RefuelingRecord)
+class RefuelingRecordAdmin(admin.ModelAdmin):
+    list_display = ('bus', 'refuel_date', 'fuel_amount', 'fuel_cost', 'fuel_type', 'odometer_reading')
+    list_filter = ('fuel_type', 'refuel_date')
+    search_fields = ('bus__registration_no', 'notes')
+    date_hierarchy = 'refuel_date'
     
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):

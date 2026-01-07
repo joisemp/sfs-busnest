@@ -50,6 +50,7 @@ from django.views.generic import (
 from services.models import (
     Institution, 
     Bus, 
+    RefuelingRecord,
     Stop, 
     Route, 
     RouteFile, 
@@ -78,6 +79,7 @@ from services.forms.central_admin import (
     PeopleUpdateForm, 
     InstitutionForm, 
     BusForm, 
+    RefuelingRecordForm,
     RouteForm, 
     StopForm, 
     RegistrationForm, 
@@ -393,6 +395,133 @@ class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
         bus = self.get_object()
         user = self.request.user
         log_user_activity(user, f"Deleted Bus: {bus.registration_no}", f"Bus {bus.registration_no} was deleted.")
+        return super().delete(request, *args, **kwargs)
+
+
+class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView):
+    """
+    BusDetailView displays detailed information about a bus including refueling records.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        template_name (str): The path to the template used to render the view.
+        model (Model): The model associated with this view (Bus).
+        context_object_name (str): The name of the context variable for the bus object.
+    Methods:
+        get_context_data(**kwargs):
+            Adds refueling records and form to the context.
+    """
+    model = Bus
+    template_name = 'central_admin/bus_detail.html'
+    context_object_name = 'bus'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        bus = self.get_object()
+        context['refueling_records'] = RefuelingRecord.objects.filter(
+            bus=bus, 
+            org=self.request.user.profile.org
+        ).order_by('-refuel_date', '-created_at')
+        context['form'] = RefuelingRecordForm()
+        return context
+
+
+class RefuelingRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
+    """
+    RefuelingRecordCreateView handles creation of refueling records for a bus.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        model (Model): The model associated with this view (RefuelingRecord).
+        form_class (Form): The form class used to create a refueling record.
+    Methods:
+        form_valid(self, form):
+            Saves the refueling record with bus and org, logs activity, and redirects to bus detail.
+    """
+    model = RefuelingRecord
+    form_class = RefuelingRecordForm
+    
+    def form_valid(self, form):
+        bus_slug = self.kwargs.get('bus_slug')
+        bus = get_object_or_404(Bus, slug=bus_slug, org=self.request.user.profile.org)
+        
+        refueling_record = form.save(commit=False)
+        refueling_record.bus = bus
+        refueling_record.org = self.request.user.profile.org
+        refueling_record.save()
+        
+        log_user_activity(
+            self.request.user,
+            f"Added refueling record for {bus.registration_no}",
+            f"Refueling record added: {refueling_record.fuel_amount}L on {refueling_record.refuel_date}"
+        )
+        messages.success(self.request, "Refueling record added successfully!")
+        return redirect('central_admin:bus_detail', slug=bus_slug)
+    
+    def form_invalid(self, form):
+        bus_slug = self.kwargs.get('bus_slug')
+        messages.error(self.request, "Error adding refueling record. Please check the form.")
+        return redirect('central_admin:bus_detail', slug=bus_slug)
+
+
+class RefuelingRecordUpdateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, UpdateView):
+    """
+    RefuelingRecordUpdateView handles updating existing refueling records.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        model (Model): The model associated with this view (RefuelingRecord).
+        form_class (Form): The form class used to update a refueling record.
+        template_name (str): The path to the template used to render the view.
+    Methods:
+        form_valid(self, form):
+            Saves the updated record, logs activity, and redirects to bus detail.
+    """
+    model = RefuelingRecord
+    form_class = RefuelingRecordForm
+    template_name = 'central_admin/refueling_record_update.html'
+    
+    def get_queryset(self):
+        return RefuelingRecord.objects.filter(org=self.request.user.profile.org)
+    
+    def form_valid(self, form):
+        refueling_record = form.save()
+        log_user_activity(
+            self.request.user,
+            f"Updated refueling record for {refueling_record.bus.registration_no}",
+            f"Refueling record updated: {refueling_record.refuel_date}"
+        )
+        messages.success(self.request, "Refueling record updated successfully!")
+        return redirect('central_admin:bus_detail', slug=refueling_record.bus.slug)
+
+
+class RefuelingRecordDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView):
+    """
+    RefuelingRecordDeleteView handles deletion of refueling records.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        model (Model): The model associated with this view (RefuelingRecord).
+        template_name (str): The path to the template used to render the view.
+    Methods:
+        get_success_url(self):
+            Returns the URL to redirect to after successful deletion.
+        delete(self, request, *args, **kwargs):
+            Logs the deletion activity before deleting the record.
+    """
+    model = RefuelingRecord
+    template_name = 'central_admin/refueling_record_confirm_delete.html'
+    
+    def get_queryset(self):
+        return RefuelingRecord.objects.filter(org=self.request.user.profile.org)
+    
+    def get_success_url(self):
+        return reverse('central_admin:bus_detail', kwargs={'slug': self.object.bus.slug})
+    
+    def delete(self, request, *args, **kwargs):
+        refueling_record = self.get_object()
+        log_user_activity(
+            request.user,
+            f"Deleted refueling record for {refueling_record.bus.registration_no}",
+            f"Refueling record deleted: {refueling_record.refuel_date}"
+        )
+        messages.success(request, "Refueling record deleted successfully!")
         return super().delete(request, *args, **kwargs)
     
 

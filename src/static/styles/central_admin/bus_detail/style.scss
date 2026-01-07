@@ -1,0 +1,383 @@
+@import '../../base';
+
+#bus-detail {
+  padding: 2rem;
+  
+  .section-header {
+    margin-bottom: 2rem;
+    
+    .breadcrumb {
+      margin-bottom: 0;
+      font-size: 0.9rem;
+      
+      a {
+        color: $indigo-600;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+        width: 100%;
+      }
+    }
+    
+    h2 {
+      margin-bottom: 0.5rem;
+      color: $gray-800;
+    }
+    
+    hr {
+      margin-top: 1rem;
+      border-color: $gray-300;
+    }
+  }
+  
+  .bus-info-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    
+    .card-title {
+      color: $indigo-700;
+      font-weight: 600;
+      
+      i {
+        color: $indigo-600;
+      }
+    }
+    
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      
+      .label {
+        font-size: 0.85rem;
+        color: $gray-600;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .value {
+        font-size: 1.1rem;
+        color: $gray-900;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .refueling-section {
+    margin-top: 2rem;
+    
+    h4 {
+      color: $gray-800;
+      font-weight: 600;
+      
+      i {
+        color: $indigo-600;
+      }
+    }
+    
+    .table-responsive {
+      margin-top: 1rem;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    table {
+      margin-bottom: 0;
+      background: white;
+      
+      thead {
+        background-color: $gray-100;
+        
+        th {
+          color: $gray-700;
+          font-weight: 600;
+          text-transform: uppercase;
+          font-size: 0.85rem;
+          letter-spacing: 0.5px;
+          padding: 1rem;
+          border-bottom: 2px solid $gray-300;
+        }
+      }
+      
+      tbody {
+        tr {
+          transition: background-color 0.2s;
+          
+          &:hover {
+            background-color: $gray-50;
+          }
+          
+          td {
+            padding: 1rem;
+            vertical-align: middle;
+            color: $gray-800;
+            
+            .badge {
+              font-size: 0.85rem;
+              padding: 0.4rem 0.8rem;
+              font-weight: 500;
+            }
+            
+            .notes-preview {
+              font-size: 0.9rem;
+              color: $gray-600;
+            }
+          }
+        }
+      }
+      
+      .action-buttons {
+        white-space: nowrap;
+        
+        .btn {
+          margin-right: 0.25rem;
+          
+          &:last-child {
+            margin-right: 0;
+          }
+        }
+      }
+    }
+    
+    .alert {
+      margin-top: 1rem;
+      border-radius: 0.5rem;
+    }
+  }
+}
+
+// Modal styling
+.modal {
+  .modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .modal-header {
+    background-color: $gray-50;
+    border-bottom: 1px solid $gray-200;
+    border-radius: 0.5rem 0.5rem 0 0;
+    
+    .modal-title {
+      color: $gray-800;
+      font-weight: 600;
+    }
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+    
+    .form-label {
+      color: $gray-700;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .form-control,
+    .form-select,
+    textarea {
+      border: 1px solid $gray-300;
+      border-radius: 0.375rem;
+      padding: 0.625rem 0.75rem;
+      
+      &:focus {
+        border-color: $indigo-500;
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+      }
+    }
+    
+    textarea {
+      resize: vertical;
+    }
+    
+    .text-danger {
+      color: #dc3545;
+    }
+    
+    .form-text {
+      font-size: 0.875rem;
+      color: $gray-600;
+      margin-top: 0.25rem;
+    }
+    
+    .invalid-feedback {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+  }
+  
+  .modal-footer {
+    background-color: $gray-50;
+    border-top: 1px solid $gray-200;
+    border-radius: 0 0 0.5rem 0.5rem;
+    padding: 1rem 1.5rem;
+  }
+}
+
+// Update and delete pages
+#refueling-record-update,
+#refueling-record-delete {
+  padding: 2rem;
+  
+  .section-header {
+    margin-bottom: 2rem;
+    
+    h2 {
+      margin-bottom: 0.5rem;
+      color: $gray-800;
+    }
+    
+    .breadcrumb {
+      margin-bottom: 0;
+      font-size: 0.9rem;
+      
+      a {
+        color: $indigo-600;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+    
+    hr {
+      margin-top: 1rem;
+      border-color: $gray-300;
+    }
+  }
+  
+  .card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    
+    .card-body {
+      padding: 2rem;
+    }
+  }
+  
+  .record-details {
+    background-color: $gray-50;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid $gray-200;
+    
+    h5 {
+      color: $gray-800;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    ul {
+      margin-bottom: 0;
+      
+      li {
+        padding: 0.5rem 0;
+        color: $gray-700;
+        
+        strong {
+          color: $gray-900;
+          margin-right: 0.5rem;
+        }
+      }
+    }
+  }
+  
+  .form-label {
+    color: $gray-700;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-control,
+  .form-select,
+  textarea {
+    border: 1px solid $gray-300;
+    border-radius: 0.375rem;
+    padding: 0.625rem 0.75rem;
+    
+    &:focus {
+      border-color: $indigo-500;
+      box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    }
+  }
+  
+  textarea {
+    resize: vertical;
+  }
+  
+  .gap-2 {
+    gap: 0.5rem;
+  }
+}
+
+// Bus list enhancement
+.bus-link {
+  color: $indigo-600;
+  text-decoration: none;
+  font-weight: 500;
+  
+  &:hover {
+    text-decoration: underline;
+    color: $indigo-700;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  #bus-detail,
+  #refueling-record-update,
+  #refueling-record-delete {
+    padding: 1rem;
+    
+    .section-header {
+      .button-group {
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+    
+    .bus-info-card {
+      .row {
+        .col-md-4 {
+          margin-bottom: 1rem;
+        }
+      }
+    }
+    
+    .table-responsive {
+      table {
+        font-size: 0.875rem;
+        
+        th, td {
+          padding: 0.75rem;
+        }
+        
+        .action-buttons {
+          .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+          }
+        }
+      }
+    }
+  }
+}
