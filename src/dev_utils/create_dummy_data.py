@@ -11,10 +11,14 @@ Run this script to get a fresh, complete test environment.
 """
 
 import os
+import sys
 import django
 from datetime import datetime, timedelta, date
 from decimal import Decimal
 import random
+
+# Add parent directory to Python path to find config module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -200,6 +204,52 @@ def create_dummy_data():
         
         print(f"   ✓ Institution: {inst.name} (Admin: {admin_user.email})")
     
+    # ========== STEP 2.5: Driver Users ==========
+    print("\n🚗 Step 2.5: Creating Driver Users...")
+    
+    drivers_data = [
+        {"first_name": "Rajesh", "last_name": "Kumar", "email": "rajesh.driver@sfs.edu", "experience": 15},
+        {"first_name": "Suresh", "last_name": "Babu", "email": "suresh.driver@sfs.edu", "experience": 12},
+        {"first_name": "Mahesh", "last_name": "Reddy", "email": "mahesh.driver@sfs.edu", "experience": 10},
+        {"first_name": "Ramesh", "last_name": "Sharma", "email": "ramesh.driver@sfs.edu", "experience": 8},
+        {"first_name": "Ganesh", "last_name": "Patel", "email": "ganesh.driver@sfs.edu", "experience": 7},
+        {"first_name": "Naresh", "last_name": "Singh", "email": "naresh.driver@sfs.edu", "experience": 14},
+        {"first_name": "Dinesh", "last_name": "Gupta", "email": "dinesh.driver@sfs.edu", "experience": 9},
+        {"first_name": "Mukesh", "last_name": "Rao", "email": "mukesh.driver@sfs.edu", "experience": 11},
+        {"first_name": "Lokesh", "last_name": "Verma", "email": "lokesh.driver@sfs.edu", "experience": 6},
+        {"first_name": "Prakash", "last_name": "Nair", "email": "prakash.driver@sfs.edu", "experience": 13},
+        {"first_name": "Anil", "last_name": "Joshi", "email": "anil.driver@sfs.edu", "experience": 10},
+        {"first_name": "Vishal", "last_name": "Desai", "email": "vishal.driver@sfs.edu", "experience": 8},
+    ]
+    
+    drivers = []
+    for driver_data in drivers_data:
+        # Create Driver User
+        driver_user, created = User.objects.get_or_create(
+            email=driver_data['email'],
+            defaults={
+                'first_name': driver_data['first_name'],
+                'last_name': driver_data['last_name']
+            }
+        )
+        if created:
+            driver_user.set_password("password123")
+            driver_user.save()
+        
+        # Create Driver Profile
+        driver_profile, _ = UserProfile.objects.get_or_create(
+            user=driver_user,
+            defaults={
+                'org': org,
+                'first_name': driver_data['first_name'],
+                'last_name': driver_data['last_name'],
+                'role': UserProfile.DRIVER,
+                'years_of_experience': driver_data['experience']
+            }
+        )
+        drivers.append(driver_user)
+        print(f"   ✓ Driver: {driver_user.first_name} {driver_user.last_name} ({driver_data['experience']} years exp) - {driver_user.email}")
+    
     # ========== STEP 3: Registration & Installments ==========
     print("\n📅 Step 3: Creating Registration and Installment Dates...")
     
@@ -349,17 +399,22 @@ def create_dummy_data():
     trips = []
     
     for idx, (route, bus) in enumerate(zip(routes, buses[:3])):
+        # Assign driver to bus record
+        assigned_driver = drivers[idx] if idx < len(drivers) else None
+        
         bus_record, _ = BusRecord.objects.get_or_create(
             org=org,
             bus=bus,
             registration=reg,
             defaults={
                 'label': f"Bus Record {idx+1}",
-                'min_required_capacity': 0
+                'min_required_capacity': 0,
+                'assigned_driver': assigned_driver
             }
         )
         bus_records.append(bus_record)
-        print(f"   ✓ Bus Record: {bus.registration_no} → {route.name}")
+        driver_info = f" (Driver: {assigned_driver.first_name} {assigned_driver.last_name})" if assigned_driver else ""
+        print(f"   ✓ Bus Record: {bus.registration_no} → {route.name}{driver_info}")
         
         # Create trips for both schedules
         for schedule in schedules:
@@ -516,6 +571,7 @@ def create_dummy_data():
     print(f"📊 Summary:")
     print(f"   • Organizations: {Organisation.objects.count()}")
     print(f"   • Institutions: {Institution.objects.count()}")
+    print(f"   • Drivers: {User.objects.filter(profile__role=UserProfile.DRIVER).count()}")
     print(f"   • Registrations: {Registration.objects.count()}")
     print(f"   • Installment Dates: {InstallmentDate.objects.count()}")
     print(f"   • Routes: {Route.objects.count()}")
@@ -532,6 +588,9 @@ def create_dummy_data():
     print(f"   Central Admin: central@sfs.edu / password123")
     print(f"   Institution Admin 1: highschool@sfs.edu / password123")
     print(f"   Institution Admin 2: college@sfs.edu / password123")
+    print(f"   Sample Driver 1: rajesh.driver@sfs.edu / password123")
+    print(f"   Sample Driver 2: suresh.driver@sfs.edu / password123")
+    print(f"   (All drivers use password: password123)")
     print("\n🎉 System is ready for comprehensive testing!")
     print("="*60)
 

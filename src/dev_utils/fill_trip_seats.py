@@ -9,8 +9,12 @@ Usage:
 """
 
 import os
+import sys
 import django
 from django.utils.text import slugify
+
+# Add parent directory to Python path to find config module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')

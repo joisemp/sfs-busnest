@@ -155,6 +155,9 @@ urlpatterns = [
      
      path('registrations/<slug:registration_slug>/bus-records/', central_admin.BusRecordListView.as_view(), name='bus_record_list'),
      path('registrations/<slug:registration_slug>/bus-records/create/', central_admin.BusRecordCreateView.as_view(), name='bus_record_create'),
+     path('registrations/<slug:registration_slug>/bus-records/driver-management/', central_admin.DriverManagementView.as_view(), name='driver_management'),
+     path('registrations/<slug:registration_slug>/bus-records/driver-management/confirm/<str:strategy>/', central_admin.DriverAssignmentConfirmView.as_view(), name='driver_assignment_confirm'),
+     path('registrations/<slug:registration_slug>/bus-records/driver-management/apply/', central_admin.DriverManagementApplyView.as_view(), name='driver_management_apply'),
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/update/', central_admin.BusRecordUpdateView.as_view(), name='bus_record_update'),
      path('registrations/<slug:registration_slug>/bus-records/<slug:bus_record_slug>/delete/', central_admin.BusRecordDeleteView.as_view(), name='bus_record_delete'),
      

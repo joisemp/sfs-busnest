@@ -92,7 +92,8 @@ from services.forms.central_admin import (
     BusRequestCommentForm,
     StopTransferForm,
     BusAssignmentForm,
-    TripExpenseForm
+    TripExpenseForm,
+    AutoAssignDriversForm
 )
 
 from services.tasks import process_uploaded_route_excel, send_email_task, export_tickets_to_excel, process_uploaded_bus_excel, generate_student_pass, export_filtered_tickets_to_excel
@@ -684,6 +685,553 @@ class BusRecordDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Delet
         """
         return reverse('central_admin:bus_record_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
     
+
+class DriverManagementView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, FormView):
+    """
+    View for managing driver assignments to bus records.
+    Shows form to select assignment strategy.
+    
+    Methods:
+        get_context_data: Displays summary statistics.
+        form_valid: Redirects to confirmation page with selected strategy.
+    """
+    template_name = 'central_admin/driver_management.html'
+    form_class = AutoAssignDriversForm
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        context['registration'] = registration
+        
+        # Get all bus records for assignment/reassignment
+        bus_records_for_assignment = BusRecord.objects.filter(
+            org=self.request.user.profile.org,
+            registration=registration
+        ).select_related('bus', 'assigned_driver__profile').prefetch_related('trips__route').order_by('label')
+        
+        # Get all available drivers from the organization
+        available_drivers = User.objects.filter(
+            profile__org=self.request.user.profile.org,
+            profile__role=UserProfile.DRIVER
+        ).select_related('profile').order_by('profile__first_name')
+        
+        # Sort drivers by experience (descending)
+        drivers_with_experience = []
+        for driver in available_drivers:
+            drivers_with_experience.append({
+                'driver': driver,
+                'experience': driver.profile.years_of_experience or 0
+            })
+        
+        drivers_with_experience.sort(key=lambda x: x['experience'], reverse=True)
+        
+        context['available_drivers'] = drivers_with_experience
+        context['total_bus_records'] = bus_records_for_assignment.count()
+        context['available_driver_count'] = len(drivers_with_experience)
+        
+        return context
+    
+    def form_valid(self, form):
+        strategy = form.cleaned_data['assignment_strategy']
+        include_unused = form.cleaned_data.get('include_unused_drivers', False)
+        
+        url = reverse('central_admin:driver_assignment_confirm', 
+                     kwargs={'registration_slug': self.kwargs['registration_slug'], 'strategy': strategy})
+        
+        # Add include_unused_drivers as query parameter if it's True
+        if include_unused:
+            url += '?include_unused_drivers=true'
+        
+        return redirect(url)
+
+
+class DriverAssignmentConfirmView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateView):
+    """
+    View for previewing driver assignments before applying.
+    Shows detailed preview of assignments based on selected strategy.
+    
+    Methods:
+        get_context_data: Calculates and displays preview of driver assignments.
+    """
+    template_name = 'central_admin/driver_assignment_confirm.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        strategy = self.kwargs.get('strategy', 'experienced_to_longest')
+        include_unused_drivers = self.request.GET.get('include_unused_drivers', 'false').lower() == 'true'
+        
+        context['registration'] = registration
+        context['selected_strategy'] = strategy
+        context['include_unused_drivers'] = include_unused_drivers
+        
+        # Get all bus records for assignment/reassignment
+        bus_records_for_assignment = BusRecord.objects.filter(
+            org=self.request.user.profile.org,
+            registration=registration
+        ).select_related('bus', 'assigned_driver__profile').prefetch_related('trips__route').order_by('label')
+        
+        # Calculate total distance for each bus record
+        bus_records_with_distance = []
+        for record in bus_records_for_assignment:
+            trips = record.trips.all()
+            total_km = sum(trip.route.total_km or 0 for trip in trips)
+            bus_records_with_distance.append({
+                'record': record,
+                'total_km': total_km,
+                'trip_count': trips.count(),
+                'current_driver': record.assigned_driver
+            })
+        
+        # Get all available drivers from the organization
+        available_drivers = User.objects.filter(
+            profile__org=self.request.user.profile.org,
+            profile__role=UserProfile.DRIVER
+        ).select_related('profile').order_by('profile__first_name')
+        
+        # Sort drivers by experience (descending)
+        drivers_with_experience = []
+        for driver in available_drivers:
+            drivers_with_experience.append({
+                'driver': driver,
+                'experience': driver.profile.years_of_experience or 0
+            })
+        
+        drivers_with_experience.sort(key=lambda x: x['experience'], reverse=True)
+        
+        # Generate preview assignments
+        preview_assignments = self._generate_preview_assignments(
+            bus_records_with_distance,
+            drivers_with_experience,
+            strategy,
+            include_unused_drivers
+        )
+        
+        context['preview_assignments'] = preview_assignments
+        context['total_bus_records'] = len(bus_records_with_distance)
+        context['available_driver_count'] = len(drivers_with_experience)
+        
+        return context
+    
+    def _generate_preview_assignments(self, bus_records_with_distance, drivers_with_experience, strategy, include_unused_drivers=False):
+        """
+        Generate preview of driver assignments based on strategy.
+        Uses round-robin distribution and prioritizes based on experience and distance.
+        
+        Args:
+            bus_records_with_distance: List of bus records with their total distance
+            drivers_with_experience: List of drivers with their experience
+            strategy: Assignment strategy ('experienced_to_longest', 'experienced_to_shortest', or 'rotate')
+            include_unused_drivers: If True and strategy is 'rotate', unused drivers get priority
+        
+        Returns:
+            List of assignment dictionaries with bus_record, driver, and assignment details
+        """
+        assignments = []
+        
+        if not drivers_with_experience:
+            return assignments
+        
+        # Handle rotate strategy differently
+        if strategy == 'rotate':
+            # Separate records with and without drivers - sort by label for consistency
+            records_with_drivers = sorted(
+                [r for r in bus_records_with_distance if r.get('current_driver')],
+                key=lambda x: x['record'].label
+            )
+            records_without_drivers = sorted(
+                [r for r in bus_records_with_distance if not r.get('current_driver')],
+                key=lambda x: x['record'].label
+            )
+            
+            if include_unused_drivers:
+                # Get currently assigned driver IDs
+                assigned_driver_ids = {r['current_driver'].id for r in records_with_drivers if r.get('current_driver')}
+                
+                # Find unused drivers (not currently assigned to any bus in this registration)
+                unused_drivers = [d['driver'] for d in drivers_with_experience if d['driver'].id not in assigned_driver_ids]
+                
+                if unused_drivers or records_with_drivers:
+                    # Get all current drivers in the exact order they appear
+                    current_drivers = [r['current_driver'] for r in records_with_drivers]
+                    
+                    # Priority: unused drivers first, then current drivers
+                    all_drivers_pool = unused_drivers + current_drivers
+                    
+                    # Rotate the combined pool: last driver goes to first position
+                    rotated_drivers = [all_drivers_pool[-1]] + all_drivers_pool[:-1]
+                    
+                    # Assign rotated drivers to records with drivers
+                    for i, record_data in enumerate(records_with_drivers):
+                        new_driver = rotated_drivers[i]
+                        # Find driver experience
+                        driver_exp = next(
+                            (d['experience'] for d in drivers_with_experience if d['driver'].id == new_driver.id),
+                            None
+                        )
+                        assignments.append({
+                            'bus_record': record_data['record'],
+                            'driver': new_driver,
+                            'total_km': record_data['total_km'],
+                            'trip_count': record_data['trip_count'],
+                            'driver_experience': driver_exp,
+                            'current_driver': record_data.get('current_driver')
+                        })
+                    
+                    # If there are more drivers than bus records, assign remaining unused drivers to unassigned buses
+                    remaining_unused = rotated_drivers[len(records_with_drivers):]
+                    for i, record_data in enumerate(records_without_drivers[:len(remaining_unused)]):
+                        driver = remaining_unused[i]
+                        driver_exp = next(
+                            (d['experience'] for d in drivers_with_experience if d['driver'].id == driver.id),
+                            None
+                        )
+                        assignments.append({
+                            'bus_record': record_data['record'],
+                            'driver': driver,
+                            'total_km': record_data['total_km'],
+                            'trip_count': record_data['trip_count'],
+                            'driver_experience': driver_exp,
+                            'current_driver': None
+                        })
+                    
+                    # Add remaining unassigned buses
+                    records_without_drivers = records_without_drivers[len(remaining_unused):]
+                    for record_data in records_without_drivers:
+                        assignments.append({
+                            'bus_record': record_data['record'],
+                            'driver': None,
+                            'total_km': record_data['total_km'],
+                            'trip_count': record_data['trip_count'],
+                            'driver_experience': None,
+                            'current_driver': None
+                        })
+                    
+                    return assignments
+            
+            if not records_with_drivers:
+                # No drivers to rotate, add remaining unassigned records
+                for record_data in records_without_drivers:
+                    assignments.append({
+                        'bus_record': record_data['record'],
+                        'driver': None,
+                        'total_km': record_data['total_km'],
+                        'trip_count': record_data['trip_count'],
+                        'driver_experience': None,
+                        'current_driver': None
+                    })
+                return assignments
+            
+            # Extract current drivers in order (normal rotation without unused drivers)
+            current_drivers = [r['current_driver'] for r in records_with_drivers]
+            
+            # Rotate: shift each driver to the next position (circular)
+            # Last driver goes to first position
+            rotated_drivers = [current_drivers[-1]] + current_drivers[:-1]
+            
+            # Priority 2: Create assignments with rotated drivers
+            for i, record_data in enumerate(records_with_drivers):
+                new_driver = rotated_drivers[i]
+                # Find driver experience from drivers_with_experience list
+                driver_exp = next(
+                    (d['experience'] for d in drivers_with_experience if d['driver'].id == new_driver.id),
+                    None
+                )
+                assignments.append({
+                    'bus_record': record_data['record'],
+                    'driver': new_driver,
+                    'total_km': record_data['total_km'],
+                    'trip_count': record_data['trip_count'],
+                    'driver_experience': driver_exp,
+                    'current_driver': record_data.get('current_driver')
+                })
+            
+            # Add remaining records without drivers (they remain unassigned)
+            for record_data in records_without_drivers:
+                assignments.append({
+                    'bus_record': record_data['record'],
+                    'driver': None,
+                    'total_km': record_data['total_km'],
+                    'trip_count': record_data['trip_count'],
+                    'driver_experience': None,
+                    'current_driver': None
+                })
+            
+            return assignments
+        
+        # Sort bus records by distance based on strategy
+        if strategy == 'experienced_to_longest':
+            # Sort routes by distance descending (longest first)
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'], reverse=True)
+        else:  # experienced_to_shortest
+            # Sort routes by distance ascending (shortest first)
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'])
+        
+        # Round-robin assignment - each driver assigned only once
+        driver_index = 0
+        for record_data in sorted_records:
+            if driver_index < len(drivers_with_experience):
+                assignments.append({
+                    'bus_record': record_data['record'],
+                    'driver': drivers_with_experience[driver_index]['driver'],
+                    'total_km': record_data['total_km'],
+                    'trip_count': record_data['trip_count'],
+                    'driver_experience': drivers_with_experience[driver_index]['experience'],
+                    'current_driver': record_data.get('current_driver')
+                })
+                driver_index += 1
+            else:
+                # Not enough drivers - keep current assignment or leave unassigned
+                assignments.append({
+                    'bus_record': record_data['record'],
+                    'driver': None,
+                    'total_km': record_data['total_km'],
+                    'trip_count': record_data['trip_count'],
+                    'driver_experience': None,
+                    'current_driver': record_data.get('current_driver')
+                })
+        
+        return assignments
+
+
+class DriverManagementApplyView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for applying driver assignments to bus records.
+    Validates and applies the assignments based on the selected strategy.
+    
+    Methods:
+        post: Applies driver assignments and logs activity.
+    """
+    
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        registration = get_object_or_404(Registration, slug=self.kwargs['registration_slug'])
+        strategy = request.POST.get('assignment_strategy', 'experienced_to_longest')
+        include_unused_drivers = request.POST.get('include_unused_drivers', 'false').lower() == 'true'
+        
+        # Get all bus records for assignment/reassignment
+        bus_records_for_assignment = BusRecord.objects.filter(
+            org=request.user.profile.org,
+            registration=registration
+        ).select_related('bus', 'assigned_driver__profile').prefetch_related('trips__route').order_by('label')
+        
+        # Calculate total distance for each bus record
+        bus_records_with_distance = []
+        for record in bus_records_for_assignment:
+            trips = record.trips.all()
+            total_km = sum(trip.route.total_km or 0 for trip in trips)
+            bus_records_with_distance.append({
+                'record': record,
+                'total_km': total_km
+            })
+        
+        # Get all available drivers from the organization
+        available_drivers = User.objects.filter(
+            profile__org=request.user.profile.org,
+            profile__role=UserProfile.DRIVER
+        ).select_related('profile').order_by('profile__first_name')
+        
+        # Sort drivers by experience (descending)
+        drivers_with_experience = list(available_drivers)
+        drivers_with_experience.sort(
+            key=lambda x: x.profile.years_of_experience or 0,
+            reverse=True
+        )
+        
+        if not drivers_with_experience:
+            messages.warning(request, "No available drivers found for assignment.")
+            return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+        
+        # Handle rotate strategy differently
+        if strategy == 'rotate':
+            # Separate records with and without drivers - sort by label for consistency
+            records_with_drivers = sorted(
+                [r for r in bus_records_with_distance if r['record'].assigned_driver],
+                key=lambda x: x['record'].label
+            )
+            records_without_drivers = sorted(
+                [r for r in bus_records_with_distance if not r['record'].assigned_driver],
+                key=lambda x: x['record'].label
+            )
+            
+            assigned_count = 0
+            rotation_count = 0
+            
+            # If include_unused_drivers is True, include unused drivers in the rotation pool
+            if include_unused_drivers:
+                # Get currently assigned driver IDs
+                assigned_driver_ids = {r['record'].assigned_driver.id for r in records_with_drivers}
+                
+                # Find unused drivers (not currently assigned to any bus in this registration)
+                unused_drivers = [d for d in drivers_with_experience if d.id not in assigned_driver_ids]
+                
+                if unused_drivers or records_with_drivers:
+                    # Get current drivers in the exact order they appear in records_with_drivers
+                    current_drivers = [r['record'].assigned_driver for r in records_with_drivers]
+                    
+                    # Priority: unused drivers first, then current drivers
+                    all_drivers_pool = unused_drivers + current_drivers
+                    
+                    # Rotate the combined pool: last driver goes to first position
+                    rotated_drivers = [all_drivers_pool[-1]] + all_drivers_pool[:-1]
+                    
+                    # Assign rotated drivers to records with drivers
+                    for i, record_data in enumerate(records_with_drivers):
+                        bus_record = record_data['record']
+                        new_driver = rotated_drivers[i]
+                        old_driver = bus_record.assigned_driver
+                        
+                        bus_record.assigned_driver = new_driver
+                        bus_record.save(update_fields=['assigned_driver'])
+                        rotation_count += 1
+                        
+                        log_user_activity(
+                            request.user,
+                            f"Rotated driver assignment with unused drivers",
+                            f"Bus record {bus_record.label}: " +
+                            f"{old_driver.profile.first_name} {old_driver.profile.last_name} → " +
+                            f"{new_driver.profile.first_name} {new_driver.profile.last_name}"
+                        )
+                    
+                    # If there are more drivers than bus records, assign remaining to unassigned buses
+                    remaining_unused = rotated_drivers[len(records_with_drivers):]
+                    for i, record_data in enumerate(records_without_drivers[:len(remaining_unused)]):
+                        bus_record = record_data['record']
+                        new_driver = remaining_unused[i]
+                        
+                        bus_record.assigned_driver = new_driver
+                        bus_record.save(update_fields=['assigned_driver'])
+                        assigned_count += 1
+                        
+                        log_user_activity(
+                            request.user,
+                            f"Assigned driver from rotation pool",
+                            f"Bus record {bus_record.label}: Assigned " +
+                            f"{new_driver.profile.first_name} {new_driver.profile.last_name}"
+                        )
+                    
+                    total_count = rotation_count + assigned_count
+                    if unused_drivers:
+                        unused_names = ', '.join([f"{d.profile.first_name} {d.profile.last_name}" for d in unused_drivers])
+                        messages.success(
+                            request,
+                            f"Successfully rotated {rotation_count} assignments and assigned {assigned_count} " +
+                            f"additional drivers (total changes: {total_count}). Unused drivers included: {unused_names}"
+                        )
+                    else:
+                        messages.success(request, f"Successfully rotated {rotation_count} driver assignments.")
+                    return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+            
+            # Priority 2: Rotate existing driver assignments
+            if not records_with_drivers:
+                if assigned_count > 0:
+                    messages.success(request, f"Successfully assigned {assigned_count} unused drivers.")
+                else:
+                    messages.warning(request, "No bus records with assigned drivers found for rotation.")
+                return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+            
+            # Extract current drivers in order
+            current_drivers = [r['record'].assigned_driver for r in records_with_drivers]
+            
+            # Rotate: shift each driver to the next position (circular)
+            rotated_drivers = [current_drivers[-1]] + current_drivers[:-1]
+            
+            # Apply rotation
+            rotation_count = 0
+            for i, record_data in enumerate(records_with_drivers):
+                bus_record = record_data['record']
+                new_driver = rotated_drivers[i]
+                old_driver = bus_record.assigned_driver
+                
+                # Assign rotated driver
+                bus_record.assigned_driver = new_driver
+                bus_record.save(update_fields=['assigned_driver'])
+                rotation_count += 1
+                
+                # Log activity
+                log_user_activity(
+                    request.user,
+                    f"Rotated driver assignment",
+                    f"Bus record {bus_record.label}: " +
+                    f"{old_driver.profile.first_name} {old_driver.profile.last_name} → " +
+                    f"{new_driver.profile.first_name} {new_driver.profile.last_name} (Rotate strategy)"
+                )
+            
+            total_count = assigned_count + rotation_count
+            if include_unused_drivers and assigned_count > 0:
+                messages.success(request, f"Successfully assigned {assigned_count} unused drivers and rotated {rotation_count} existing assignments (total: {total_count}).")
+            else:
+                messages.success(request, f"Successfully rotated {rotation_count} driver assignments.")
+            return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+        
+        # Sort bus records by distance based on strategy
+        if strategy == 'experienced_to_longest':
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'], reverse=True)
+        else:  # experienced_to_shortest
+            sorted_records = sorted(bus_records_with_distance, key=lambda x: x['total_km'])
+        
+        # Apply assignment - each driver assigned only once
+        assigned_count = 0
+        driver_index = 0
+        
+        for record_data in sorted_records:
+            if driver_index < len(drivers_with_experience):
+                bus_record = record_data['record']
+                driver = drivers_with_experience[driver_index]
+                
+                # Store old driver info for logging
+                old_driver = bus_record.assigned_driver
+                
+                # Check if this driver is already assigned to another bus record in this registration
+                # If yes, clear that assignment first
+                existing_assignment = BusRecord.objects.filter(
+                    registration=registration,
+                    assigned_driver=driver
+                ).exclude(pk=bus_record.pk).first()
+                
+                if existing_assignment:
+                    # Clear the previous assignment
+                    existing_assignment.assigned_driver = None
+                    existing_assignment.save(update_fields=['assigned_driver'])
+                    log_user_activity(
+                        request.user,
+                        f"Cleared driver assignment",
+                        f"Driver {driver.profile.first_name} {driver.profile.last_name} " +
+                        f"removed from bus record {existing_assignment.label} (reassignment)"
+                    )
+                
+                # Assign driver to new bus record
+                bus_record.assigned_driver = driver
+                bus_record.save(update_fields=['assigned_driver'])
+                
+                # Log activity
+                action = "reassigned" if old_driver else "assigned"
+                log_user_activity(
+                    request.user,
+                    f"Auto-{action} driver to bus record",
+                    f"Driver {driver.profile.first_name} {driver.profile.last_name} " +
+                    f"auto-{action} to bus record {bus_record.label} in registration {registration.name}"
+                )
+                
+                assigned_count += 1
+                driver_index += 1
+        
+        unassigned_count = len(sorted_records) - assigned_count
+        
+        if assigned_count > 0:
+            messages.success(
+                request,
+                f"Successfully assigned/reassigned {assigned_count} driver(s) to bus records."
+            )
+        
+        if unassigned_count > 0:
+            messages.warning(
+                request,
+                f"{unassigned_count} bus record(s) could not be assigned due to insufficient available drivers."
+            )
+        
+        return redirect('central_admin:bus_record_list', registration_slug=registration.slug)
+
 
 class TripListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """

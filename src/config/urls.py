@@ -13,11 +13,13 @@ Routes:
 - 'core/': Includes the URL patterns from the 'core' app.
 - 'central_admin/': Includes the URL patterns for central administration services.
 - 'institution_admin/': Includes the URL patterns for institution administration services.
+- 'drivers/': Includes the URL patterns for driver-related services.
 - 'students/': Includes the URL patterns for student-related services.
 Namespaces:
 - 'core': Namespace for the 'core' app.
 - 'central_admin': Namespace for central administration services.
 - 'institution_admin': Namespace for institution administration services.
+- 'drivers': Namespace for driver-related services.
 - 'students': Namespace for student-related services.
 """
 
@@ -28,6 +30,7 @@ urlpatterns = [
     path('core/', include('core.urls', namespace='core')),
     path('central_admin/', include('services.urls.central_admin', namespace='central_admin')),
     path('institution_admin/', include('services.urls.institution_admin', namespace='institution_admin')),
+    path('drivers/', include('services.urls.drivers', namespace='drivers')),
     path('students/', include('services.urls.students', namespace='students')),
 ]
 
