@@ -19,38 +19,38 @@
 
 <div class="card border-0 mb-4">
     <div class="card-body p-4">
-        <h3 class="h5 mb-4">Assigned Bus Records</h3>
-        {% for record in bus_records %}
+        <h3 class="h5 mb-4">Active Assignment</h3>
         <div class="card border mb-3">
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <h5 class="h6 fw-semibold text-primary mb-3">
-                            <i class="fa-solid fa-bus me-2"></i>{{ record.label }}
+                            <i class="fa-solid fa-bus me-2"></i>{{ bus_record.label }}
                         </h5>
                         <div class="mb-2">
                             <small class="text-muted d-block">Registration</small>
-                            <span class="fw-semibold">{{ record.registration.name }}</span>
+                            <span class="fw-semibold">{{ active_registration.name }}</span>
+                            <span class="badge bg-success ms-2">Active</span>
                         </div>
                         <div class="mb-2">
                             <small class="text-muted d-block">Min Required Capacity</small>
-                            <span>{{ record.min_required_capacity }} seats</span>
+                            <span>{{ bus_record.min_required_capacity }} seats</span>
                         </div>
                     </div>
-                    {% if record.bus %}
+                    {% if bus_record.bus %}
                     <div class="col-md-6">
                         <h6 class="fw-semibold mb-3">Bus Details</h6>
                         <div class="mb-2">
                             <small class="text-muted d-block">Registration Number</small>
-                            <span class="fw-semibold">{{ record.bus.registration_no }}</span>
+                            <span class="fw-semibold">{{ bus_record.bus.registration_no }}</span>
                         </div>
                         <div class="mb-2">
                             <small class="text-muted d-block">Capacity</small>
-                            <span>{{ record.bus.capacity }} seats</span>
+                            <span>{{ bus_record.bus.capacity }} seats</span>
                         </div>
                         <div class="mb-2">
                             <small class="text-muted d-block">Status</small>
-                            {% if record.bus.is_available %}
+                            {% if bus_record.bus.is_available %}
                             <span class="badge bg-success">Available</span>
                             {% else %}
                             <span class="badge bg-secondary">Not Available</span>
@@ -68,7 +68,6 @@
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
 
@@ -95,11 +94,11 @@
                 </a>
             </div>
             <div class="col-md-6 col-lg-4">
-                <a href="#" class="card text-decoration-none border h-100 text-dark">
+                <a href="{% url 'drivers:refueling_list' %}" class="card text-decoration-none border h-100 text-dark">
                     <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-3">👥</div>
-                        <h4 class="h6 fw-semibold mb-2">Students</h4>
-                        <small class="text-muted">View student list</small>
+                        <div class="fs-1 mb-3">⛽</div>
+                        <h4 class="h6 fw-semibold mb-2">Refueling Records</h4>
+                        <small class="text-muted">Add fuel records</small>
                     </div>
                 </a>
             </div>
@@ -112,10 +111,14 @@
         <div class="mb-4">
             <i class="fa-solid fa-bus fs-1 text-muted opacity-50"></i>
         </div>
-        <h3 class="h5 text-muted mb-3">No Bus Assignment</h3>
-        <p class="text-muted mb-4">You haven't been assigned to any bus yet. Please contact your administrator for bus assignment.</p>
+        <h3 class="h5 text-muted mb-3">No Active Assignment</h3>
+        {% if not active_registration %}
+        <p class="text-muted mb-4">There is no active registration at the moment. Please wait for a registration to be activated.</p>
+        {% else %}
+        <p class="text-muted mb-4">You haven't been assigned to a bus in the active registration ({{ active_registration.name }}). Please contact your administrator for bus assignment.</p>
+        {% endif %}
         <div class="text-muted">
-            <small><i class="fa-solid fa-circle-info me-2"></i>Once assigned, you'll be able to view routes, schedules, and student information.</small>
+            <small><i class="fa-solid fa-circle-info me-2"></i>Once assigned, you'll be able to view routes, schedules, and manage refueling records.</small>
         </div>
     </div>
 </div>
