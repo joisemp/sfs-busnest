@@ -26,7 +26,7 @@ Forms:
 
 from django import forms
 from core.models import UserProfile, User
-from services.models import Institution, Bus, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense, InstallmentDate
+from services.models import Institution, Bus, RefuelingRecord, Route, Stop, Registration, FAQ, Schedule, BusRecord, Trip, ScheduleGroup, BusRequest, BusRequestComment, BusReservationAssignment, TripExpense, InstallmentDate
 from django.core.exceptions import ValidationError
 from config.mixins import form_mixin
 
@@ -140,6 +140,31 @@ class BusForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         self.fields['is_available'].is_switch = True
 
 
+class RefuelingRecordForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for managing refueling records in the central admin interface.
+    Fields: refuel_date, fuel_amount, fuel_cost, odometer_reading, fuel_type, notes
+    """
+    class Meta:
+        model = RefuelingRecord
+        fields = [
+            'refuel_date', 'fuel_amount', 'fuel_cost', 'odometer_reading', 'fuel_type', 'notes'
+        ]
+        widgets = {
+            'refuel_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Customizes field labels and help text.
+        """
+        super(RefuelingRecordForm, self).__init__(*args, **kwargs)
+        self.fields['fuel_amount'].label = "Fuel Amount (Liters/kWh)"
+        self.fields['fuel_cost'].label = "Total Cost (₹)"
+        self.fields['odometer_reading'].label = "Odometer Reading (km)"
+
+
 class RouteForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing routes in the central admin interface.
@@ -190,21 +215,26 @@ class StopForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class RegistrationForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing registrations in the central admin interface.
-    Fields: name, instructions, status (with custom label and switch)
+    Fields: name, instructions, status, is_active (with custom labels and switches)
     """
     class Meta:
         model = Registration
-        fields = ['name', 'instructions', 'status']
+        fields = ['name', 'instructions', 'status', 'is_active']
         labels = {
             'status': 'Open registration',
+            'is_active': 'Active registration',
+        }
+        help_texts = {
+            'is_active': 'Only one registration can be active at a time. Activating this will deactivate all others.',
         }
         
     def __init__(self,*args,**kwargs):
         """
-        Customizes the status field to use a switch widget.
+        Customizes the status and is_active fields to use switch widgets.
         """
         super(RegistrationForm, self).__init__(*args,**kwargs)
         self.fields['status'].is_switch = True
+        self.fields['is_active'].is_switch = True
         
 
 class FAQForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

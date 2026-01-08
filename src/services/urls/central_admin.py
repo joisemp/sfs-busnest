@@ -97,8 +97,12 @@ urlpatterns = [
      path('buses/', central_admin.BusListView.as_view(), name='bus_list'),
      path('buses/upload/', central_admin.BusFileUploadView.as_view(), name='bus_upload'),
      path('buses/create/', central_admin.BusCreateView.as_view(), name='bus_create'),
+     path('buses/<slug:slug>/', central_admin.BusDetailView.as_view(), name='bus_detail'),
      path('buses/<slug:slug>/update/', central_admin.BusUpdateView.as_view(), name='bus_update'),
      path('buses/<slug:slug>/delete/', central_admin.BusDeleteView.as_view(), name='bus_delete'),
+     path('buses/<slug:bus_slug>/refueling/add/', central_admin.RefuelingRecordCreateView.as_view(), name='refueling_record_create'),
+     path('buses/refueling/<slug:slug>/update/', central_admin.RefuelingRecordUpdateView.as_view(), name='refueling_record_update'),
+     path('buses/refueling/<slug:slug>/delete/', central_admin.RefuelingRecordDeleteView.as_view(), name='refueling_record_delete'),
      
      path('people/', central_admin.PeopleListView.as_view(), name='people_list'),
      path('people/add/', central_admin.PeopleCreateView.as_view(), name='people_create'),

@@ -15,6 +15,7 @@ Models:
     Schedule: Represents a schedule (e.g., morning, evening).
     ScheduleGroup: Groups pickup and drop schedules.
     Bus: Represents a bus.
+    RefuelingRecord: Represents a refueling record for a bus.
     BusRecord: Represents a bus assigned to a registration.
     Trip: Represents a trip for a bus record and schedule.
     Ticket: Represents a student's bus ticket.
@@ -246,9 +247,9 @@ class Registration(models.Model):
     """
     Represents a registration event or period for an organization.
     Fields:
-        org, name, instructions, status, code, slug
+        org, name, instructions, status, code, is_active, slug
     Methods:
-        save: Generates a unique slug and code if not present.
+        save: Generates a unique slug and code if not present. Ensures only one active registration.
         __str__: Returns the registration name.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='registrations')
@@ -256,17 +257,24 @@ class Registration(models.Model):
     instructions = models.TextField()
     status = models.BooleanField(default=False)
     code = models.CharField(max_length=100, unique=True, null=True)
+    is_active = models.BooleanField(default=False, help_text='Only one registration can be active at a time')
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
 
     def save(self, *args, **kwargs):
         """
         Save the Registration instance, generating a unique slug and code if not present.
+        Ensures only one registration can be active per organization at a time.
         """
         if not self.slug:
             base_slug = slugify(f"{self.org}-{self.name}")
             self.slug = generate_unique_slug(self, base_slug)
         if not self.code:
             self.code = generate_unique_code(self, unique_field='code')
+        
+        # If setting this registration as active, deactivate all others in the same org
+        if self.is_active:
+            Registration.objects.filter(org=self.org, is_active=True).exclude(pk=self.pk).update(is_active=False)
+        
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -355,6 +363,56 @@ class Bus(models.Model):
         String representation of the Bus.
         """
         return f"{self.registration_no} (Capacity : {self.capacity})"
+
+
+class RefuelingRecord(models.Model):
+    """
+    Represents a refueling record for a bus.
+    Fields:
+        org, bus, refuel_date, fuel_amount, fuel_cost, odometer_reading, fuel_type, notes, slug, created_at, updated_at
+    Methods:
+        save: Generates a unique slug if not present.
+        __str__: Returns refuel info.
+    """
+    FUEL_TYPE_CHOICES = [
+        ('petrol', 'Petrol'),
+        ('diesel', 'Diesel'),
+        ('cng', 'CNG'),
+        ('electric', 'Electric'),
+    ]
+    
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='refueling_records')
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='refueling_records')
+    refuel_date = models.DateField()
+    fuel_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Amount in liters or kWh")
+    fuel_cost = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total cost")
+    odometer_reading = models.PositiveIntegerField(help_text="Odometer reading in km")
+    fuel_type = models.CharField(max_length=20, choices=FUEL_TYPE_CHOICES, default='diesel')
+    notes = models.TextField(blank=True, null=True)
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-refuel_date', '-created_at']
+        verbose_name = 'Refueling Record'
+        verbose_name_plural = 'Refueling Records'
+
+    def save(self, *args, **kwargs):
+        """
+        Save the RefuelingRecord instance, generating a unique slug if not present.
+        """
+        if not self.slug:
+            base_slug = slugify(f"refuel-{self.bus.registration_no}-{self.refuel_date}")
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        """
+        String representation of the RefuelingRecord.
+        """
+        return f"{self.bus.registration_no} - {self.refuel_date} ({self.fuel_amount}L)"
+
 
 class BusRecord(models.Model):
     """

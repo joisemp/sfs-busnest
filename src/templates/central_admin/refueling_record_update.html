@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/bus_detail/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<section id="refueling-record-update">
+  
+  <div class="section-header">
+    <div>
+      <h2>Update Refueling Record</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'central_admin:bus_list' %}">Buses</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'central_admin:bus_detail' slug=object.bus.slug %}">{{object.bus.registration_no}}</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Update Record</li>
+        </ol>
+      </nav>
+    </div>
+    <hr>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label">
+            {{ field.label }}
+            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.help_text %}
+          <small class="form-text text-muted">{{ field.help_text }}</small>
+          {% endif %}
+          {% if field.errors %}
+          <div class="invalid-feedback d-block">
+            {{ field.errors }}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'central_admin:bus_detail' slug=object.bus.slug %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-save me-2"></i>Update Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</section>
+
+{% endblock content %}

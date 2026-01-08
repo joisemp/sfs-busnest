@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Update Refueling Record{% endblock title %}
+
+{% block sidebar %}
+{% include 'drivers/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<section id="refueling-record-update">
+  
+  <div class="section-header mb-4">
+    <div>
+      <a href="{% url 'drivers:refueling_list' %}" class="btn btn-outline-dark btn-sm mb-3">
+        <i class="fa-solid fa-arrow-left me-2"></i>Back
+      </a>
+    </div>
+    <div>
+      <h2><i class="fa-solid fa-pen-to-square me-2"></i>Update Refueling Record</h2>
+      <p class="text-muted mb-0">Update refueling record for {{ bus.registration_no }}</p>
+    </div>
+    <hr>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.refuel_date.id_for_label }}" class="form-label">
+              {{ form.refuel_date.label }}
+              {% if form.refuel_date.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.refuel_date }}
+            {% if form.refuel_date.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.refuel_date.errors }}
+            </div>
+            {% endif %}
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.fuel_type.id_for_label }}" class="form-label">
+              {{ form.fuel_type.label }}
+              {% if form.fuel_type.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.fuel_type }}
+            {% if form.fuel_type.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.fuel_type.errors }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.fuel_amount.id_for_label }}" class="form-label">
+              {{ form.fuel_amount.label }}
+              {% if form.fuel_amount.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.fuel_amount }}
+            {% if form.fuel_amount.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.fuel_amount.errors }}
+            </div>
+            {% endif %}
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.fuel_cost.id_for_label }}" class="form-label">
+              {{ form.fuel_cost.label }}
+              {% if form.fuel_cost.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.fuel_cost }}
+            {% if form.fuel_cost.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.fuel_cost.errors }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12 mb-3">
+            <label for="{{ form.odometer_reading.id_for_label }}" class="form-label">
+              {{ form.odometer_reading.label }}
+              {% if form.odometer_reading.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.odometer_reading }}
+            {% if form.odometer_reading.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.odometer_reading.errors }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12 mb-3">
+            <label for="{{ form.notes.id_for_label }}" class="form-label">
+              {{ form.notes.label }}
+            </label>
+            {{ form.notes }}
+            {% if form.notes.help_text %}
+            <small class="form-text text-muted">{{ form.notes.help_text }}</small>
+            {% endif %}
+            {% if form.notes.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.notes.errors }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'drivers:refueling_list' %}" class="btn btn-secondary">
+            <i class="fa-solid fa-times me-2"></i>Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-save me-2"></i>Update Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</section>
+
+{% endblock content %}

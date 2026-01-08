@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/bus_detail/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<section id="bus-detail">
+  
+  <div class="section-header">
+    <div class="mb-3">
+      <a href="{% url 'central_admin:bus_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left me-2"></i>Back to Buses
+      </a>
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2>Bus Details - {{bus.registration_no}}</h2>
+      </div>
+      <div class="button-group">
+        <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-primary">
+          <i class="fa-solid fa-pen me-2"></i>Edit Bus
+        </a>
+        <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-danger">
+          <i class="fa-solid fa-trash me-2"></i>Delete
+        </a>
+      </div>
+    </div>
+    <hr>
+  </div>
+
+  <!-- Bus Information Card -->
+  <div class="card bus-info-card mb-4">
+    <div class="card-body">
+      <h4 class="card-title mb-3">
+        <i class="fa-solid fa-bus me-2"></i>{{bus.registration_no}}
+      </h4>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <div class="info-item">
+            <span class="label">Registration Number</span>
+            <span class="value">{{bus.registration_no}}</span>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="info-item">
+            <span class="label">Capacity</span>
+            <span class="value">{{bus.capacity}} seats</span>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="info-item">
+            <span class="label">Status</span>
+            <span class="value">
+              {% if bus.is_available %}
+              <span class="badge bg-success">Available</span>
+              {% else %}
+              <span class="badge bg-danger">Maintenance</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refueling Records Section -->
+  <div class="refueling-section">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4><i class="fa-solid fa-gas-pump me-2"></i>Refueling Records</h4>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRefuelingModal">
+        <i class="fa-solid fa-plus me-2"></i>Add Refueling Record
+      </button>
+    </div>
+
+    {% if refueling_records %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Fuel Type</th>
+            <th>Amount</th>
+            <th>Cost</th>
+            <th>Odometer</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in refueling_records %}
+          <tr>
+            <td>{{record.refuel_date|date:"d M Y"}}</td>
+            <td>
+              <span class="badge bg-info">{{record.get_fuel_type_display}}</span>
+            </td>
+            <td>{{record.fuel_amount}} L</td>
+            <td>₹{{record.fuel_cost}}</td>
+            <td>{{record.odometer_reading}} km</td>
+            <td>
+              {% if record.notes %}
+              <span class="notes-preview">{{record.notes|truncatewords:10}}</span>
+              {% else %}
+              <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+            <td class="action-buttons">
+              <a href="{% url 'central_admin:refueling_record_update' slug=record.slug %}" 
+                 class="btn btn-sm btn-dark" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+              <a href="{% url 'central_admin:refueling_record_delete' slug=record.slug %}" 
+                 class="btn btn-sm btn-danger" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      <i class="fa-solid fa-info-circle me-2"></i>No refueling records found for this bus.
+    </div>
+    {% endif %}
+  </div>
+
+</section>
+
+<!-- Add Refueling Record Modal -->
+<div class="modal fade" id="addRefuelingModal" tabindex="-1" aria-labelledby="addRefuelingModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addRefuelingModalLabel">Add Refueling Record</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'central_admin:refueling_record_create' bus_slug=bus.slug %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">
+              {{ field.label }}
+              {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+            {% endif %}
+            {% if field.errors %}
+            <div class="invalid-feedback d-block">
+              {{ field.errors }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-save me-2"></i>Save Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

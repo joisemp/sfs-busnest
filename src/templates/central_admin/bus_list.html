@@ -48,7 +48,11 @@
       <tbody>
         {% for bus in buses %}
         <tr>
-          <td>{{bus.registration_no}}</td>
+          <td>
+            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="bus-link">
+              {{bus.registration_no}}
+            </a>
+          </td>
           <td>{{bus.driver}}</td>
           <td>{{bus.capacity}}</td>
           <td>
@@ -59,6 +63,7 @@
             {% endif %}
           </td>
           <td class="table-link">
+            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="btn btn-sm btn-info">View</a>
             <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-sm btn-dark">Edit</a>
             <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-sm btn-danger">Delete</a>
           </td>
