@@ -3,6 +3,11 @@
 
 {% block title %}My Refueling Records{% endblock title %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/driver/refueling_list/style.css' %}">
+{% endblock %}
+
+
 {% block sidebar %}
 {% include 'drivers/sidebar.html' %}
 {% endblock sidebar %}
