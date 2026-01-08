@@ -3,17 +3,49 @@
 
 {% block title %}Driver Dashboard{% endblock title %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/driver/dashboard/style.css' %}">
+{% endblock %}
+
+
 {% block sidebar %}
 {% include 'drivers/sidebar.html' %}
 {% endblock sidebar %}
 
 {% block content %}
 
+<section id="driver-dashboard">
+    <div class="Message-pop-up d-flex align-items-center justify-content-between ">
+        <div class="message-box">
+            <h1>Welcome back, {{ profile.first_name }}!</h1>
+            <p class="fw-semibold">Here's your driver dashboard.</p>
+        </div>
+        <div class="btn-grp">
+            <button class="btn btn-primary btn-sm" id="closeBtn">Refueling records</button>
+        </div>
+    </div>
+    <div class="cards-component">
+        <div class="card" style="width: 18rem;">
+            <div class="card-body">
+                <h5 class="card-title">Bus 1</h5>
+                <p class="fw-semibold">KA01AB1234</p>
+                <div class="text-end">
+                    <span class="fw-semibold">50 seats</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock content %}
+
+
 {% if has_assignment %}
 <div class="card border-0 mb-4">
     <div class="card-body p-4">
         <h2 class="h5 text-primary mb-2">Welcome back, {{ profile.first_name }}!</h2>
-        <p class="text-muted mb-0">Here's your driver dashboard. Access your routes, schedules, and important information from this page.</p>
+        <p class="text-muted mb-0">Here's your driver dashboard. Access your routes, schedules, and important
+            information from this page.</p>
     </div>
 </div>
 
@@ -113,15 +145,16 @@
         </div>
         <h3 class="h5 text-muted mb-3">No Active Assignment</h3>
         {% if not active_registration %}
-        <p class="text-muted mb-4">There is no active registration at the moment. Please wait for a registration to be activated.</p>
+        <p class="text-muted mb-4">There is no active registration at the moment. Please wait for a registration to be
+            activated.</p>
         {% else %}
-        <p class="text-muted mb-4">You haven't been assigned to a bus in the active registration ({{ active_registration.name }}). Please contact your administrator for bus assignment.</p>
+        <p class="text-muted mb-4">You haven't been assigned to a bus in the active registration ({{
+            active_registration.name }}). Please contact your administrator for bus assignment.</p>
         {% endif %}
         <div class="text-muted">
-            <small><i class="fa-solid fa-circle-info me-2"></i>Once assigned, you'll be able to view routes, schedules, and manage refueling records.</small>
+            <small><i class="fa-solid fa-circle-info me-2"></i>Once assigned, you'll be able to view routes, schedules,
+                and manage refueling records.</small>
         </div>
     </div>
 </div>
 {% endif %}
-
-{% endblock content %}
