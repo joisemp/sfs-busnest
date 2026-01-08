@@ -69,23 +69,31 @@
     left: 0;
     z-index: 999;
     border-right: 1px solid #e5e5e5;
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    
+    // Hide scrollbar
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    
+    &::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
 
     @media screen and (max-width: 430px) {
-      width: 100%;
-      height: auto;
-      top: auto;
-      left: auto;
-      bottom: 0;
+      width: 250px;
+      height: calc(100vh - 60px);
+      transform: translateX(0);
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+
+      &.sidebar-collapsed {
+        transform: translateX(-100%);
+      }
     }
 
     .nav {
       display: flex;
       flex-direction: column;
-
-      @media screen and (max-width: 430px) {
-        flex-direction: row;
-        flex-wrap: nowrap;
-      }
 
       .navlink {
         text-decoration: none;
@@ -104,31 +112,14 @@
         }
 
         @media screen and (max-width: 430px) {
-          width: fit-content;
-          border-right: none;
-          border-top: 3px solid transparent;
-          flex-grow: 1;
-          flex-basis: 20%;
-          text-align: center;
-          align-items: center;
-          justify-content: center;
-          padding: 1rem 0.3rem;
-          flex-direction: column;
-
-          &:hover {
-            background-color: $indigo-50;
-            border-top: 3px solid $indigo-600;
-            border-right: none;
-          }
-
+          padding: 1.5rem 1rem;
+          
           i {
-            font-size: 20px;
-            margin-right: 0 !important;
+            font-size: 18px;
           }
 
           span {
-            font-size: 12px;
-            margin-top: 0.2rem;
+            font-size: 14px;
           }
         }
       }
@@ -137,11 +128,6 @@
         color: $indigo-600;
         background-color: $indigo-50;
         border-right: 3px solid $indigo-600;
-
-        @media screen and (max-width: 430px) {
-          border-right: none;
-          border-top: 3px solid $indigo-600;
-        }
       }
     }
 
@@ -180,8 +166,7 @@
     }
 
     @media screen and (max-width: 430px) {
-      margin-left: auto;
-      margin-bottom: 76px;
+      margin-left: 0;
       width: 100%;
       padding: 0;
     }
