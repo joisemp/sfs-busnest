@@ -238,79 +238,16 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
-#registration-dashobard {
-  padding-top: 1rem;
+.card {
+  width: 18rem;
+  border: #4f46e5 solid 1px;
+  background-color: #eef2ff;
 }
-#registration-dashobard .header-button-group {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
+.card .card-title {
+  color: #4338ca;
 }
-@media screen and (max-width: 767px) {
-  #registration-dashobard .header-button-group {
-    justify-content: left;
+@media screen and (max-width: 430px) {
+  .card {
+    width: 100%;
   }
-  #registration-dashobard .header-button-group .setting {
-    margin-left: 1rem;
-  }
-}
-#registration-dashobard .header-button-group .back .btn {
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid black;
-}
-#registration-dashobard .header-button-group .setting .btn {
-  background-color: #c7d2fe;
-  color: #3730a3;
-  border: 1px solid #3730a3;
-  padding: 5px 9px;
-  font-weight: 600;
-}
-@media screen and (min-width: 768px) and (max-width: 991px) {
-  #registration-dashobard .content {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-  }
-}
-#registration-dashobard .content .registration-count {
-  margin-bottom: 1rem;
-  width: 100%;
-  background: #4f46e5;
-  color: #ffffff;
-  padding: 44px 10px;
-}
-#registration-dashobard .content .registration-count h5 {
-  font-size: 27px;
-  font-weight: 502;
-}
-#registration-dashobard .content .registration-count h6 {
-  font-size: 60px;
-  font-weight: 700;
-}
-#registration-dashobard .content .stop-frequency {
-  margin-bottom: 1rem;
-  width: 100%;
-}
-#registration-dashobard .content .stop-frequency .info {
-  display: flex;
-  justify-content: space-between;
-}
-#registration-dashobard .table-content .heading {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-#registration-dashobard .table-content .heading h2 {
-  font-weight: 600;
-}
-#registration-dashobard .table-content .table td,
-#registration-dashobard .table-content .table th {
-  white-space: nowrap;
-  padding: 1rem;
-  background-color: rgba(201, 229, 226, 0);
-}
-#registration-dashobard .table-content .table th {
-  color: #94a3b8;
-  font-weight: 500;
 }/*# sourceMappingURL=style.css.map */

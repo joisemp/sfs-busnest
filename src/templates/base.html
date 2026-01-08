@@ -22,9 +22,14 @@
         <!-- Navbar -->
         <header class="header">
             <div class="header-content w-100">
-                <a href="{% url 'landing_page' %}" class="logo">
-                    <img src="{% static 'images/logo.svg' %}" style="max-width: 130px;" alt="">
-                </a>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link text-dark d-md-none me-2 mobile-menu-toggle" id="mobileMenuToggle" style="text-decoration: none; border: none; box-shadow: none;">
+                        <i class="fa-solid fa-bars" style="font-size: 24px;"></i>
+                    </button>
+                    <a href="{% url 'landing_page' %}" class="logo">
+                        <img src="{% static 'images/logo.svg' %}" style="max-width: 130px;" alt="">
+                    </a>
+                </div>
 
                 <div class="d-flex">
                     <!-- Notification -->
@@ -155,8 +160,41 @@
                 const originalText = p.textContent;
                 p.textContent = truncateString(originalText, 30); // Change '40' to any limit you want
             });
+
+            // Mobile sidebar toggle functionality
+            const menuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (menuToggle && sidebar) {
+                // Start with sidebar collapsed on mobile
+                if (window.innerWidth <= 430) {
+                    sidebar.classList.add('sidebar-collapsed');
+                }
+
+                menuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('sidebar-collapsed');
+                });
+
+                // Close sidebar when clicking outside on mobile
+                document.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 430) {
+                        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target) && !sidebar.classList.contains('sidebar-collapsed')) {
+                            sidebar.classList.add('sidebar-collapsed');
+                        }
+                    }
+                });
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 430) {
+                        sidebar.classList.remove('sidebar-collapsed');
+                    }
+                });
+            }
         });
     </script>
+
 </body>
 
 </html>

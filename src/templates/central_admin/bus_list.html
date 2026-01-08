@@ -39,7 +39,7 @@
       <thead>
         <tr>
           <td class="text-muted">Registration no</td>
-          <th class="text-muted">Driver name</th>
+          <!-- <th class="text-muted">Driver name</th> -->
           <th class="text-muted">Capacity</th>
           <th class="text-muted">Status</th>
           <th class="text-muted">Action</th>
@@ -53,7 +53,7 @@
               {{bus.registration_no}}
             </a>
           </td>
-          <td>{{bus.driver}}</td>
+          <!-- <td>{{bus.driver}}</td> -->
           <td>{{bus.capacity}}</td>
           <td>
             {% if bus.is_available %}
@@ -63,7 +63,7 @@
             {% endif %}
           </td>
           <td class="table-link">
-            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="btn btn-sm btn-info">View</a>
+            <!-- <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="btn btn-sm btn-info">View</a> -->
             <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-sm btn-dark">Edit</a>
             <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-sm btn-danger">Delete</a>
           </td>

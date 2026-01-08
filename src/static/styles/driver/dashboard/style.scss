@@ -1,0 +1,14 @@
+@use '../../sidebar_navbar_base' as *;
+
+.card{
+    width:18rem;
+    border:$indigo-600 solid 1px;
+    background-color: $indigo-50;
+    .card-title{
+        color: $indigo-700;
+    }
+    
+    @media screen and (max-width: 430px) {
+        width: 100%;
+    }
+}
