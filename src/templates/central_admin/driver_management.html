@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/central_admin/driver_management/style.css' %}">
+{% endblock style %}
+
 {% block sidebar %}
 {% include 'central_admin/sidebar/registration_sidebar.html' %}
 {% endblock sidebar %}
