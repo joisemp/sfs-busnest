@@ -1,0 +1,86 @@
+@use "./base/typography" as *;
+@use "./base/colors" as *;
+@use "./base/buttons" as *;
+
+// Forward modules so importing files can access variables
+@forward "./base/typography";
+@forward "./base/colors";
+@forward "./base/buttons";
+
+// Overall wrap
+.initial-wrap {
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+
+    // Navbar
+    .header {
+        background-color: $base-white;
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        height: 60px;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+        }
+
+        // notification
+        .notification {
+            display: flex;
+            align-items: center;
+            .dropdown {
+                ul {
+                    padding-bottom: 0px;
+                    li {
+                        .color {
+                            background-color: $indigo-100;
+                            padding: 10px;
+                            span {
+                                font-size: 14px;
+                                font-weight: 500;
+                            }
+                            a {
+                                text-decoration: none !important;
+                                color: $primary-color;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Content section
+    .main-content {
+        margin-top: 60px;
+    }
+}
+
+tbody,
+td,
+tfoot,
+th,
+thead,
+tr {
+    background: #ffffff00 !important;
+    white-space: nowrap;
+    padding: 1rem !important;
+    .text-muted {
+        font-weight: 508;
+    }
+
+    .table-link {
+        a {
+            text-decoration: none !important;
+            font-weight: 500;
+        }
+    }
+}

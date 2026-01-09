@@ -7,11 +7,6 @@
 <link rel="stylesheet" href="{% static 'styles/driver/dashboard/style.css' %}">
 {% endblock %}
 
-
-{% block sidebar %}
-{% include 'drivers/sidebar.html' %}
-{% endblock sidebar %}
-
 {% block content %}
 
 <section id="driver-dashboard" class="mt-3 mt-md-auto">
@@ -21,7 +16,7 @@
             <p class="fw-semibold">Here's your driver dashboard.</p>
         </div>
         <div class="btn-grp">
-            <button class="btn btn-primary btn-sm" id="closeBtn">Refueling records</button>
+            <a href="{% url 'drivers:refueling_list' %}" class="btn btn-primary btn-sm" id="closeBtn">Refueling records</a>
         </div>
     </div>
     <div class="cards-component">
