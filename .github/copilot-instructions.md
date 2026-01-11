@@ -8,35 +8,51 @@ SFS BusNest is a Django-based centralized bus management system for multiple edu
 ## Architecture
 
 ### Core Components
-- **`core/`**: Custom user authentication (`User` with email as USERNAME_FIELD, `UserProfile` with role flags)
-- **`services/`**: Main business logic - 25+ models covering organisations, institutions, routes, buses, tickets, receipts, notifications
-- **`config/`**: Settings, Celery config, middleware (maintenance mode), validators, utils
+- **`core/`**: Custom user authentication (`User` with email as USERNAME_FIELD, `UserProfile` with single role field)
+- **`services/`**: Main business logic - 30+ models organized across 10 modules (core, routes, registrations, buses, bus_operations, tickets, requests, reservations, system, utils)
+- **`config/`**: Settings, Celery config, middleware (maintenance mode), validators, utils, mixins (access control)
 
 ### User Roles & Access Pattern
 ```python
-# Three distinct user types with separate URL namespaces
+# Four distinct user types with separate URL namespaces
 UserProfile.is_central_admin    # Full system access - manages all institutions
 UserProfile.is_institution_admin # Institution-scoped - manages their institution only
+UserProfile.is_driver           # Driver dashboard - manages refueling records, views assigned trips
 UserProfile.is_student          # Read-only access - views their tickets/schedules
 ```
 
-**URL Structure**: `/central_admin/`, `/institution_admin/`, `/students/` - each with separate views/forms/urls modules in `services/`
+**URL Structure**: `/central_admin/`, `/institution_admin/`, `/drivers/`, `/students/` - each with separate views/forms/urls modules in `services/`
 
 ### Data Hierarchy
 ```
 Organisation (org)
   ├─ Institution(s)
   │   ├─ StudentGroup(s) (class-section combinations)
-  │   └─ UserProfile(s) (institution admins)
+  │   └─ UserProfile(s) (institution admins, drivers, students)
   ├─ Registration (booking period/event)
   │   ├─ Route(s) → Stop(s)
+  │   │   └─ RouteFile(s) (Excel uploads for route data)
   │   ├─ Schedule(s) (morning/evening timings)
   │   ├─ ScheduleGroup(s) (pickup+drop pairs)
   │   ├─ BusRecord(s) (bus assigned to registration)
   │   │   └─ Trip(s) (route+schedule+bus combination)
   │   ├─ Receipt(s) (payment validation)
-  │   └─ Ticket(s) (student bookings)
-  └─ Bus(es) (organization fleet)
+  │   │   └─ ReceiptFile(s) (Excel uploads for receipt data)
+  │   ├─ Ticket(s) (student bookings)
+  │   │   └─ Payment(s) (installment payments)
+  │   └─ BusReservationRequest(s) (institution bus requests)
+  │       ├─ BusReservationAssignment(s) (bus allocations)
+  │       └─ TripExpense(s) (trip cost tracking)
+  ├─ Bus(es) (organization fleet)
+  │   ├─ RefuelingRecord(s) (fuel tracking by drivers)
+  │   └─ BusFile(s) (Excel uploads for bus data)
+  ├─ BusRequest(s) (FAQ/support tickets)
+  │   └─ BusRequestComment(s) (ticket responses)
+  └─ System Models
+      ├─ Notification(s) (in-app notifications)
+      ├─ UserActivity(s) (audit log)
+      ├─ ExportedFile(s) (generated reports)
+      └─ StudentPassFile(s) (generated passes)
 ```
 
 **Critical**: All models have `org` ForeignKey - filter by `user.profile.org` for multi-tenancy. Use `slug` for URLs (all models auto-generate unique slugs on save).
@@ -79,11 +95,13 @@ cd src; $env:DJANGO_SETTINGS_MODULE="config.test_settings"; python manage.py tes
 ## Key Patterns & Conventions
 
 ### Model Conventions
-1. **Unique Slugs**: All models use `slug = SlugField(unique=True, db_index=True)` with auto-generation in `save()` via `config.utils.generate_unique_slug()`
-2. **Unique Codes**: Registration uses `generate_unique_code()` for shareable booking codes
-3. **Organisation Scoping**: Always filter by `org=request.user.profile.org` in views
-4. **Soft Deletes**: Use `is_available` (Bus), `is_expired` (Receipt), `status` (Ticket) instead of hard deletes
-5. **Signals**: `Ticket` deletion auto-decrements `Trip.booking_count` via `update_trip_booking_count_on_ticket_delete` signal
+1. **Modular Organization**: Models split across 10 files in `services/models/` (core.py, routes.py, registrations.py, buses.py, bus_operations.py, tickets.py, requests.py, reservations.py, system.py, utils.py)
+2. **Unique Slugs**: All models use `slug = SlugField(unique=True, db_index=True)` with auto-generation in `save()` via `config.utils.generate_unique_slug()`
+3. **Unique Codes**: Registration uses `generate_unique_code()` for shareable booking codes; BusReservationRequest auto-generates `reservation_no`
+4. **Organisation Scoping**: Always filter by `org=request.user.profile.org` in views (multi-tenancy enforcement)
+5. **Soft Deletes**: Use `is_available` (Bus), `is_expired` (Receipt), `status` (Ticket) instead of hard deletes
+6. **Signals**: `Ticket` deletion auto-decrements `Trip.booking_count` via `update_trip_booking_count_on_ticket_delete` signal
+7. **Role-Based Model**: UserProfile uses single `role` field (CharField with choices) instead of multiple boolean flags
 
 ### File Upload Processing
 **Pattern**: Upload → Celery task → Notification
@@ -142,9 +160,20 @@ routes = sorted(routes, key=lambda r: _natural_sort_key(r.name))
 ```
 
 ### Form Handling
-Forms split by role: `services/forms/{central_admin,institution_admin,students}.py`
+Forms split by role: `services/forms/{central_admin,institution_admin,drivers,students}.py`
 
 **HTMX Integration**: Many forms use HTMX for dynamic updates (check templates for `hx-` attributes)
+
+### Access Control Mixins
+**Location**: `config/mixins/access_mixin.py`
+
+Provides role-based view access control:
+- `CentralAdminOnlyAccessMixin`: Restricts access to central admins
+- `InstitutionAdminOnlyAccessMixin`: Restricts access to institution admins
+- `DriverOnlyAccessMixin`: Restricts access to drivers
+- `StudentOnlyAccessMixin`: Restricts access to students
+
+All views should inherit from appropriate mixin + `LoginRequiredMixin`
 
 ### Static Files
 - **Development**: WhiteNoise serves from `src/static/` and `src/staticfiles/`
@@ -152,6 +181,33 @@ Forms split by role: `services/forms/{central_admin,institution_admin,students}.
 - **Technologies**: Bootstrap 5, SCSS, vanilla JS, HTMX (no React/Vue)
 
 ## Key Features
+
+### Driver Dashboard & Refueling Management
+**Location**: `templates/drivers/` + `services/views/drivers.py`
+
+Driver-specific functionality for managing assigned buses and refueling records:
+
+**Features**:
+1. **Driver Dashboard**: Shows driver profile, assigned bus record from active registration, quick access to tasks
+2. **Refueling Records**: Drivers can add/update refueling records for their assigned bus
+   - Fields: date, odometer_reading, fuel_quantity, fuel_cost, notes
+   - Auto-generates unique slug on save
+   - Scoped to driver's assigned bus in active registration
+3. **Access Pattern**: Only one registration is active at a time (`Registration.is_active=True`)
+   - Each driver assigned to one bus record in active registration
+   - All operations scoped to assigned bus
+
+**Views** (`services/views/drivers.py`):
+- `DriverDashboardView`: Main dashboard for drivers
+- `DriverRefuelingListView`: List all refueling records for driver's bus
+- `DriverRefuelingCreateView`: Add new refueling record
+- `DriverRefuelingUpdateView`: Edit existing refueling record
+
+**URL Namespace**: `/drivers/` (dashboard, refueling list, refueling create/update)
+
+**Models**:
+- `RefuelingRecord` in `services/models/buses.py`: Tracks fuel consumption, costs, odometer readings
+- `UserProfile.years_of_experience`: Optional field for driver experience tracking
 
 ### Stop Transfer Management System
 **Location**: `templates/central_admin/stop_transfer_management.html` + `static/js/stop_transfer.js`
@@ -228,6 +284,9 @@ Complete drag-and-drop interface for managing stops across routes with real-time
 7. **Stop Transfers**: When transferring stops, only update relevant bus records (pickup vs drop) to avoid unnecessary ticket modifications
 8. **Drag & Drop**: Always prevent drag events on interactive elements (buttons, inputs) using `e.target.closest('button')` check
 9. **Bootstrap Modals**: Check for existing modal instances before creating new ones to prevent memory leaks
+10. **Role System**: Use `profile.role` (single CharField) not boolean flags - use properties `is_central_admin`, `is_driver`, etc. for backward compatibility
+11. **Driver Access**: Drivers can only access their assigned bus in the active registration - always check `Registration.is_active=True`
+12. **Model Imports**: Import from `services.models` (uses `__init__.py` re-exports), not from individual model files
 
 ## Database
 
@@ -248,11 +307,12 @@ Complete drag-and-drop interface for managing stops across routes with real-time
 ## Frontend Architecture & Templates
 
 ### Template Structure
-**Three-layer base template inheritance**:
+**Four-layer base template inheritance**:
 ```
 base.html (global layout)
   ├─ central_admin/ (extends base.html)
   ├─ institution_admin/ (extends base.html)
+  ├─ drivers/ (extends base.html)
   └─ students/ (extends base.html)
 ```
 
@@ -346,13 +406,14 @@ static/
 
 ## Adding New Features
 
-1. **New Model**: Add to `services/models.py` → include `org`, `slug`, docstrings
-2. **New Admin View**: Create in `services/views/central_admin.py` → add URL in `services/urls/central_admin.py`
+1. **New Model**: Add to appropriate `services/models/{category}.py` → include `org`, `slug`, docstrings → export in `services/models/__init__.py`
+2. **New Admin View**: Create in `services/views/{role}.py` → add URL in `services/urls/{role}.py` → use appropriate access mixin
 3. **New Async Task**: Add to `services/tasks.py` → create/update `Notification` for user feedback
 4. **New Form**: Add to `services/forms/{role}.py` → use Bootstrap classes for styling
 5. **New Template**: Extend `base.html` → include role-specific sidebar → add to `templates/{role}/`
 6. **New SCSS**: Create `style.scss` in `static/styles/{role}/{page}/` → import base partials → CSS auto-compiles
-7. **Always**: Write tests in `services/test/`, run before committing
+7. **Access Control**: Always use mixins from `config/mixins/access_mixin.py` for role-based views
+8. **Always**: Write tests in `services/test/test_models.py` or `core/test/`, run before committing
 
 ## Testing Strategy
 
