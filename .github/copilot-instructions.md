@@ -7,6 +7,24 @@ SFS BusNest is a Django-based centralized bus management system for multiple edu
 
 ## Architecture
 
+### Project Structure
+```
+src/
+  ├─ config/          # Django settings, Celery config, utilities
+  │   ├─ middleware/  # Custom middleware (maintenance mode)
+  │   └─ mixins/      # Access control mixins, form mixins
+  ├─ core/            # Custom user authentication
+  ├─ services/        # Main business logic (30+ models)
+  │   ├─ models/      # 10 modular files (core, routes, registrations, etc.)
+  │   ├─ views/       # Role-specific views (central_admin, institution_admin, drivers, students)
+  │   ├─ forms/       # Role-specific forms matching view structure
+  │   ├─ urls/        # Role-specific URL configs
+  │   ├─ utils/       # Utility functions (transfer_stop.py, etc.)
+  │   └─ tasks.py     # Celery background tasks
+  ├─ templates/       # Role-based template directories
+  └─ static/          # SCSS, JS, images, vendor libs
+```
+
 ### Core Components
 - **`core/`**: Custom user authentication (`User` with email as USERNAME_FIELD, `UserProfile` with single role field)
 - **`services/`**: Main business logic - 30+ models organized across 10 modules (core, routes, registrations, buses, bus_operations, tickets, requests, reservations, system, utils)
@@ -169,11 +187,15 @@ Forms split by role: `services/forms/{central_admin,institution_admin,drivers,st
 
 Provides role-based view access control:
 - `CentralAdminOnlyAccessMixin`: Restricts access to central admins
-- `InstitutionAdminOnlyAccessMixin`: Restricts access to institution admins
+- `InsitutionAdminOnlyAccessMixin`: Restricts access to institution admins (note the typo - missing 't')
 - `DriverOnlyAccessMixin`: Restricts access to drivers
-- `StudentOnlyAccessMixin`: Restricts access to students
+- `RegistrationOpenCheckMixin`: Used for student-facing views - validates active registration exists
+- `RegistrationClosedOnlyAccessMixin`: Restricts access when registration is closed
+- `RedirectLoggedInUsersMixin`: Redirects authenticated users to role-specific dashboards
 
-All views should inherit from appropriate mixin + `LoginRequiredMixin`
+**Note**: Student views use `RegistrationOpenCheckMixin` instead of a dedicated student mixin. They don't require authentication - access is based on active registration status.
+
+All admin/driver views should inherit from appropriate mixin + `LoginRequiredMixin`
 
 ### Static Files
 - **Development**: WhiteNoise serves from `src/static/` and `src/staticfiles/`
@@ -287,6 +309,8 @@ Complete drag-and-drop interface for managing stops across routes with real-time
 10. **Role System**: Use `profile.role` (single CharField) not boolean flags - use properties `is_central_admin`, `is_driver`, etc. for backward compatibility
 11. **Driver Access**: Drivers can only access their assigned bus in the active registration - always check `Registration.is_active=True`
 12. **Model Imports**: Import from `services.models` (uses `__init__.py` re-exports), not from individual model files
+13. **Access Mixin Typo**: The institution admin mixin class name has a typo: `InsitutionAdminOnlyAccessMixin` (missing 't' in "Institution")
+14. **Student Views**: Student-facing views use `RegistrationOpenCheckMixin` and don't require authentication - they're public during active registration periods
 
 ## Database
 
