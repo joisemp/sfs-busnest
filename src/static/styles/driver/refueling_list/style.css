@@ -153,4 +153,85 @@ thead .table-link a,
 tr .table-link a {
   text-decoration: none !important;
   font-weight: 500;
+}
+
+#card-section {
+  margin-top: 20px;
+}
+#card-section .card {
+  background-color: #4f46e5;
+  color: aliceblue;
+  padding: 10px;
+  height: 200px;
+}
+#card-section .card p {
+  font-weight: 500;
+}
+#card-section .card .seat-count {
+  display: flex;
+  justify-content: right;
+}
+
+#link .nav-pills {
+  margin-top: 20px;
+}
+#link .nav-pills .nav-link {
+  color: black;
+}
+#link .nav-pills :hover {
+  border-radius: 5px;
+  background-color: black;
+  color: white;
+}
+
+#card-list {
+  margin-top: 24px;
+}
+#card-list .refueling-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+#card-list .refueling-card {
+  background-color: #eef2ff;
+  border-radius: 8px;
+  padding: 32px 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  transition: all 0.3s ease;
+}
+#card-list .refueling-card:hover {
+  border-color: #6366f1;
+  background-color: #e0e7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+#card-list .refueling-card .fuel-quantity {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+#card-list .refueling-card .fuel-cost {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 24px;
+}
+#card-list .refueling-card .fuel-type-badge {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4f46e5;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }/*# sourceMappingURL=style.css.map */
