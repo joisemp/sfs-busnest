@@ -400,7 +400,7 @@ class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
 
 class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView):
     """
-    BusDetailView displays detailed information about a bus including refueling records.
+    BusDetailView displays detailed information about a bus including refueling records and statistics.
     It requires the user to be logged in and have central admin access.
     Attributes:
         template_name (str): The path to the template used to render the view.
@@ -408,20 +408,63 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         context_object_name (str): The name of the context variable for the bus object.
     Methods:
         get_context_data(**kwargs):
-            Adds refueling records and form to the context.
+            Adds refueling records, form, and statistics (mileage, odometer, etc.) to the context.
     """
     model = Bus
     template_name = 'central_admin/bus_detail.html'
     context_object_name = 'bus'
     
     def get_context_data(self, **kwargs):
+        from django.db.models import Sum, Max, Min
+        
         context = super().get_context_data(**kwargs)
         bus = self.get_object()
-        context['refueling_records'] = RefuelingRecord.objects.filter(
+        
+        refueling_records = RefuelingRecord.objects.filter(
             bus=bus, 
             org=self.request.user.profile.org
-        ).order_by('-refuel_date', '-created_at')
+        ).order_by('odometer_reading')
+        
+        context['refueling_records'] = refueling_records.order_by('-refuel_date', '-created_at')
         context['form'] = RefuelingRecordForm()
+        
+        # Calculate statistics
+        mileage = None
+        latest_odometer = None
+        total_fuel_cost = 0
+        total_fuel_amount = 0
+        refueling_count = refueling_records.count()
+        
+        if refueling_records.exists():
+            # Get latest odometer reading
+            latest_record = refueling_records.last()
+            latest_odometer = latest_record.odometer_reading
+            
+            # Calculate mileage (km per liter)
+            if refueling_records.count() >= 2:
+                first_record = refueling_records.first()
+                total_distance = latest_record.odometer_reading - first_record.odometer_reading
+                total_fuel = refueling_records.exclude(id=first_record.id).aggregate(
+                    total=Sum('fuel_amount')
+                )['total'] or 0
+                
+                if total_fuel > 0 and total_distance > 0:
+                    mileage = round(total_distance / float(total_fuel), 2)
+            
+            # Get refueling statistics
+            stats = refueling_records.aggregate(
+                total_cost=Sum('fuel_cost'),
+                total_fuel=Sum('fuel_amount')
+            )
+            total_fuel_cost = stats['total_cost'] or 0
+            total_fuel_amount = stats['total_fuel'] or 0
+        
+        context['mileage'] = mileage
+        context['latest_odometer'] = latest_odometer
+        context['total_fuel_cost'] = total_fuel_cost
+        context['total_fuel_amount'] = total_fuel_amount
+        context['refueling_count'] = refueling_count
+        
         return context
 
 
