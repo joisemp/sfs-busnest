@@ -282,7 +282,10 @@ class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context_object_name (str): The name of the context variable that will contain the list of buses.
     Methods:
         get_queryset(self):
-            Returns a queryset of Bus objects filtered by the organization of the currently logged-in user.
+            Returns a queryset of Bus objects filtered by the organization of the currently logged-in user
+            and optionally filtered by availability status.
+        get_context_data(**kwargs):
+            Adds status counts and current filter to the context.
     """
     model = Bus
     template_name = 'central_admin/bus_list.html'
@@ -290,7 +293,31 @@ class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
     def get_queryset(self):
         queryset = Bus.objects.filter(org=self.request.user.profile.org)
+        
+        # Filter by status if specified in query parameters
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'available':
+            queryset = queryset.filter(is_available=True)
+        elif status_filter == 'maintenance':
+            queryset = queryset.filter(is_available=False)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all buses in the organization for counting
+        all_buses = Bus.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_buses.count()
+        context['available_count'] = all_buses.filter(is_available=True).count()
+        context['maintenance_count'] = all_buses.filter(is_available=False).count()
+        
+        # Add current filter to context
+        context['status_filter'] = self.request.GET.get('status')
+        
+        return context
 
 
 class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):

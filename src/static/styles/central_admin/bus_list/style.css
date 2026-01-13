@@ -238,6 +238,51 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
+#bus-list .section-header {
+  margin-bottom: 1rem;
+}
+#bus-list .section-header h2 {
+  margin-bottom: 0;
+  font-weight: 600;
+}
+#bus-list #filter-tabs .nav-pills {
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+#bus-list #filter-tabs .nav-pills .nav-item .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  color: #6c757d;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+#bus-list #filter-tabs .nav-pills .nav-item .nav-link i {
+  font-size: 0.875rem;
+}
+#bus-list #filter-tabs .nav-pills .nav-item .nav-link .badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+}
+#bus-list #filter-tabs .nav-pills .nav-item .nav-link:hover {
+  background-color: #f8f9fa;
+  border-color: #000;
+  color: #000;
+}
+#bus-list #filter-tabs .nav-pills .nav-item .nav-link.active {
+  background-color: #000;
+  border-color: #000;
+  color: #fff;
+}
+#bus-list #filter-tabs .nav-pills .nav-item .nav-link.active .badge {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+}
 #bus-list tbody, #bus-list td, #bus-list tfoot, #bus-list th, #bus-list thead, #bus-list tr {
   background: rgba(255, 255, 255, 0) !important;
   white-space: nowrap;
@@ -249,4 +294,17 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 #bus-list tbody .table-link a, #bus-list td .table-link a, #bus-list tfoot .table-link a, #bus-list th .table-link a, #bus-list thead .table-link a, #bus-list tr .table-link a {
   text-decoration: none !important;
   font-weight: 500;
+}
+@media (max-width: 768px) {
+  #bus-list .section-header .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+  #bus-list #filter-tabs .nav-pills .nav-item .nav-link {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+  }
+  #bus-list #filter-tabs .nav-pills .nav-item .nav-link i {
+    font-size: 0.875rem;
+  }
 }/*# sourceMappingURL=style.css.map */

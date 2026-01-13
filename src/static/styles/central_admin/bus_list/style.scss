@@ -1,6 +1,65 @@
 @use '../../sidebar_navbar_base' as *;
 
 #bus-list{
+    .section-header {
+        margin-bottom: 1rem;
+        
+        h2 {
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+    }
+
+    // Filter tabs styling
+    #filter-tabs {
+        .nav-pills {
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            
+            .nav-item {
+                .nav-link {
+                    display: flex;
+                    align-items: center;
+                    padding: 0.5rem 0.85rem;
+                    border-radius: 6px;
+                    color: #6c757d;
+                    background-color: #fff;
+                    border: 1px solid #dee2e6;
+                    font-weight: 500;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    
+                    i {
+                        font-size: 0.875rem;
+                    }
+                    
+                    .badge {
+                        font-size: 0.7rem;
+                        padding: 0.2rem 0.4rem;
+                        border-radius: 8px;
+                    }
+                    
+                    &:hover {
+                        background-color: #f8f9fa;
+                        border-color: #000;
+                        color: #000;
+                    }
+                    
+                    &.active {
+                        background-color: #000;
+                        border-color: #000;
+                        color: #fff;
+                        
+                        .badge {
+                            background-color: rgba(255, 255, 255, 0.3) !important;
+                            color: #fff !important;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     tbody, td, tfoot, th, thead, tr {
         background: #ffffff00 !important;
         white-space: nowrap;
@@ -16,4 +75,30 @@
             }
         }
     }
+
+    // Responsive adjustments
+    @media (max-width: 768px) {
+        .section-header {
+            .btn {
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+            }
+        }
+        
+        #filter-tabs {
+            .nav-pills {
+                .nav-item {
+                    .nav-link {
+                        padding: 0.6rem 1rem;
+                        font-size: 0.875rem;
+                        
+                        i {
+                            font-size: 0.875rem;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+
