@@ -17,6 +17,8 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-# CMD [ "python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Development: python manage.py runserver 0.0.0.0:8000
+# WSGI Production: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+# ASGI Production: uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --workers 3
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--workers", "3"]
