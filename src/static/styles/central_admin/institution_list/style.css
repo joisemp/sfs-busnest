@@ -238,6 +238,10 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
+#institution-list .section-header h2 {
+  font-weight: 600;
+}
+
 .wrap {
   display: flex;
   flex-wrap: wrap;
@@ -260,4 +264,18 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 .wrap .card-wrap .card {
   width: 100%;
   padding: 30px 20px;
+  transition: all 0.2s ease;
+}
+.wrap .card-wrap .card:hover {
+  border: 3px solid #000 !important;
+}
+.wrap .card-wrap .card .card-title {
+  font-size: 1rem;
+  color: #1f2937;
+}
+.wrap .card-wrap .card .btn {
+  transition: all 0.2s ease;
+}
+.wrap .card-wrap .card .btn:hover {
+  transform: translateX(2px);
 }/*# sourceMappingURL=style.css.map */
