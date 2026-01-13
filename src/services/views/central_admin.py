@@ -3684,6 +3684,15 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Get all reservations in the organization for counting
+        all_reservations = BusReservationRequest.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_reservations.count()
+        context['pending_count'] = all_reservations.filter(status='pending').count()
+        context['approved_count'] = all_reservations.filter(status='approved').count()
+        context['rejected_count'] = all_reservations.filter(status='rejected').count()
+        
         # Get month filter from query params or default to current month
         from datetime import datetime
         month_param = self.request.GET.get('month')

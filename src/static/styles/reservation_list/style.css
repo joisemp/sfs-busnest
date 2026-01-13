@@ -236,4 +236,152 @@ tbody .text-muted, td .text-muted, tfoot .text-muted, th .text-muted, thead .tex
 tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, thead .table-link a, tr .table-link a {
   text-decoration: none !important;
   font-weight: 500;
+}
+
+#reservation-list .section-header {
+  margin-bottom: 1rem;
+}
+#reservation-list .section-header h2 {
+  margin-bottom: 0;
+  font-weight: 600;
+}
+#reservation-list #filter-tabs .nav-pills {
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+#reservation-list #filter-tabs .nav-pills .nav-item .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  color: #6c757d;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+#reservation-list #filter-tabs .nav-pills .nav-item .nav-link i {
+  font-size: 0.875rem;
+}
+#reservation-list #filter-tabs .nav-pills .nav-item .nav-link .badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+}
+#reservation-list #filter-tabs .nav-pills .nav-item .nav-link:hover {
+  background-color: #f8f9fa;
+  border-color: #000;
+  color: #000;
+}
+#reservation-list #filter-tabs .nav-pills .nav-item .nav-link.active {
+  background-color: #000;
+  border-color: #000;
+  color: #fff;
+}
+#reservation-list #filter-tabs .nav-pills .nav-item .nav-link.active .badge {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+}
+#reservation-list .content-tabs {
+  border-bottom: 1px solid #dee2e6;
+}
+#reservation-list .content-tabs .nav-tabs {
+  border-bottom: none;
+}
+#reservation-list .content-tabs .nav-tabs .nav-item .nav-link {
+  color: #6c757d;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+#reservation-list .content-tabs .nav-tabs .nav-item .nav-link i {
+  font-size: 1rem;
+}
+#reservation-list .content-tabs .nav-tabs .nav-item .nav-link .badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+#reservation-list .content-tabs .nav-tabs .nav-item .nav-link:hover {
+  color: #000;
+  border-bottom-color: #dee2e6;
+}
+#reservation-list .content-tabs .nav-tabs .nav-item .nav-link.active {
+  color: #000;
+  border-bottom-color: #000;
+  background-color: transparent;
+}
+#reservation-list .hover-card {
+  transition: all 0.2s ease;
+}
+#reservation-list .hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+#reservation-list .hover-card .card-body {
+  padding: 1.25rem;
+}
+#reservation-list .hover-card .card-body .card-title {
+  font-size: 1rem;
+  color: #1f2937;
+}
+#reservation-list .hover-card .card-body .badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  font-weight: 500;
+}
+#reservation-list .hover-card .card-body .btn {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+  transition: all 0.2s ease;
+}
+#reservation-list .hover-card .card-body .btn:hover {
+  transform: translateX(2px);
+}
+#reservation-list .table-responsive {
+  border-radius: 8px;
+  overflow: hidden;
+}
+#reservation-list .table-responsive .table {
+  margin-bottom: 0;
+}
+#reservation-list .table-responsive .table thead {
+  background-color: #f8f9fa;
+}
+#reservation-list .table-responsive .table thead th {
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1rem;
+}
+#reservation-list .table-responsive .table tbody tr {
+  transition: background-color 0.2s ease;
+}
+#reservation-list .table-responsive .table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+#reservation-list .table-responsive .table tbody tr td {
+  padding: 1rem;
+  vertical-align: middle;
+}
+@media (max-width: 768px) {
+  #reservation-list .section-header .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+  #reservation-list #filter-tabs .nav-pills .nav-item .nav-link {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+  }
+  #reservation-list #filter-tabs .nav-pills .nav-item .nav-link i {
+    font-size: 0.875rem;
+  }
+  #reservation-list .content-tabs .nav-tabs .nav-item .nav-link {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+  }
 }/*# sourceMappingURL=style.css.map */
