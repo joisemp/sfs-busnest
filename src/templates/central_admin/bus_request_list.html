@@ -70,13 +70,31 @@
                 </form>
             </div>
             <hr>
-            <div class="filter-links">
-                <a href="{% url 'central_admin:bus_request_list' registration_slug=registration.slug %}"
-                    class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'bus_request_list' %}active{% endif %}">All ({{ total_requests }})</a>
-                <a href="{% url 'central_admin:bus_request_open_list' registration_slug=registration.slug %}"
-                    class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'bus_request_open_list' %}active{% endif %}">Open ({{ open_requests }})</a>
-                <a href="{% url 'central_admin:bus_request_closed_list' registration_slug=registration.slug %}"
-                    class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'bus_request_closed_list' %}active{% endif %}">Closed ({{ closed_requests }})</a>
+            <!-- Filter Tabs -->
+            <div id="filter-tabs" class="mb-4">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a href="{% url 'central_admin:bus_request_list' registration_slug=registration.slug %}"
+                           class="nav-link {% if request.resolver_match.url_name == 'bus_request_list' %}active{% endif %}">
+                            <i class="fa-solid fa-list me-2"></i>All
+                            <span class="badge bg-dark ms-2">{{ total_requests }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'central_admin:bus_request_open_list' registration_slug=registration.slug %}"
+                           class="nav-link {% if request.resolver_match.url_name == 'bus_request_open_list' %}active{% endif %}">
+                            <i class="fa-solid fa-envelope-open me-2"></i>Open
+                            <span class="badge bg-dark ms-2">{{ open_requests }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'central_admin:bus_request_closed_list' registration_slug=registration.slug %}"
+                           class="nav-link {% if request.resolver_match.url_name == 'bus_request_closed_list' %}active{% endif %}">
+                            <i class="fa-solid fa-check-circle me-2"></i>Closed
+                            <span class="badge bg-dark ms-2">{{ closed_requests }}</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
         {% if bus_requests %}
