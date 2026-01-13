@@ -312,3 +312,76 @@ class DriverRefuelingUpdateView(LoginRequiredMixin, DriverOnlyAccessMixin, Updat
         messages.error(self.request, "Error updating refueling record. Please check the form.")
         return super().form_invalid(form)
 
+
+class DriverStudentsListView(LoginRequiredMixin, DriverOnlyAccessMixin, TemplateView):
+    """
+    View for drivers to see students assigned to their bus schedules.
+    
+    Shows all students grouped by schedule (morning/evening) for the driver's assigned bus.
+    """
+    template_name = 'drivers/students_list.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        from services.models import BusRecord, Registration, Ticket, Schedule
+        
+        # Get active registration
+        active_registration = Registration.objects.filter(
+            org=self.request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        bus_record = None
+        schedules_data = []
+        
+        if active_registration:
+            bus_record = BusRecord.objects.filter(
+                registration=active_registration,
+                assigned_driver=self.request.user
+            ).select_related('bus').first()
+            
+            if bus_record:
+                # Get all schedules for this registration
+                schedules = Schedule.objects.filter(
+                    registration=active_registration
+                ).order_by('start_time')
+                
+                for schedule in schedules:
+                    # Get pickup tickets for this schedule and bus record
+                    pickup_tickets = Ticket.objects.filter(
+                        registration=active_registration,
+                        pickup_bus_record=bus_record,
+                        pickup_schedule=schedule,
+                        is_terminated=False,
+                        status=True
+                    ).select_related(
+                        'student_group', 'institution', 'pickup_point'
+                    ).order_by('student_name')
+                    
+                    # Get drop tickets for this schedule and bus record
+                    drop_tickets = Ticket.objects.filter(
+                        registration=active_registration,
+                        drop_bus_record=bus_record,
+                        drop_schedule=schedule,
+                        is_terminated=False,
+                        status=True
+                    ).select_related(
+                        'student_group', 'institution', 'drop_point'
+                    ).order_by('student_name')
+                    
+                    if pickup_tickets.exists() or drop_tickets.exists():
+                        schedules_data.append({
+                            'schedule': schedule,
+                            'pickup_students': pickup_tickets,
+                            'drop_students': drop_tickets,
+                            'total_students': pickup_tickets.count() + drop_tickets.count()
+                        })
+        
+        context['active_registration'] = active_registration
+        context['bus_record'] = bus_record
+        context['assigned_bus'] = bus_record.bus if bus_record else None
+        context['schedules_data'] = schedules_data
+        context['has_assignment'] = bus_record is not None and bus_record.bus is not None
+        
+        return context

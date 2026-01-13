@@ -1,0 +1,184 @@
+@use '../../navbar_only_base' as *;
+
+#card-section {
+    margin-top: 20px;
+    .card {
+        background-color: $indigo-600;
+        color: #ffffff;
+        padding: 30px;
+        height: 200px;
+
+        .card-body {
+            padding: 0;
+        }
+
+        p {
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+
+        .seat-count {
+            display: flex;
+            justify-content: right;
+        }
+    }
+}
+
+#link {
+    .nav-pills {
+        margin-top: 20px;
+        
+        .nav-item {
+            .nav-link {
+                color: #000000 !important;
+                background-color: transparent !important;
+                transition: all 0.3s ease;
+                font-weight: 500;
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                
+                &:hover {
+                    border-radius: 5px !important;
+                    background-color: #000000 !important;
+                    color: #ffffff !important;
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+                
+                &.active {
+                    border-radius: 5px !important;
+                    background-color: #000000 !important;
+                    color: #ffffff !important;
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+                
+                &:focus,
+                &:focus-visible {
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+            }
+        }
+    }
+}
+
+#card-list {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    
+    .schedule-card {
+        background-color: $indigo-50;
+        border-radius: 8px;
+        padding: 70px 20px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        
+        &:hover {
+            border-color: $indigo-500;
+            background-color: $indigo-100;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+        
+        .schedule-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: $gray-900;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+        
+        .student-count {
+            font-size: 3rem;
+            font-weight: 700;
+            color: $gray-700;
+            margin-bottom: 24px;
+        }
+        
+        .time-badge {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: $indigo-600;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+    }
+}
+
+.modal {
+    .student-section {
+        h6 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid $gray-200;
+        }
+
+        .table {
+            margin-bottom: 0;
+
+            thead {
+                background-color: $gray-50;
+
+                th {
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    color: $gray-700;
+                }
+            }
+
+            tbody {
+                tr {
+                    &:hover {
+                        background-color: $indigo-50;
+                    }
+
+                    td {
+                        font-size: 0.9rem;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.alert {
+    border-radius: 8px;
+}
+
+// Responsive
+@media (max-width: 768px) {
+    #card-section .card {
+        height: auto;
+        text-align: center;
+
+        .seat-count {
+            justify-content: center;
+            margin-top: 1rem;
+        }
+    }
+
+    #card-list {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}

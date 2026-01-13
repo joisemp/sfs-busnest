@@ -31,10 +31,8 @@
            href="{% url 'drivers:refueling_list' %}">Refueling</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Issues</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Students</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'students_list' %}active{% endif %}" 
+           href="{% url 'drivers:students_list' %}">Students</a>
       </li>
     </ul>
   </section>

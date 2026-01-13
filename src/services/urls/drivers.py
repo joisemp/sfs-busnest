@@ -16,4 +16,5 @@ urlpatterns = [
     path('refueling/', drivers.DriverRefuelingListView.as_view(), name='refueling_list'),
     path('refueling/add/', drivers.DriverRefuelingCreateView.as_view(), name='refueling_create'),
     path('refueling/<slug:slug>/update/', drivers.DriverRefuelingUpdateView.as_view(), name='refueling_update'),
+    path('students/', drivers.DriverStudentsListView.as_view(), name='students_list'),
 ]
