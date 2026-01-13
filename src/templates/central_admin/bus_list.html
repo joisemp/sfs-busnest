@@ -49,7 +49,7 @@
         {% for bus in buses %}
         <tr>
           <td>
-            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="bus-link">
+            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="bus-link fw-bold text-dark">
               {{bus.registration_no}}
             </a>
           </td>

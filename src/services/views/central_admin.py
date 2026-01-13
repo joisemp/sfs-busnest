@@ -1604,14 +1604,39 @@ class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context_object_name (str): The context variable name for the list of people.
     Methods:
         get_queryset(): Returns a queryset of UserProfile objects filtered by the organization of the current user.
+        get_context_data(**kwargs): Adds role counts and current filter to the context.
     """
     model = UserProfile
     template_name = 'central_admin/people_list.html'
     context_object_name = 'people'
     
     def get_queryset(self):
-        queryset = UserProfile.objects.filter(org=self.request.user.profile.org)
+        queryset = UserProfile.objects.filter(org=self.request.user.profile.org).exclude(pk=self.request.user.profile.pk)
+        
+        # Filter by role if specified in query parameters
+        role_filter = self.request.GET.get('role')
+        if role_filter:
+            queryset = queryset.filter(role=role_filter)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all people in the organization for counting
+        all_people = UserProfile.objects.filter(org=self.request.user.profile.org)
+        
+        # Add role counts
+        context['all_count'] = all_people.count()
+        context['central_admin_count'] = all_people.filter(role='central_admin').count()
+        context['institution_admin_count'] = all_people.filter(role='institution_admin').count()
+        context['driver_count'] = all_people.filter(role='driver').count()
+        context['student_count'] = all_people.filter(role='student').count()
+        
+        # Add current filter to context
+        context['role_filter'] = self.request.GET.get('role')
+        
+        return context
     
 
 class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
