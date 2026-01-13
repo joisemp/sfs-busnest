@@ -10,29 +10,55 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div class="d-flex justify-content-between  align-items-center mb-3">
-    <!-- <div>
-        <form class="d-flex" role="search">
-            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-dark" type="submit">Search<i class="fa-solid fa-magnifying-glass ms-3"></i></button>
-        </form>
-    </div> -->
-</div>
-<div class="section-header">
-    <div>
-        <a href="#" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-     </div>
-     <div class="gear d-flex justify-content-between">
-       <div>
-         <h2>Registration</h2>
-       </div>
-        <div class="button">
-            <a href="{% url 'central_admin:registration_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>New registration</a>
-        </div>
-    </div>
-    <hr>
-</div>
+
 <section id="registration-list">
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2>Registration</h2>
+      </div>
+      <div>
+        <a href="{% url 'central_admin:registration_create' %}" class="btn btn-primary">
+          <i class="fa-solid fa-plus me-md-2 me-0"></i><span class="d-none d-md-inline">New registration</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <section id="filter-tabs" class="mt-4 mb-3">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a class="nav-link {% if not status_filter %}active{% endif %}" 
+           href="{% url 'central_admin:registration_list' %}">
+          <i class="fa-solid fa-list me-2"></i>All
+          <span class="badge bg-light text-dark ms-1">{{ all_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if status_filter == 'active' %}active{% endif %}" 
+           href="{% url 'central_admin:registration_list' %}?status=active">
+          <i class="fa-solid fa-check-circle me-2"></i>Active
+          <span class="badge bg-light text-dark ms-1">{{ active_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if status_filter == 'open' %}active{% endif %}" 
+           href="{% url 'central_admin:registration_list' %}?status=open">
+          <i class="fa-solid fa-lock-open me-2"></i>Open
+          <span class="badge bg-light text-dark ms-1">{{ open_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if status_filter == 'closed' %}active{% endif %}" 
+           href="{% url 'central_admin:registration_list' %}?status=closed">
+          <i class="fa-solid fa-lock me-2"></i>Closed
+          <span class="badge bg-light text-dark ms-1">{{ closed_count }}</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
     <div class="wrap">
         {% if registrations %}
         {% for registration in registrations %}

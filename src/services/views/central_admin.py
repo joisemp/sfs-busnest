@@ -2148,7 +2148,9 @@ class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     Methods:
         get_queryset(self):
             Returns a queryset of Registration objects filtered by the organization
-            of the currently logged-in user's profile.
+            of the currently logged-in user's profile and optionally filtered by status.
+        get_context_data(**kwargs):
+            Adds status counts and current filter to the context.
     """
     model = Registration
     template_name = 'central_admin/registration_list.html'
@@ -2156,7 +2158,34 @@ class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     
     def get_queryset(self):
         queryset = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Filter by status if specified in query parameters
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'open':
+            queryset = queryset.filter(status=True)
+        elif status_filter == 'closed':
+            queryset = queryset.filter(status=False)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all registrations in the organization for counting
+        all_registrations = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_registrations.count()
+        context['active_count'] = all_registrations.filter(is_active=True).count()
+        context['open_count'] = all_registrations.filter(status=True).count()
+        context['closed_count'] = all_registrations.filter(status=False).count()
+        
+        # Add current filter to context
+        context['status_filter'] = self.request.GET.get('status')
+        
+        return context
     
     
 class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
