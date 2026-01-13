@@ -160,12 +160,16 @@ tr .table-link a {
 }
 #card-section .card {
   background-color: #4f46e5;
-  color: aliceblue;
-  padding: 10px;
+  color: #ffffff;
+  padding: 30px;
   height: 200px;
+}
+#card-section .card .card-body {
+  padding: 0;
 }
 #card-section .card p {
   font-weight: 500;
+  margin-bottom: 0;
 }
 #card-section .card .seat-count {
   display: flex;
@@ -175,13 +179,35 @@ tr .table-link a {
 #link .nav-pills {
   margin-top: 20px;
 }
-#link .nav-pills .nav-link {
-  color: black;
+#link .nav-pills .nav-item .nav-link {
+  color: #000000 !important;
+  background-color: transparent !important;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
-#link .nav-pills :hover {
-  border-radius: 5px;
-  background-color: black;
-  color: white;
+#link .nav-pills .nav-item .nav-link:hover {
+  border-radius: 5px !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#link .nav-pills .nav-item .nav-link.active {
+  border-radius: 5px !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#link .nav-pills .nav-item .nav-link:focus, #link .nav-pills .nav-item .nav-link:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 #card-list {
@@ -195,7 +221,7 @@ tr .table-link a {
 #card-list .refueling-card {
   background-color: #eef2ff;
   border-radius: 8px;
-  padding: 32px 24px;
+  padding: 70px 20px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -203,6 +229,7 @@ tr .table-link a {
   justify-content: center;
   min-height: 200px;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 #card-list .refueling-card:hover {
   border-color: #6366f1;
@@ -234,4 +261,13 @@ tr .table-link a {
   font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.3px;
+}
+#card-list .refueling-card .refuel-date {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+#card-list .refueling-card .refuel-date small {
+  font-size: 0.75rem;
+  color: #4b5563;
 }/*# sourceMappingURL=style.css.map */

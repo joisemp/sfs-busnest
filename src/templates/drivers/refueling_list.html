@@ -10,71 +10,154 @@
 
 {% block content %}
 
-
+{% if bus_record %}
   <section id="card-section">
     <div class="card">
       <div class="card-body">
-        <h3>Bus 1</h3>
-        <p>KA01AB1234</p>
+        <h3>{{ bus_record.label }}</h3>
+        <p>{{ bus_record.bus.registration_no }}</p>
       </div>
       <div class="seat-count">
-        <p>50 seats</p>
+        <p>{{ bus_record.bus.capacity }} seats</p>
       </div>
     </div>
   </section>
+{% endif %}
 
   <section id="link" class="d-flex">
     <ul class="nav nav-pills">
       <li class="nav-item">
-        <a class="nav-link" href="#">Refueling</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'refueling_list' %}active{% endif %}" 
+           href="{% url 'drivers:refueling_list' %}">Refueling</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="#">Issues</a>
+        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Issues</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="#">Students</a>
+        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Students</a>
       </li>
     </ul>
   </section>
 
+  {% if has_assignment %}
   <div id="btn-grp" class="d-flex justify-content-end mt-3">
-    <button class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add record</button>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#refuelingModal">
+      <i class="fa-solid fa-plus me-2"></i>Add record
+    </button>
   </div>
   
   <section id="card-list">
+    {% if refueling_records %}
     <div class="refueling-grid">
-      <!-- Refueling Card -->
-      <div class="refueling-card">
-        <div class="fuel-quantity">30.00 L</div>
-        <div class="fuel-cost">₹5000</div>
-        <span class="fuel-type-badge">Diesel</span>
+      {% for record in refueling_records %}
+      <div class="refueling-card" data-bs-toggle="modal" data-bs-target="#detailModal{{ record.id }}" style="cursor: pointer;">
+        <div class="fuel-quantity">{{ record.fuel_amount }} L</div>
+        <div class="fuel-cost">₹{{ record.fuel_cost }}</div>
+        <span class="fuel-type-badge">{{ record.get_fuel_type_display }}</span>
       </div>
       
-      <!-- Refueling Card -->
-      <div class="refueling-card">
-        <div class="fuel-quantity">30.00 L</div>
-        <div class="fuel-cost">₹5000</div>
-        <span class="fuel-type-badge">Diesel</span>
+      <!-- Detail Modal for each record -->
+      <div class="modal fade" id="detailModal{{ record.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ record.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="detailModalLabel{{ record.id }}">
+                <i class="fa-solid fa-gas-pump me-2"></i>Refueling Details
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row mb-3">
+                <div class="col-6">
+                  <strong>Bus:</strong>
+                </div>
+                <div class="col-6">
+                  {{ record.bus.registration_no }}
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-6">
+                  <strong>Date:</strong>
+                </div>
+                <div class="col-6">
+                  {{ record.refuel_date|date:"d M Y" }}
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-6">
+                  <strong>Fuel Type:</strong>
+                </div>
+                <div class="col-6">
+                  <span class="badge bg-secondary">{{ record.get_fuel_type_display }}</span>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-6">
+                  <strong>Fuel Amount:</strong>
+                </div>
+                <div class="col-6">
+                  {{ record.fuel_amount }} Liters
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-6">
+                  <strong>Fuel Cost:</strong>
+                </div>
+                <div class="col-6">
+                  ₹{{ record.fuel_cost }}
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-6">
+                  <strong>Odometer Reading:</strong>
+                </div>
+                <div class="col-6">
+                  {{ record.odometer_reading }} km
+                </div>
+              </div>
+              {% if record.notes %}
+              <div class="row mb-3">
+                <div class="col-12">
+                  <strong>Notes:</strong>
+                </div>
+                <div class="col-12">
+                  {{ record.notes }}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <a href="{% url 'drivers:refueling_update' slug=record.slug %}" class="btn btn-primary">
+                <i class="fa-solid fa-pen-to-square me-2"></i>Edit
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <!-- Refueling Card -->
-      <div class="refueling-card">
-        <div class="fuel-quantity">30.00 L</div>
-        <div class="fuel-cost">₹5000</div>
-        <span class="fuel-type-badge">Diesel</span>
-      </div>
-      
-      <!-- Refueling Card -->
-      <div class="refueling-card">
-        <div class="fuel-quantity">30.00 L</div>
-        <div class="fuel-cost">₹5000</div>
-        <span class="fuel-type-badge">Diesel</span>
-      </div>
+      {% endfor %}
     </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fa-solid fa-gas-pump fa-4x mb-3 opacity-25"></i>
+      <p class="lead">No refueling records found</p>
+      <p>Add your first refueling record using the button above.</p>
+    </div>
+    {% endif %}
   </section>
-
+  {% else %}
+  <div class="alert alert-warning mt-3">
+    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+    {% if not active_registration %}
+    <strong>No active registration</strong> - There is no active registration at the moment.
+    {% else %}
+    <strong>No active assignment</strong> - You don't have a bus assigned in the active registration.
+    {% endif %}
+  </div>
+  {% endif %}
 
 {% endblock content %}
+
 <div class="section-header mb-4">
   <div>
     <a href="{% url 'drivers:dashboard' %}" class="btn btn-outline-dark btn-sm mb-3">
@@ -113,8 +196,7 @@
           {% csrf_token %}
           <div class="alert alert-info mb-3">
             <i class="fa-solid fa-info-circle me-2"></i>
-            <strong>Bus:</strong> {{ assigned_bus.registration_no }} | <strong>Registration:</strong> {{
-            active_registration.name }}
+            <strong>Bus:</strong> {{ assigned_bus.registration_no }} | <strong>Registration:</strong> {{ active_registration.name }}
           </div>
           <div class="row">
             <div class="col-md-6 mb-3">
@@ -214,16 +296,4 @@
     </div>
     {% endif %}
   </div>
-</div>
-{% else %}
-<div class="alert alert-warning">
-  <i class="fa-solid fa-exclamation-triangle me-2"></i>
-  {% if not active_registration %}
-  <strong>No active registration</strong> - There is no active registration at the moment. Please wait for a
-  registration to be activated.
-  {% else %}
-  <strong>No active assignment</strong> - You don't have a bus assigned in the active registration ({{
-  active_registration.name }}). Please contact your administrator.
-  {% endif %}
-</div>
 {% endif %}

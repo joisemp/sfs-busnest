@@ -4,12 +4,17 @@
     margin-top: 20px;
     .card {
         background-color: $indigo-600 ;
-        color: aliceblue;
-        padding: 10px;
+        color: #ffffff;
+        padding: 30px;
         height: 200px;
+
+        .card-body{
+            padding: 0;
+        }
 
         p {
             font-weight: 500;
+            margin-bottom: 0;
         }
 
         .seat-count {
@@ -21,13 +26,42 @@
 #link {
     .nav-pills {
         margin-top: 20px;
-        .nav-link{
-            color: black;
-        }
-         :hover {
-            border-radius: 5px;
-            background-color: black ;
-            color: white;
+        
+        .nav-item {
+            .nav-link {
+                color: #000000 !important;
+                background-color: transparent !important;
+                transition: all 0.3s ease;
+                font-weight: 500;
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                
+                &:hover {
+                    border-radius: 5px !important;
+                    background-color: #000000 !important;
+                    color: #ffffff !important;
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+                
+                &.active {
+                    border-radius: 5px !important;
+                    background-color: #000000 !important;
+                    color: #ffffff !important;
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+                
+                &:focus,
+                &:focus-visible {
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+            }
         }
     }
 }
@@ -44,7 +78,7 @@
     .refueling-card {
         background-color: $indigo-50;
         border-radius: 8px;
-        padding: 32px 24px;
+        padding: 70px 20px;
         position: relative;
         display: flex;
         flex-direction: column;
@@ -52,6 +86,7 @@
         justify-content: center;
         min-height: 200px;
         transition: all 0.3s ease;
+        cursor: pointer;
         
         &:hover {
             border-color: $indigo-500;
@@ -86,6 +121,17 @@
             font-size: 0.875rem;
             font-weight: 500;
             letter-spacing: 0.3px;
+        }
+        
+        .refuel-date {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            
+            small {
+                font-size: 0.75rem;
+                color: $gray-600;
+            }
         }
     }
 }
