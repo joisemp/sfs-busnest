@@ -87,13 +87,13 @@ class RedirectLoggedInUsersMixin(AccessMixin):
     A mixin to redirect logged-in users based on their profile type.
     This mixin overrides the `dispatch` method to check if the user is authenticated.
     If the user is authenticated, it verifies the existence of a user profile and redirects
-    them to the appropriate dashboard based on their profile type.
+    them to the appropriate page based on their profile type.
     Raises:
         Http404: If the authenticated user does not have an associated profile.
     Redirects:
         - Central Admin users to the 'central_admin:dashboard' URL.
         - Institution Admin users to the 'institution_admin:registration_list' URL.
-        - Driver users to the 'drivers:dashboard' URL.
+        - Driver users to the 'drivers:refueling_list' URL.
     If the user is not authenticated, the request is passed to the parent class's `dispatch` method.
     """
     def dispatch(self, request, *args, **kwargs):
@@ -106,7 +106,7 @@ class RedirectLoggedInUsersMixin(AccessMixin):
             if request.user.profile.is_institution_admin:
                 return HttpResponsePermanentRedirect(reverse('institution_admin:registration_list'))
             if request.user.profile.is_driver:
-                return HttpResponsePermanentRedirect(reverse('drivers:dashboard'))
+                return HttpResponsePermanentRedirect(reverse('drivers:refueling_list'))
 
         return super().dispatch(request, *args, **kwargs)
     

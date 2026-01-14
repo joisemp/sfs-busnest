@@ -1,8 +1,8 @@
 """
-drivers.py - Views for driver dashboard and driver-related functionality
+drivers.py - Views for driver-related functionality
 
-This module contains view classes for driver users including dashboard,
-trip management, route information, and refueling record management.
+This module contains view classes for driver users including refueling record management
+and trip information.
 
 Driver Access Pattern:
 - Only one registration is active at a time (Registration.is_active=True)
@@ -16,50 +16,6 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from config.mixins.access_mixin import DriverOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
-
-
-class DriverDashboardView(DriverOnlyAccessMixin, TemplateView):
-    """
-    Driver dashboard view that displays key information for drivers.
-    
-    Shows:
-    - Driver profile information
-    - Assigned bus record from the active registration
-    - Quick access to common driver tasks
-    
-    If no active registration or driver not assigned, shows an empty state.
-    """
-    template_name = 'drivers/dashboard.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        profile = user.profile
-        
-        from services.models import BusRecord, Registration
-        
-        # Get active registration
-        active_registration = Registration.objects.filter(
-            org=profile.org,
-            is_active=True
-        ).first()
-        
-        # Get driver's bus record in active registration
-        bus_record = None
-        if active_registration:
-            bus_record = BusRecord.objects.filter(
-                registration=active_registration,
-                assigned_driver=user
-            ).select_related('bus', 'registration').first()
-        
-        context['profile'] = profile
-        context['full_name'] = f"{profile.first_name} {profile.last_name}"
-        context['org_name'] = profile.org.name if profile.org else "N/A"
-        context['active_registration'] = active_registration
-        context['bus_record'] = bus_record
-        context['has_assignment'] = bus_record is not None
-        
-        return context
 
 
 class DriverRefuelingListView(LoginRequiredMixin, DriverOnlyAccessMixin, ListView):
