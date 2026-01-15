@@ -302,6 +302,18 @@
                         <span class="me-2">Action</span>
                       </button>
                       <ul class="dropdown-menu shadow-lg">
+                        {% if ticket.is_terminated %}
+                        <!-- For terminated tickets, only show restore option -->
+                        <li class="p-3">
+                          <form method="POST" action="{% url 'institution_admin:ticket_restore' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item text-success" onclick="return confirm('Are you sure you want to restore this ticket? Seat availability will be checked.');">
+                              <i class="fa-solid fa-rotate-left me-2"></i>Restore ticket
+                            </button>
+                          </form>
+                        </li>
+                        {% else %}
+                        <!-- For active tickets, show all normal actions -->
                         <li class="p-3"><a class="dropdown-item"
                             href="{% url 'institution_admin:payment_create' registration_slug=ticket.registration.slug %}?ticket={{ ticket.slug }}"><i
                               class="fa-solid fa-dollar-sign me-2"></i>Record Payment</a></li>
@@ -317,6 +329,7 @@
                         <li class="p-3"><a class="dropdown-item text-danger"
                             href="{% url 'institution_admin:ticket_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}"><i
                               class="fa-solid fa-trash me-2"></i>Terminate ticket</a></li>
+                        {% endif %}
                       </ul>
                     </div>
                   </div>

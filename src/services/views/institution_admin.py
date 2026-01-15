@@ -8,6 +8,7 @@ Classes:
     TicketListView: Lists and filters tickets for a registration and institution.
     TicketUpdateView: Updates ticket details and related receipt institution.
     TicketDeleteView: Deletes a ticket.
+    TicketRestoreView: Restores a terminated ticket with seat availability validation.
     ReceiptListView: Lists receipts for a registration.
     ReceiptDataFileUploadView: Handles uploading and processing of receipt data Excel files.
     ReceiptCreateView: Creates a new receipt.
@@ -283,6 +284,85 @@ class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View)
         ticket = get_object_or_404(Ticket, slug=ticket_slug, registration__slug=registration_slug)
         ticket.terminate()
         messages.success(request, f'Ticket for {ticket.student_name} has been terminated successfully.')
+        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+
+
+class TicketRestoreView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to restore a terminated ticket with seat availability validation.
+    """
+    def post(self, request, registration_slug, ticket_slug):
+        """
+        Restore a terminated ticket after checking seat availability.
+        """
+        ticket = get_object_or_404(Ticket, slug=ticket_slug, registration__slug=registration_slug)
+        
+        # Check if ticket is actually terminated
+        if not ticket.is_terminated:
+            messages.warning(request, f'Ticket for {ticket.student_name} is not terminated.')
+            return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Check seat availability for pickup
+        if ticket.pickup_bus_record and ticket.pickup_schedule:
+            pickup_trip = ticket.pickup_bus_record.trips.filter(schedule=ticket.pickup_schedule).first()
+            if pickup_trip:
+                if ticket.pickup_bus_record.bus:
+                    available_seats = ticket.pickup_bus_record.bus.capacity - pickup_trip.booking_count
+                    if available_seats <= 0:
+                        messages.error(
+                            request, 
+                            f'Cannot restore ticket: No seats available in pickup bus {ticket.pickup_bus_record.label} '
+                            f'for {ticket.pickup_schedule.name} schedule.'
+                        )
+                        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+            else:
+                messages.error(
+                    request, 
+                    f'Cannot restore ticket: Pickup trip not found for bus {ticket.pickup_bus_record.label} '
+                    f'and schedule {ticket.pickup_schedule.name}.'
+                )
+                return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Check seat availability for drop
+        if ticket.drop_bus_record and ticket.drop_schedule:
+            drop_trip = ticket.drop_bus_record.trips.filter(schedule=ticket.drop_schedule).first()
+            if drop_trip:
+                if ticket.drop_bus_record.bus:
+                    available_seats = ticket.drop_bus_record.bus.capacity - drop_trip.booking_count
+                    if available_seats <= 0:
+                        messages.error(
+                            request, 
+                            f'Cannot restore ticket: No seats available in drop bus {ticket.drop_bus_record.label} '
+                            f'for {ticket.drop_schedule.name} schedule.'
+                        )
+                        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+            else:
+                messages.error(
+                    request, 
+                    f'Cannot restore ticket: Drop trip not found for bus {ticket.drop_bus_record.label} '
+                    f'and schedule {ticket.drop_schedule.name}.'
+                )
+                return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # All validations passed, restore the ticket
+        ticket.is_terminated = False
+        ticket.terminated_at = None
+        ticket.save()
+        
+        # Update trip booking counts
+        if ticket.pickup_bus_record and ticket.pickup_schedule:
+            pickup_trip = ticket.pickup_bus_record.trips.filter(schedule=ticket.pickup_schedule).first()
+            if pickup_trip:
+                pickup_trip.booking_count += 1
+                pickup_trip.save()
+        
+        if ticket.drop_bus_record and ticket.drop_schedule:
+            drop_trip = ticket.drop_bus_record.trips.filter(schedule=ticket.drop_schedule).first()
+            if drop_trip:
+                drop_trip.booking_count += 1
+                drop_trip.save()
+        
+        messages.success(request, f'Ticket for {ticket.student_name} has been restored successfully.')
         return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
 
 

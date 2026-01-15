@@ -9,6 +9,7 @@ URL Patterns (detailed):
 - registrations/<slug:registration_slug>/tickets/: List all tickets for a registration.
 - registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/: Update a ticket.
 - registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/delete/: Delete a ticket.
+- registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/restore/: Restore a terminated ticket.
 - registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/: Search for available buses for a ticket.
 - change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-stop/: Select a stop for changing bus info.
 - change-bus/registrations/<slug:registration_code>/tickets/<slug:ticket_id>/select-schedule/: Select a schedule group for changing bus info.
@@ -53,6 +54,7 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/tickets/', institution_admin.TicketListView.as_view(), name='ticket_list'),
      path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/', institution_admin.TicketUpdateView.as_view(), name='ticket_update'),
      path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/delete/', institution_admin.TicketDeleteView.as_view(), name='ticket_delete'),
+     path('registrations/<slug:registration_slug>/tickets/<slug:ticket_slug>/restore/', institution_admin.TicketRestoreView.as_view(), name='ticket_restore'),
      
      path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/', institution_admin.BusSearchFormView.as_view(), name='bus_search'),
      # path('registrations/<slug:registration_code>/update-bus-info/<slug:ticket_id>/search-bus/available-buses/', institution_admin.BusSearchResultsView.as_view(), name='bus_search_results'),
