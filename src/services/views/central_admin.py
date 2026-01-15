@@ -625,8 +625,8 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                 bus=None, 
                 registration__slug=self.kwargs["registration_slug"]
             ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
-                pickup_ticket_count=Count('pickup_tickets', distinct=True),
-                drop_ticket_count=Count('drop_tickets', distinct=True),
+                pickup_ticket_count=Count('pickup_tickets', filter=Q(pickup_tickets__is_terminated=False), distinct=True),
+                drop_ticket_count=Count('drop_tickets', filter=Q(drop_tickets__is_terminated=False), distinct=True),
                 trip_count=Count('trips', distinct=True)
             )
         else:
@@ -634,8 +634,8 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                 org=self.request.user.profile.org, 
                 registration__slug=self.kwargs["registration_slug"]
             ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
-                pickup_ticket_count=Count('pickup_tickets', distinct=True),
-                drop_ticket_count=Count('drop_tickets', distinct=True),
+                pickup_ticket_count=Count('pickup_tickets', filter=Q(pickup_tickets__is_terminated=False), distinct=True),
+                drop_ticket_count=Count('drop_tickets', filter=Q(drop_tickets__is_terminated=False), distinct=True),
                 trip_count=Count('trips', distinct=True)
             )
         return queryset
