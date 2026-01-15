@@ -408,7 +408,7 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
     View to handle uploading and background processing of receipt data Excel files.
     """
     model = ReceiptFile
-    fields = ['registration', 'file']
+    fields = ['file']
     template_name = 'institution_admin/receipt_file_upload.html'
     
     def form_valid(self, form):
@@ -417,9 +417,16 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         """
         receipt_data_file = form.save(commit=False)
         user = self.request.user
+        
+        # Get registration from URL slug
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        receipt_data_file.registration = registration
         receipt_data_file.org = user.profile.org
         receipt_data_file.institution = user.profile.institution
         receipt_data_file.save()
+        
         process_uploaded_receipt_data_excel.delay(
             self.request.user.id,
             receipt_data_file.file.name,
