@@ -58,6 +58,7 @@ from django.contrib import messages
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     """
     View to list all registrations for the current user's organization.
+    Supports filtering by active status.
     """
     model = Registration
     template_name = 'institution_admin/registration_list.html'
@@ -66,9 +67,40 @@ class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
     def get_queryset(self):
         """
         Returns queryset of registrations filtered by the user's organization.
+        Supports filtering by status via GET parameter.
         """
         queryset = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Filter by status if specified in query parameters
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'open':
+            queryset = queryset.filter(status=True)
+        elif status_filter == 'closed':
+            queryset = queryset.filter(status=False)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        """
+        Add status counts and current filter to context for template rendering.
+        """
+        context = super().get_context_data(**kwargs)
+        
+        # Get all registrations in the organization for counting
+        all_registrations = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_registrations.count()
+        context['active_count'] = all_registrations.filter(is_active=True).count()
+        context['open_count'] = all_registrations.filter(status=True).count()
+        context['closed_count'] = all_registrations.filter(status=False).count()
+        
+        # Add current filter to context
+        context['status_filter'] = self.request.GET.get('status')
+        
+        return context
     
 
 class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
