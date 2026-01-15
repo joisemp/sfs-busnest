@@ -2,7 +2,8 @@ from django.contrib.auth.mixins import AccessMixin
 from django.http import HttpResponsePermanentRedirect
 from django.urls import reverse
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
 from services.models import Registration
 
 
@@ -157,5 +158,39 @@ class RegistrationClosedOnlyAccessMixin(AccessMixin):
         if registration and registration.status:
             # Registration is open, deny access
             return render(request, "registration_open.html", {"registration": registration})
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ActiveRegistrationRequiredMixin(AccessMixin):
+    """
+    Mixin that restricts modification operations to only active registrations.
+    
+    This mixin checks if the registration associated with the view is active.
+    If not, it displays an error message and redirects to the appropriate page.
+    
+    The mixin looks for registration_slug in URL kwargs and retrieves the registration.
+    For views that need modification access (Create, Update, Delete), this ensures
+    that institution admins can only modify resources for active registrations.
+    
+    Usage:
+        class MyUpdateView(ActiveRegistrationRequiredMixin, UpdateView):
+            ...
+    
+    Methods:
+        dispatch(request, *args, **kwargs):
+            Checks if the registration is active before allowing the request to proceed.
+            If not active, redirects with an error message.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Check if registration is active before allowing modifications.
+        """
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        if not registration.is_active:
+            messages.error(request, 'Cannot modify resources for non-active registrations.')
+            return redirect('institution_admin:registration_list')
+        
         return super().dispatch(request, *args, **kwargs)
 
