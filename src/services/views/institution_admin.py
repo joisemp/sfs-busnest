@@ -452,10 +452,16 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Acti
     
     def get_form_kwargs(self):
         """
-        Add institution to form kwargs to filter student groups.
+        Add institution and registration to form kwargs.
         """
         kwargs = super().get_form_kwargs()
         kwargs['institution'] = self.request.user.profile.institution
+        
+        # Get registration from URL slug
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        kwargs['registration'] = registration
+        
         return kwargs
     
     def form_valid(self, form):
@@ -464,13 +470,19 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Acti
         """
         receipt = form.save(commit=False)
         user = self.request.user
+        
+        # Get registration from URL slug
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        receipt.registration = registration
         receipt.org = user.profile.org
         receipt.institution = user.profile.institution
         receipt.save()
         return redirect(
             reverse(
                 'institution_admin:receipt_list',
-                kwargs={'registration_slug': receipt.registration.slug}
+                kwargs={'registration_slug': registration_slug}
             )
         )
     

@@ -21,13 +21,15 @@ from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule, BusRe
 class ReceiptForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for managing student payment receipts in the institution admin interface.
-    Fields: registration, receipt_id, student_id, student_group
+    Fields: receipt_id, student_id, student_group
     
     The student_group field is filtered to show only groups belonging to the specified institution.
+    The registration field is not included as it's set automatically from the URL.
     """
     
     def __init__(self, *args, **kwargs):
         institution = kwargs.pop('institution', None)
+        registration = kwargs.pop('registration', None)
         super().__init__(*args, **kwargs)
         
         if institution:
@@ -36,7 +38,7 @@ class ReceiptForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     
     class Meta:
         model = Receipt
-        fields = ['registration', 'receipt_id', 'student_id', 'student_group']
+        fields = ['receipt_id', 'student_id', 'student_group']
         
         
 class StudentGroupForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
