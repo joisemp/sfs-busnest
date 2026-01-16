@@ -39,13 +39,14 @@ Each view is protected by login and institution admin access mixins, and many us
 import threading
 from urllib.parse import urlencode
 from django.db import transaction
+from django.db.models import Q
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView, View, DetailView
 from django.urls import reverse, reverse_lazy
 from services.forms.central_admin import BusRequestCommentForm
 from services.forms.students import StopSelectForm
-from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip, BusReservationRequest
+from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip, BusReservationRequest, log_user_activity
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm, BulkStudentGroupUpdateForm, BusReservationRequestForm
 from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -1699,4 +1700,220 @@ class PaymentDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Dele
         registration_slug = self.object.registration.slug
         messages.success(self.request, f"Payment {self.object.payment_id} deleted successfully!")
         return reverse('institution_admin:payment_list', kwargs={'registration_slug': registration_slug})
+
+
+class InstallmentDateListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
+    """
+    View to list installment dates for a specific registration.
+    Shows both global installments and institution-specific ones.
+    
+    Attributes:
+        model (InstallmentDate): The InstallmentDate model.
+        template_name (str): Template for displaying installment list.
+        context_object_name (str): Context variable name for installments.
+        paginate_by (int): Number of installments per page.
+    """
+    model = None
+    template_name = 'institution_admin/installment_date_list.html'
+    context_object_name = 'installment_dates'
+    paginate_by = 50
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        self.model = InstallmentDate
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Returns installments for the registration that are either global or specific to this institution.
+        """
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        
+        # Get both global installments (institution=None) and institution-specific ones
+        return self.model.objects.filter(
+            registration=registration,
+            org=self.request.user.profile.org
+        ).filter(
+            Q(institution=None) | Q(institution=self.request.user.profile.institution)
+        ).order_by('due_date')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        context['registration'] = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        return context
+
+
+class InstallmentDateCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+    """
+    View to create a new installment date for the institution.
+    
+    Attributes:
+        model (InstallmentDate): The InstallmentDate model.
+        template_name (str): Template for the form.
+        form_class: Form class for installment creation.
+    """
+    model = None
+    template_name = 'institution_admin/installment_date_form.html'
+    form_class = None
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        from services.forms.institution_admin import InstallmentDateForm
+        self.model = InstallmentDate
+        self.form_class = InstallmentDateForm
+        
+        # Check if registration is active
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug, org=request.user.profile.org)
+        
+        if not registration.is_active:
+            messages.error(request, 'Cannot create installments for non-active registrations.')
+            return redirect('institution_admin:installment_date_list', registration_slug=registration.slug)
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        installment = form.save(commit=False)
+        installment.org = self.request.user.profile.org
+        installment.institution = self.request.user.profile.institution
+        
+        # Auto-assign registration from URL
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        installment.registration = registration
+        
+        installment.save()
+        log_user_activity(
+            user=self.request.user, 
+            action='Created installment date', 
+            description=f"Created installment '{installment.title}' for {installment.registration.name} due on {installment.due_date}"
+        )
+        messages.success(self.request, f"Installment date '{installment.title}' created successfully!")
+        return redirect('institution_admin:installment_date_list', registration_slug=installment.registration.slug)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registration_slug = self.kwargs.get('registration_slug')
+        if registration_slug:
+            context['registration'] = get_object_or_404(Registration, slug=registration_slug, org=self.request.user.profile.org)
+        return context
+
+
+class InstallmentDateUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
+    """
+    View to update an existing installment date.
+    Only allows editing institution-specific installments (not global ones).
+    
+    Attributes:
+        model (InstallmentDate): The InstallmentDate model.
+        template_name (str): Template for the form.
+        form_class: Form class for installment editing.
+        slug_field (str): The field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    """
+    model = None
+    template_name = 'institution_admin/installment_date_form.html'
+    form_class = None
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        from services.forms.institution_admin import InstallmentDateForm
+        self.model = InstallmentDate
+        self.form_class = InstallmentDateForm
+        
+        # Check if the installment belongs to this institution
+        installment = get_object_or_404(
+            InstallmentDate, 
+            slug=self.kwargs.get('slug'),
+            institution=request.user.profile.institution,
+            org=request.user.profile.org
+        )
+        
+        if not installment.registration.is_active:
+            messages.error(request, 'Cannot modify installments for non-active registrations.')
+            return redirect('institution_admin:installment_date_list', registration_slug=installment.registration.slug)
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Ensures institution admins can only update their own institution's installments.
+        """
+        return self.model.objects.filter(
+            institution=self.request.user.profile.institution,
+            org=self.request.user.profile.org
+        )
+    
+    def form_valid(self, form):
+        installment = form.save()
+        log_user_activity(
+            user=self.request.user, 
+            action='Updated installment date', 
+            description=f"Updated installment '{installment.title}' for {installment.registration.name} due on {installment.due_date}"
+        )
+        messages.success(self.request, f"Installment date '{installment.title}' updated successfully!")
+        return redirect('institution_admin:installment_date_list', registration_slug=installment.registration.slug)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registration'] = self.object.registration
+        return context
+
+
+class InstallmentDateDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+    """
+    View to delete an installment date.
+    Only allows deleting institution-specific installments (not global ones).
+    
+    Attributes:
+        model (InstallmentDate): The InstallmentDate model.
+        template_name (str): Template for delete confirmation.
+        slug_field (str): The field used for slug lookup.
+        slug_url_kwarg (str): The URL keyword argument for the slug.
+    """
+    model = None
+    template_name = 'institution_admin/installment_date_confirm_delete.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        from services.models import InstallmentDate
+        self.model = InstallmentDate
+        
+        # Check if the installment belongs to this institution
+        installment = get_object_or_404(
+            InstallmentDate, 
+            slug=self.kwargs.get('slug'),
+            institution=request.user.profile.institution,
+            org=request.user.profile.org
+        )
+        
+        if not installment.registration.is_active:
+            messages.error(request, 'Cannot delete installments for non-active registrations.')
+            return redirect('institution_admin:installment_date_list', registration_slug=installment.registration.slug)
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Ensures institution admins can only delete their own institution's installments.
+        """
+        return self.model.objects.filter(
+            institution=self.request.user.profile.institution,
+            org=self.request.user.profile.org
+        )
+    
+    def get_success_url(self):
+        registration_slug = self.object.registration.slug
+        log_user_activity(
+            user=self.request.user, 
+            action='Deleted installment date', 
+            description=f"Deleted installment '{self.object.title}' for {self.object.registration.name} due on {self.object.due_date}"
+        )
+        messages.success(self.request, f"Installment date '{self.object.title}' deleted successfully!")
+        return reverse('institution_admin:installment_date_list', kwargs={'registration_slug': registration_slug})
 

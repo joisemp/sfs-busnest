@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/receipt_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h5>Delete installment date "{{ object.title }}"?</h5>
+
+<p>
+    <strong>Installment Details:</strong><br>
+    Title: {{ object.title }}<br>
+    Due Date: {{ object.due_date|date:"d M, Y" }}<br>
+    Registration: {{ object.registration.name }}<br>
+    Institution: {{ object.institution.name }}
+</p>
+
+<p class="text-danger">
+    <strong>Warning:</strong> This action cannot be undone. Any payments associated with this installment may be affected.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-danger" type="submit">Yes, delete installment</button>
+    <a class="btn btn-sm text-primary" href="{% url 'institution_admin:installment_date_list' registration_slug=object.registration.slug %}">Cancel</a>
+</form>
+{% endblock %}
