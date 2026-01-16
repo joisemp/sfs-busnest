@@ -242,130 +242,252 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   padding: 2rem;
 }
 #bus-detail .section-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
-#bus-detail .section-header .breadcrumb {
-  margin-bottom: 0;
-  font-size: 0.9rem;
-}
-#bus-detail .section-header .breadcrumb a {
-  color: #4f46e5;
-  text-decoration: none;
-}
-#bus-detail .section-header .breadcrumb a:hover {
-  text-decoration: underline;
-}
-#bus-detail .section-header .button-group {
+#bus-detail .action-buttons-section {
   display: flex;
   gap: 0.5rem;
 }
 @media (max-width: 768px) {
-  #bus-detail .section-header .button-group {
+  #bus-detail .action-buttons-section {
     flex-direction: column;
+  }
+  #bus-detail .action-buttons-section .btn {
     width: 100%;
   }
 }
-#bus-detail .section-header h2 {
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+
+#card-section {
+  margin-top: 20px;
 }
-#bus-detail .section-header hr {
-  margin-top: 1rem;
-  border-color: #d1d5db;
+#card-section .card {
+  background-color: #4f46e5;
+  color: #ffffff;
+  padding: 30px;
+  height: 200px;
 }
-#bus-detail .bus-info-card {
-  border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border-radius: 0.5rem;
+#card-section .card .card-body {
+  padding: 0;
 }
-#bus-detail .bus-info-card .card-title {
-  color: #4338ca;
-  font-weight: 600;
+#card-section .card p {
+  font-weight: 500;
+  margin-bottom: 0;
 }
-#bus-detail .bus-info-card .card-title i {
-  color: #4f46e5;
+#card-section .card p .badge {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
 }
-#bus-detail .bus-info-card .info-item {
+#card-section .card .seat-count {
+  display: flex;
+  justify-content: right;
+}
+
+#card-list {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+#card-list .stat-card {
+  background-color: #eef2ff;
+  border-radius: 8px;
+  padding: 40px 20px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  transition: all 0.3s ease;
 }
-#bus-detail .bus-info-card .info-item .label {
-  font-size: 0.85rem;
-  color: #4b5563;
+#card-list .stat-card:hover {
+  border-color: #6366f1;
+  background-color: #e0e7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+#card-list .stat-card .stat-icon {
+  font-size: 2.5rem;
+  color: #4f46e5;
+  margin-bottom: 16px;
+}
+#card-list .stat-card .stat-icon i {
+  display: block;
+}
+#card-list .stat-card .stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+  text-align: center;
+}
+#card-list .stat-card .stat-label {
+  font-size: 0.9rem;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #4b5563;
+  text-align: center;
 }
-#bus-detail .bus-info-card .info-item .value {
-  font-size: 1.1rem;
+
+.refueling-section {
+  margin-top: 3rem;
+}
+.refueling-section .section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.refueling-section .section-title h4 {
   color: #111827;
   font-weight: 600;
+  font-size: 1.25rem;
+  margin: 0;
 }
-#bus-detail .refueling-section {
-  margin-top: 2rem;
+.refueling-section .section-title .btn-primary {
+  background-color: #4f46e5;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  transition: all 0.2s;
 }
-#bus-detail .refueling-section h4 {
-  color: #1f2937;
-  font-weight: 600;
+.refueling-section .section-title .btn-primary:hover {
+  background-color: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
 }
-#bus-detail .refueling-section h4 i {
-  color: #4f46e5;
+.refueling-section .table-responsive {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
 }
-#bus-detail .refueling-section .table-responsive {
-  margin-top: 1rem;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-#bus-detail .refueling-section table {
+.refueling-section .table-responsive .table {
   margin-bottom: 0;
-  background: white;
 }
-#bus-detail .refueling-section table thead {
-  background-color: #f3f4f6;
+.refueling-section .table-responsive .table thead {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
-#bus-detail .refueling-section table thead th {
+.refueling-section .table-responsive .table thead th {
   color: #374151;
   font-weight: 600;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  font-size: 0.85rem;
   letter-spacing: 0.5px;
-  padding: 1rem;
-  border-bottom: 2px solid #d1d5db;
-}
-#bus-detail .refueling-section table tbody tr {
-  transition: background-color 0.2s;
-}
-#bus-detail .refueling-section table tbody tr:hover {
-  background-color: #f9fafb;
-}
-#bus-detail .refueling-section table tbody tr td {
-  padding: 1rem;
-  vertical-align: middle;
-  color: #1f2937;
-}
-#bus-detail .refueling-section table tbody tr td .badge {
-  font-size: 0.85rem;
-  padding: 0.4rem 0.8rem;
-  font-weight: 500;
-}
-#bus-detail .refueling-section table tbody tr td .notes-preview {
-  font-size: 0.9rem;
-  color: #4b5563;
-}
-#bus-detail .refueling-section table .action-buttons {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
 }
-#bus-detail .refueling-section table .action-buttons .btn {
-  margin-right: 0.25rem;
+.refueling-section .table-responsive .table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s;
 }
-#bus-detail .refueling-section table .action-buttons .btn:last-child {
-  margin-right: 0;
+.refueling-section .table-responsive .table tbody tr:last-child {
+  border-bottom: none;
 }
-#bus-detail .refueling-section .alert {
-  margin-top: 1rem;
-  border-radius: 0.5rem;
+.refueling-section .table-responsive .table tbody tr:hover {
+  background-color: #eef2ff;
+}
+.refueling-section .table-responsive .table tbody tr td {
+  padding: 1rem 1.25rem;
+  vertical-align: middle;
+  color: #1f2937;
+  font-size: 0.9rem;
+}
+.refueling-section .table-responsive .table tbody tr td .date-cell,
+.refueling-section .table-responsive .table tbody tr td .amount-cell,
+.refueling-section .table-responsive .table tbody tr td .cost-cell,
+.refueling-section .table-responsive .table tbody tr td .odometer-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+.refueling-section .table-responsive .table tbody tr td .date-cell i,
+.refueling-section .table-responsive .table tbody tr td .amount-cell i,
+.refueling-section .table-responsive .table tbody tr td .cost-cell i,
+.refueling-section .table-responsive .table tbody tr td .odometer-cell i {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+.refueling-section .table-responsive .table tbody tr td .date-cell span,
+.refueling-section .table-responsive .table tbody tr td .amount-cell span,
+.refueling-section .table-responsive .table tbody tr td .cost-cell span,
+.refueling-section .table-responsive .table tbody tr td .odometer-cell span {
+  font-weight: 500;
+}
+.refueling-section .table-responsive .table tbody tr td .fuel-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.refueling-section .table-responsive .table tbody tr td .notes-text {
+  color: #4b5563;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.refueling-section .table-responsive .table tbody tr td .text-muted {
+  color: #9ca3af;
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons .btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons .btn-action i {
+  font-size: 0.85rem;
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons .btn-action.btn-edit {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons .btn-action.btn-edit:hover {
+  background-color: #4f46e5;
+  color: white;
+  transform: translateY(-1px);
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons .btn-action.btn-delete {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+.refueling-section .table-responsive .table tbody tr td .action-buttons .btn-action.btn-delete:hover {
+  background-color: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+}
+.refueling-section .empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px dashed #d1d5db;
+}
+.refueling-section .empty-state i {
+  font-size: 3rem;
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+.refueling-section .empty-state p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
 }
 
 .modal .modal-content {

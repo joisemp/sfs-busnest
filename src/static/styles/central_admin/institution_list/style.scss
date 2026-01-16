@@ -1,5 +1,13 @@
 @use '../../sidebar_navbar_base' as *;
 
+#institution-list {
+    .section-header {
+        h2 {
+            font-weight: 600;
+        }
+    }
+}
+
 .wrap{
     display:flex;
     flex-wrap: wrap;
@@ -18,6 +26,24 @@
        .card{
         width:100%;
         padding: 30px 20px;
+        transition: all 0.2s ease;
+        
+        &:hover {
+            border: 3px solid #000 !important;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            color: #1f2937;
+        }
+        
+        .btn {
+            transition: all 0.2s ease;
+            
+            &:hover {
+                transform: translateX(2px);
+            }
+        }
        }
     }
 }

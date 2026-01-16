@@ -13,103 +13,112 @@
 {% block content %}
 <section id="reservation-list">
     <div class="section-header">
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h2>Reservations & Payments</h2>
             </div>
         </div>
-        <hr>
     </div>
     
-    <!-- Common Filter Section -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row align-items-end">
-                <div class="col-md-3">
-                    <label for="monthFilter" class="form-label">Filter by Month</label>
-                    <input type="month" class="form-control" id="monthFilter" value="{{ current_month }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="statusFilter" class="form-label">Filter by Status</label>
-                    <select class="form-select" id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
-                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="button" class="btn btn-primary" id="applyFilters">
-                        <i class="fa-solid fa-filter me-2"></i>Apply Filters
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" id="resetFilters">
-                        <i class="fa-solid fa-rotate-right me-2"></i>Reset
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Filter Tabs -->
+    <section id="filter-tabs" class="mt-4 mb-3">
+        <ul class="nav nav-pills">
+            <li class="nav-item">
+                <a class="nav-link {% if not status_filter %}active{% endif %}" 
+                   href="{% url 'central_admin:reservation' %}">
+                    <i class="fa-solid fa-list me-2"></i>All
+                    <span class="badge bg-light text-dark ms-1">{{ all_count }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" 
+                   href="{% url 'central_admin:reservation' %}?status=pending">
+                    <i class="fa-solid fa-clock me-2"></i>Pending
+                    <span class="badge bg-light text-dark ms-1">{{ pending_count }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'approved' %}active{% endif %}" 
+                   href="{% url 'central_admin:reservation' %}?status=approved">
+                    <i class="fa-solid fa-check-circle me-2"></i>Approved
+                    <span class="badge bg-light text-dark ms-1">{{ approved_count }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'rejected' %}active{% endif %}" 
+                   href="{% url 'central_admin:reservation' %}?status=rejected">
+                    <i class="fa-solid fa-times-circle me-2"></i>Rejected
+                    <span class="badge bg-light text-dark ms-1">{{ rejected_count }}</span>
+                </a>
+            </li>
+        </ul>
+    </section>
     
     <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs mb-4" id="reservationTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations" type="button" role="tab" aria-controls="reservations" aria-selected="true">
-                <i class="fa-solid fa-bus me-2"></i>Reservations <span class="badge bg-secondary">{{ reservations.count }}</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="driver-payments-tab" data-bs-toggle="tab" data-bs-target="#driver-payments" type="button" role="tab" aria-controls="driver-payments" aria-selected="false">
-                <i class="fa-solid fa-money-bill me-2"></i>Driver Payments <span class="badge bg-secondary">{{ driver_payments|length }}</span>
-            </button>
-        </li>
-    </ul>
+    <div class="content-tabs mb-4">
+        <ul class="nav nav-tabs" id="reservationTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations" type="button" role="tab" aria-controls="reservations" aria-selected="true">
+                    <i class="fa-solid fa-bus me-2"></i>Reservations <span class="badge bg-dark ms-1">{{ reservations.count }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="driver-payments-tab" data-bs-toggle="tab" data-bs-target="#driver-payments" type="button" role="tab" aria-controls="driver-payments" aria-selected="false">
+                    <i class="fa-solid fa-money-bill me-2"></i>Driver Payments <span class="badge bg-dark ms-1">{{ driver_payments|length }}</span>
+                </button>
+            </li>
+        </ul>
+    </div>
     
     <!-- Tab Content -->
     <div class="tab-content" id="reservationTabsContent">
         <!-- Reservations Tab -->
         <div class="tab-pane fade show active" id="reservations" role="tabpanel" aria-labelledby="reservations-tab">
-            {% if status_filter or month_filter %}
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                <i class="fa-solid fa-filter me-2"></i>Active Filters: 
-                {% if month_filter %}
-                    <strong>Month: {{ month_filter }}</strong>
-                {% endif %}
-                {% if status_filter %}
-                    {% if month_filter %}, {% endif %}<strong>Status: {{ status_filter|title }}</strong>
-                {% endif %}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endif %}
-            <div class="row" id="reservationsList">
-        {% for reservation in reservations %}
-        <div class="col-12 col-md-6 col-lg-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ reservation.institution.name }}</h5>
-                    <p class="card-text text-muted">{{ reservation.booked_by }}</p>
-                    <div class="d-flex align-items-center justify-content-end">
-                        {% if reservation.status == 'pending' %}
-                        <span class="badge text-bg-warning me-2">Pending</span>
-                        {% elif reservation.status == 'approved' %}
-                        <span class="badge text-bg-success me-2">Approved</span>
-                        {% elif reservation.status == 'rejected' %}
-                        <span class="badge text-bg-danger me-2">Rejected</span>
-                        {% endif %}
-                        <a href="{% url 'central_admin:reservation_detail' reservation.slug %}" class="btn btn-sm btn-outline-dark d-flex"><span>View</span><i
-                                class="fa-solid fa-arrow-right ms-2"></i>
-                        </a>
-                    </div>
-
+            
+            <!-- Month Filter - Minimalistic -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <label for="monthFilter" class="form-label mb-0 fw-semibold">Month:</label>
+                    <input type="month" class="form-control form-control-sm" id="monthFilter" value="{{ current_month }}" style="width: auto;">
+                    <button type="button" class="btn btn-sm btn-dark" id="applyFilters">
+                        <i class="fa-solid fa-filter me-1"></i>Apply
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="resetFilters">
+                        <i class="fa-solid fa-rotate-right me-1"></i>Reset
+                    </button>
                 </div>
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info" role="alert">
-                No reservations found.
-            </div>
-        </div>
-        {% endfor %}
+            
+            <div class="row" id="reservationsList">
+                {% for reservation in reservations %}
+                <div class="col-12 col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm hover-card">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold mb-2">{{ reservation.institution.name }}</h6>
+                            <p class="card-text text-muted small mb-3">{{ reservation.booked_by }}</p>
+                            <div class="d-flex align-items-center justify-content-between">
+                                {% if reservation.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif reservation.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif reservation.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                                <a href="{% url 'central_admin:reservation_detail' reservation.slug %}" class="btn btn-sm btn-dark">
+                                    View<i class="fa-solid fa-arrow-right ms-2"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No reservations found.</p>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
         
@@ -166,8 +175,9 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="alert alert-info">
-                    <i class="fa-solid fa-info-circle me-2"></i>No driver payment data available for the selected month.
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">No driver payment data available for the selected month.</p>
                 </div>
                 {% endif %}
             </div>

@@ -10,58 +10,51 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div class="d-flex justify-content-between  align-items-center mb-3">
-    {% if not search_term %}
+<section id="institution-list">
     <div>
-        <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary"><i
-                class="fa-solid fa-plus me-2"></i>Add institution</a>
-    </div>
-    <!-- <div>
-        <form class="d-flex" role="search" method="get">
-            <input class="form-control me-2" type="search" name="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-dark" type="submit">Search<i
-                    class="fa-solid fa-magnifying-glass ms-3"></i></button>
-        </form>
-    </div>
-    {% else %}
-    <button class="btn btn-outline-dark btn-sm px-2" onclick="history.back()"><i class="fa-solid fa-xmark me-2"></i>Clear search</button>
-    {% endif %} -->
-</div>
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center section-header mb-4">
+            <h2>Institutions</h2>
+            {% if not search_term %}
+            <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary">
+                <i class="fa-solid fa-plus me-2"></i>Add Institution
+            </a>
+            {% endif %}
+        </div>
+
 <section>
     {% if institutions %}
     <div class="wrap">
         {% for institute in institutions %}
         <div class="card-wrap">
-            <div class="card">
+            <div class="card border-0">
                 <div class="mb-3">
                     <div class="mb-3">
-                        <h5 class="card-title">{{institute.name}}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{institute.label}}</h6>
+                        <h6 class="card-title fw-bold">{{institute.name}}</h6>
+                        <p class="card-subtitle mb-2 text-muted small">{{institute.label}}</p>
                     </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Managed by: {{institute.incharge}}</h6>
+                    <p class="card-subtitle mb-2 text-muted small"><i class="fa-solid fa-user me-1"></i>{{institute.incharge}}</p>
                 </div>
-                <div class="d-flex justify-content-end">
-                    <div class="button-block d-flex">
-                        <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}"
-                            class="btn text-danger btn-sm me-2"><i class="fa-solid fa-trash me-2"></i>Remove</a>
-                        <a href="{% url 'central_admin:institution_update' slug=institute.slug %}"
-                            class="btn btn-dark btn-sm"><i class="fa-solid fa-pen-to-square me-2"></i>Edit</a>
-                    </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}"
+                        class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i></a>
+                    <a href="{% url 'central_admin:institution_update' slug=institute.slug %}"
+                        class="btn btn-dark btn-sm"><i class="fa-solid fa-pen-to-square me-1"></i>Edit</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-        {% if search_term %}
-            <div class="text-center">
-                <p>No results for "{{search_term}}"</p>
-            </div>
-        {% else %}
-            <div class="text-center">
-                <p>No institutions have been added yet</p>
-            </div>
-        {% endif %}
+        <div class="text-center py-5">
+            <i class="fa-solid fa-building fa-3x text-muted mb-3"></i>
+            {% if search_term %}
+            <p class="text-muted mb-0">No results for "{{search_term}}"</p>
+            {% else %}
+            <p class="text-muted mb-0">No institutions have been added yet</p>
+            {% endif %}
+        </div>
     {% endif %}
+    </div>
 </section>
 {% endblock content %}

@@ -20,19 +20,38 @@
          </div>
           <div class="button">
             <a href="{% url 'central_admin:bus_create' %}" class="btn btn-primary me-2 me-md-0 me-2"><i
-              class="fa-solid fa-plus me-md-2 me-0"></i>Add bus</a>
-            <a href="{% url 'central_admin:bus_upload' %}" class="btn btn-secondary"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload files</a>
+              class="fa-solid fa-plus me-md-2 me-0"></i><span class="d-none d-md-inline">Add bus</span></a>
+            <a href="{% url 'central_admin:bus_upload' %}" class="btn btn-secondary"><i class="fa-solid fa-cloud-arrow-up me-2"></i><span class="d-none d-md-inline">Upload files</span></a>
           </div>
       </div>
-      <hr>
   </div>
-    <!-- <div>
-      <form class="d-flex" role="search">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-dark" type="submit">
-          <span class="d-none d-md-inline">Search</span><i class="fa-solid fa-magnifying-glass ms-md-2"></i></button>
-      </form>
-    </div> -->
+
+  <!-- Filter Tabs -->
+  <section id="filter-tabs" class="mt-4 mb-3">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a class="nav-link {% if not status_filter %}active{% endif %}" 
+           href="{% url 'central_admin:bus_list' %}">
+          <i class="fa-solid fa-bus me-2"></i>All
+          <span class="badge bg-light text-dark ms-1">{{ all_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if status_filter == 'available' %}active{% endif %}" 
+           href="{% url 'central_admin:bus_list' %}?status=available">
+          <i class="fa-solid fa-circle-check me-2"></i>Available
+          <span class="badge bg-light text-dark ms-1">{{ available_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if status_filter == 'maintenance' %}active{% endif %}" 
+           href="{% url 'central_admin:bus_list' %}?status=maintenance">
+          <i class="fa-solid fa-wrench me-2"></i>Maintenance
+          <span class="badge bg-light text-dark ms-1">{{ maintenance_count }}</span>
+        </a>
+      </li>
+    </ul>
+  </section>
   
   <div class="table-responsive">
     <table class="table">
@@ -49,7 +68,7 @@
         {% for bus in buses %}
         <tr>
           <td>
-            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="bus-link">
+            <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="bus-link fw-bold text-dark">
               {{bus.registration_no}}
             </a>
           </td>

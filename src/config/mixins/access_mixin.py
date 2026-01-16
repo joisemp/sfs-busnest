@@ -2,7 +2,8 @@ from django.contrib.auth.mixins import AccessMixin
 from django.http import HttpResponsePermanentRedirect
 from django.urls import reverse
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
 from services.models import Registration
 
 
@@ -87,13 +88,13 @@ class RedirectLoggedInUsersMixin(AccessMixin):
     A mixin to redirect logged-in users based on their profile type.
     This mixin overrides the `dispatch` method to check if the user is authenticated.
     If the user is authenticated, it verifies the existence of a user profile and redirects
-    them to the appropriate dashboard based on their profile type.
+    them to the appropriate page based on their profile type.
     Raises:
         Http404: If the authenticated user does not have an associated profile.
     Redirects:
         - Central Admin users to the 'central_admin:dashboard' URL.
         - Institution Admin users to the 'institution_admin:registration_list' URL.
-        - Driver users to the 'drivers:dashboard' URL.
+        - Driver users to the 'drivers:refueling_list' URL.
     If the user is not authenticated, the request is passed to the parent class's `dispatch` method.
     """
     def dispatch(self, request, *args, **kwargs):
@@ -106,7 +107,7 @@ class RedirectLoggedInUsersMixin(AccessMixin):
             if request.user.profile.is_institution_admin:
                 return HttpResponsePermanentRedirect(reverse('institution_admin:registration_list'))
             if request.user.profile.is_driver:
-                return HttpResponsePermanentRedirect(reverse('drivers:dashboard'))
+                return HttpResponsePermanentRedirect(reverse('drivers:refueling_list'))
 
         return super().dispatch(request, *args, **kwargs)
     
@@ -157,5 +158,39 @@ class RegistrationClosedOnlyAccessMixin(AccessMixin):
         if registration and registration.status:
             # Registration is open, deny access
             return render(request, "registration_open.html", {"registration": registration})
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ActiveRegistrationRequiredMixin(AccessMixin):
+    """
+    Mixin that restricts modification operations to only active registrations.
+    
+    This mixin checks if the registration associated with the view is active.
+    If not, it displays an error message and redirects to the appropriate page.
+    
+    The mixin looks for registration_slug in URL kwargs and retrieves the registration.
+    For views that need modification access (Create, Update, Delete), this ensures
+    that institution admins can only modify resources for active registrations.
+    
+    Usage:
+        class MyUpdateView(ActiveRegistrationRequiredMixin, UpdateView):
+            ...
+    
+    Methods:
+        dispatch(request, *args, **kwargs):
+            Checks if the registration is active before allowing the request to proceed.
+            If not active, redirects with an error message.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Check if registration is active before allowing modifications.
+        """
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        if not registration.is_active:
+            messages.error(request, 'Cannot modify resources for non-active registrations.')
+            return redirect('institution_admin:registration_list')
+        
         return super().dispatch(request, *args, **kwargs)
 

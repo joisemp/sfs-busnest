@@ -10,32 +10,63 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div class="section-header">
-  <div>
-      <a href="#" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-   </div>
-   <div class="gear d-flex justify-content-between">
-     <div>
-       <h2>People</h2>
-     </div>
-     <div class="mb-3 mb-md-0">
-      <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add people</a>
-    </div>
-  </div>
-  <hr>
-</div>
 
 <section id="people-list">
-  <!-- search bar -->
-  <div class="d-md-flex d-block justify-content-between align-items-center  mt-2 mb-4">
-   
-    <!-- <div>
-      <form class="d-flex" role="search">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-dark" type="submit">
-          <span class="d-none d-md-inline">Search</span><i class="fa-solid fa-magnifying-glass ms-md-2"></i></button>
-      </form>
-    </div> -->
+  
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2>People</h2>
+      </div>
+      <div>
+        <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary">
+          <i class="fa-solid fa-plus me-md-2 me-0"></i><span class="d-none d-md-inline">Add People</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <section id="filter-tabs" class="mt-4 mb-3">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a class="nav-link {% if not role_filter %}active{% endif %}" 
+           href="{% url 'central_admin:people_list' %}">
+          <i class="fa-solid fa-users me-2"></i>All
+          <span class="badge bg-light text-dark ms-1">{{ all_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if role_filter == 'central_admin' %}active{% endif %}" 
+           href="{% url 'central_admin:people_list' %}?role=central_admin">
+          <i class="fa-solid fa-user-shield me-2"></i>Central Admin
+          <span class="badge bg-light text-dark ms-1">{{ central_admin_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if role_filter == 'institution_admin' %}active{% endif %}" 
+           href="{% url 'central_admin:people_list' %}?role=institution_admin">
+          <i class="fa-solid fa-user-tie me-2"></i>Institution Admin
+          <span class="badge bg-light text-dark ms-1">{{ institution_admin_count }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if role_filter == 'driver' %}active{% endif %}" 
+           href="{% url 'central_admin:people_list' %}?role=driver">
+          <i class="fa-solid fa-id-card me-2"></i>Drivers
+          <span class="badge bg-light text-dark ms-1">{{ driver_count }}</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Current User Warning Card -->
+  <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+    <i class="fa-solid fa-user-shield me-3" style="font-size: 1.5rem;"></i>
+    <div>
+      <strong>Your Account</strong>
+      <p class="mb-0">{{ user.get_full_name|default:user.username }} ({{ user.profile.get_role_display }}) - You cannot edit or delete your own account from this list.</p>
+    </div>
   </div>
 
   <!-- table -->
@@ -53,13 +84,10 @@
         {% for person in people %}
         <tr>
           <td>
-            <span class="name">{{person.first_name}} {{person.last_name}}</span>
-            {% if request.user.profile == person %}
-            (You)
-            {% endif %}
+            <span class="fw-bold text-dark">{{person.first_name}} {{person.last_name}}</span>
           </td>
           <td>
-            {{ person.get_role_display }}
+            <span class="badge bg-primary">{{ person.get_role_display }}</span>
           </td>
           <td>
             {% if person.role == 'driver' and person.years_of_experience %}
@@ -68,9 +96,9 @@
               <span class="text-muted">N/A</span>
             {% endif %}
           </td>
-          <td>
-            <a href="{% url 'central_admin:people_delete' slug=person.slug %}" class="btn btn-sm text-danger"><i class="fa-solid fa-trash me-2"></i>Delete</a>
-            <a href="{% url 'central_admin:people_update' slug=person.slug %}" class="btn btn-sm btn-dark"><i class="fa-solid fa-pen-to-square me-2"></i>Edit</a>
+          <td class="table-link">
+            <a href="{% url 'central_admin:people_update' slug=person.slug %}" class="btn btn-sm btn-dark"><i class="fa-solid fa-pen-to-square me-1"></i>Edit</a>
+            <a href="{% url 'central_admin:people_delete' slug=person.slug %}" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
           </td>
         </tr>
         {% endfor %}

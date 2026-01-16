@@ -8,6 +8,7 @@ Classes:
     TicketListView: Lists and filters tickets for a registration and institution.
     TicketUpdateView: Updates ticket details and related receipt institution.
     TicketDeleteView: Deletes a ticket.
+    TicketRestoreView: Restores a terminated ticket with seat availability validation.
     ReceiptListView: Lists receipts for a registration.
     ReceiptDataFileUploadView: Handles uploading and processing of receipt data Excel files.
     ReceiptCreateView: Creates a new receipt.
@@ -46,7 +47,7 @@ from services.forms.central_admin import BusRequestCommentForm
 from services.forms.students import StopSelectForm
 from services.models import Bus, BusRecord, BusRequest, BusRequestComment, Registration, Receipt, ScheduleGroup, Stop, StudentGroup, Ticket, Schedule, ReceiptFile, Trip, BusReservationRequest
 from services.forms.institution_admin import ReceiptForm, StudentGroupForm, TicketForm, BusSearchForm, BulkStudentGroupUpdateForm, BusReservationRequestForm
-from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin
+from config.mixins.access_mixin import InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.template.loader import render_to_string
@@ -58,6 +59,7 @@ from django.contrib import messages
 class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     """
     View to list all registrations for the current user's organization.
+    Supports filtering by active status.
     """
     model = Registration
     template_name = 'institution_admin/registration_list.html'
@@ -66,9 +68,40 @@ class RegistrationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
     def get_queryset(self):
         """
         Returns queryset of registrations filtered by the user's organization.
+        Supports filtering by status via GET parameter.
         """
         queryset = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Filter by status if specified in query parameters
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'open':
+            queryset = queryset.filter(status=True)
+        elif status_filter == 'closed':
+            queryset = queryset.filter(status=False)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        """
+        Add status counts and current filter to context for template rendering.
+        """
+        context = super().get_context_data(**kwargs)
+        
+        # Get all registrations in the organization for counting
+        all_registrations = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_registrations.count()
+        context['active_count'] = all_registrations.filter(is_active=True).count()
+        context['open_count'] = all_registrations.filter(status=True).count()
+        context['closed_count'] = all_registrations.filter(status=False).count()
+        
+        # Add current filter to context
+        context['status_filter'] = self.request.GET.get('status')
+        
+        return context
     
 
 class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -177,6 +210,9 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         ).order_by('name')
         context['search_term'] = self.search_term
         
+        # Check if registration is active (institution admins can only modify active registrations)
+        context['is_registration_active'] = self.registration.is_active
+        
         # Preserve query parameters for pagination (excluding page number)
         query_dict = self.request.GET.copy()
         if 'page' in query_dict:
@@ -194,7 +230,7 @@ class TicketListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVie
         return context
 
 
-class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
+class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, UpdateView):
     """
     View to update ticket details and ensure receipt institution matches ticket institution.
     """
@@ -233,10 +269,11 @@ class TicketUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Updat
             )
 
 
-class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, View):
     """
     View to soft delete (terminate) a ticket.
     """
+    
     def get(self, request, registration_slug, ticket_slug):
         """
         Display confirmation page for ticket termination.
@@ -251,6 +288,86 @@ class TicketDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View)
         ticket = get_object_or_404(Ticket, slug=ticket_slug, registration__slug=registration_slug)
         ticket.terminate()
         messages.success(request, f'Ticket for {ticket.student_name} has been terminated successfully.')
+        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+
+
+class TicketRestoreView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, View):
+    """
+    View to restore a terminated ticket with seat availability validation.
+    """
+    
+    def post(self, request, registration_slug, ticket_slug):
+        """
+        Restore a terminated ticket after checking seat availability.
+        """
+        ticket = get_object_or_404(Ticket, slug=ticket_slug, registration__slug=registration_slug)
+        
+        # Check if ticket is actually terminated
+        if not ticket.is_terminated:
+            messages.warning(request, f'Ticket for {ticket.student_name} is not terminated.')
+            return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Check seat availability for pickup
+        if ticket.pickup_bus_record and ticket.pickup_schedule:
+            pickup_trip = ticket.pickup_bus_record.trips.filter(schedule=ticket.pickup_schedule).first()
+            if pickup_trip:
+                if ticket.pickup_bus_record.bus:
+                    available_seats = ticket.pickup_bus_record.bus.capacity - pickup_trip.booking_count
+                    if available_seats <= 0:
+                        messages.error(
+                            request, 
+                            f'Cannot restore ticket: No seats available in pickup bus {ticket.pickup_bus_record.label} '
+                            f'for {ticket.pickup_schedule.name} schedule.'
+                        )
+                        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+            else:
+                messages.error(
+                    request, 
+                    f'Cannot restore ticket: Pickup trip not found for bus {ticket.pickup_bus_record.label} '
+                    f'and schedule {ticket.pickup_schedule.name}.'
+                )
+                return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Check seat availability for drop
+        if ticket.drop_bus_record and ticket.drop_schedule:
+            drop_trip = ticket.drop_bus_record.trips.filter(schedule=ticket.drop_schedule).first()
+            if drop_trip:
+                if ticket.drop_bus_record.bus:
+                    available_seats = ticket.drop_bus_record.bus.capacity - drop_trip.booking_count
+                    if available_seats <= 0:
+                        messages.error(
+                            request, 
+                            f'Cannot restore ticket: No seats available in drop bus {ticket.drop_bus_record.label} '
+                            f'for {ticket.drop_schedule.name} schedule.'
+                        )
+                        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+            else:
+                messages.error(
+                    request, 
+                    f'Cannot restore ticket: Drop trip not found for bus {ticket.drop_bus_record.label} '
+                    f'and schedule {ticket.drop_schedule.name}.'
+                )
+                return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # All validations passed, restore the ticket
+        ticket.is_terminated = False
+        ticket.terminated_at = None
+        ticket.save()
+        
+        # Update trip booking counts
+        if ticket.pickup_bus_record and ticket.pickup_schedule:
+            pickup_trip = ticket.pickup_bus_record.trips.filter(schedule=ticket.pickup_schedule).first()
+            if pickup_trip:
+                pickup_trip.booking_count += 1
+                pickup_trip.save()
+        
+        if ticket.drop_bus_record and ticket.drop_schedule:
+            drop_trip = ticket.drop_bus_record.trips.filter(schedule=ticket.drop_schedule).first()
+            if drop_trip:
+                drop_trip.booking_count += 1
+                drop_trip.save()
+        
+        messages.success(request, f'Ticket for {ticket.student_name} has been restored successfully.')
         return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
 
 
@@ -278,19 +395,20 @@ class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
 
     def get_context_data(self, **kwargs):
         """
-        Adds registration to the context for the template.
+        Adds registration and active status to the context for the template.
         """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.registration  # Ensure registration is passed to the template
+        context['is_registration_active'] = self.registration.is_active
         return context
     
 
-class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, CreateView):
     """
     View to handle uploading and background processing of receipt data Excel files.
     """
     model = ReceiptFile
-    fields = ['registration', 'file']
+    fields = ['file']
     template_name = 'institution_admin/receipt_file_upload.html'
     
     def form_valid(self, form):
@@ -299,9 +417,16 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         """
         receipt_data_file = form.save(commit=False)
         user = self.request.user
+        
+        # Get registration from URL slug
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        receipt_data_file.registration = registration
         receipt_data_file.org = user.profile.org
         receipt_data_file.institution = user.profile.institution
         receipt_data_file.save()
+        
         process_uploaded_receipt_data_excel.delay(
             self.request.user.id,
             receipt_data_file.file.name,
@@ -317,7 +442,7 @@ class ReceiptDataFileUploadView(LoginRequiredMixin, InsitutionAdminOnlyAccessMix
         )
     
     
-class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, CreateView):
     """
     View to create a new receipt.
     """
@@ -327,10 +452,16 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Crea
     
     def get_form_kwargs(self):
         """
-        Add institution to form kwargs to filter student groups.
+        Add institution and registration to form kwargs.
         """
         kwargs = super().get_form_kwargs()
         kwargs['institution'] = self.request.user.profile.institution
+        
+        # Get registration from URL slug
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        kwargs['registration'] = registration
+        
         return kwargs
     
     def form_valid(self, form):
@@ -339,13 +470,19 @@ class ReceiptCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Crea
         """
         receipt = form.save(commit=False)
         user = self.request.user
+        
+        # Get registration from URL slug
+        registration_slug = self.kwargs.get('registration_slug')
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        receipt.registration = registration
         receipt.org = user.profile.org
         receipt.institution = user.profile.institution
         receipt.save()
         return redirect(
             reverse(
                 'institution_admin:receipt_list',
-                kwargs={'registration_slug': receipt.registration.slug}
+                kwargs={'registration_slug': registration_slug}
             )
         )
     
@@ -357,6 +494,19 @@ class ReceiptDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Dele
     model = Receipt
     template_name = 'institution_admin/receipt_confirm_delete.html'
     slug_url_kwarg = 'receipt_slug'
+    
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Check if registration is active before allowing receipt deletion.
+        Uses custom logic because registration_slug is not in URL kwargs.
+        """
+        receipt = get_object_or_404(Receipt, slug=self.kwargs.get('receipt_slug'))
+        
+        if not receipt.registration.is_active:
+            messages.error(request, 'Cannot modify resources for non-active registrations.')
+            return redirect('institution_admin:receipt_list', registration_slug=receipt.registration.slug)
+        
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         """
@@ -390,14 +540,15 @@ class StudentGroupListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, L
     
     def get_context_data(self, **kwargs):
         """
-        Adds registration to the context for the template.
+        Adds registration and active status to the context for the template.
         """
         context = super().get_context_data(**kwargs)
         context['registration'] = self.registration  # Ensure registration is passed to the template
+        context['is_registration_active'] = self.registration.is_active
         return context
     
     
-class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, CreateView):
     """
     View to create a new student group.
     """
@@ -422,7 +573,7 @@ class StudentGroupCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
         )
 
 
-class StudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, UpdateView):
+class StudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, UpdateView):
     """
     View to update a student group.
     """
@@ -447,7 +598,7 @@ class StudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin,
         return super().form_valid(form)
     
     
-class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, DeleteView):
+class StudentGroupDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, DeleteView):
     """
     View to delete a student group.
     """
@@ -1054,7 +1205,7 @@ class BusRequestCommentView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, 
         return HttpResponse('Invalid form submission', status=400)
 
 
-class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, FormView):
+class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, FormView):
     """
     View to handle bulk update of student groups via Excel upload.
     """
@@ -1137,7 +1288,7 @@ class BulkStudentGroupUpdateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMi
             raise Http404("Bulk update is only allowed when registration is closed.")
         return super().dispatch(request, *args, **kwargs)
 
-class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, View):
     """
     View to confirm and process bulk student group updates.
     """
@@ -1154,16 +1305,6 @@ class BulkStudentGroupUpdateConfirmView(LoginRequiredMixin, InsitutionAdminOnlyA
         return HttpResponseRedirect(
             reverse('institution_admin:ticket_list', kwargs={'registration_slug': self.kwargs['registration_slug']})
         )
-    
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Ensures bulk update is only allowed when registration is closed.
-        """
-        registration_slug = self.kwargs.get('registration_slug')
-        registration = get_object_or_404(Registration, slug=registration_slug)
-        if registration.status:
-            raise Http404("Bulk update is only allowed when registration is closed.")
-        return super().dispatch(request, *args, **kwargs)
 
 
 class ReservationListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
@@ -1358,7 +1499,7 @@ class PaymentListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListVi
         return context
 
 
-class PaymentCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, CreateView):
+class PaymentCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ActiveRegistrationRequiredMixin, CreateView):
     """
     View to record a new payment for a ticket.
     
@@ -1377,6 +1518,7 @@ class PaymentCreateView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Crea
         from services.forms.institution_admin import PaymentForm
         self.model = Payment
         self.form_class = PaymentForm
+        
         return super().dispatch(request, *args, **kwargs)
     
     def get_form_kwargs(self):
@@ -1523,9 +1665,21 @@ class PaymentDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Dele
     slug_url_kwarg = 'slug'
     
     def dispatch(self, request, *args, **kwargs):
+        """
+        Check if registration is active before allowing payment deletion.
+        Uses custom logic because registration_slug is not in URL kwargs.
+        """
         # Import Payment model here to avoid circular import
         from services.models import Payment
         self.model = Payment
+        
+        # Check if registration is active before allowing payment deletion
+        payment = get_object_or_404(Payment, slug=self.kwargs.get('slug'))
+        
+        if not payment.registration.is_active:
+            messages.error(request, 'Cannot modify resources for non-active registrations.')
+            return redirect('institution_admin:payment_list', registration_slug=payment.registration.slug)
+        
         return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):

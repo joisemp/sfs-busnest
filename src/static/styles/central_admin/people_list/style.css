@@ -238,15 +238,121 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
-#people-list tbody, #people-list td, #people-list tfoot, #people-list th, #people-list thead, #people-list tr {
-  background: rgba(255, 255, 255, 0) !important;
-  white-space: nowrap;
-  padding: 1rem;
+#people-list .section-header {
+  margin-bottom: 1rem;
 }
-#people-list tbody .text-muted, #people-list td .text-muted, #people-list tfoot .text-muted, #people-list th .text-muted, #people-list thead .text-muted, #people-list tr .text-muted {
-  font-weight: 508;
+#people-list .section-header h2 {
+  margin-bottom: 0;
+  font-weight: 600;
 }
-#people-list tbody .table-link a, #people-list td .table-link a, #people-list tfoot .table-link a, #people-list th .table-link a, #people-list thead .table-link a, #people-list tr .table-link a {
-  text-decoration: none !important;
+#people-list .section-header hr {
+  margin-top: 1rem;
+  opacity: 0.1;
+}
+#people-list #filter-tabs .nav-pills {
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+#people-list #filter-tabs .nav-pills .nav-item .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  color: #6c757d;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
   font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+#people-list #filter-tabs .nav-pills .nav-item .nav-link i {
+  font-size: 0.875rem;
+}
+#people-list #filter-tabs .nav-pills .nav-item .nav-link .badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+}
+#people-list #filter-tabs .nav-pills .nav-item .nav-link:hover {
+  background-color: #f8f9fa;
+  border-color: #000;
+  color: #000;
+}
+#people-list #filter-tabs .nav-pills .nav-item .nav-link.active {
+  background-color: #000;
+  border-color: #000;
+  color: #fff;
+}
+#people-list #filter-tabs .nav-pills .nav-item .nav-link.active .badge {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+}
+#people-list .table-responsive {
+  border-radius: 8px;
+}
+#people-list table {
+  margin-bottom: 0;
+}
+#people-list table thead tr td, #people-list table thead tr th {
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+#people-list table tbody tr {
+  transition: background-color 0.2s ease;
+}
+#people-list table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+#people-list table tbody tr td {
+  vertical-align: middle;
+  padding: 1rem;
+  white-space: nowrap;
+}
+#people-list table tbody tr td .fw-bold {
+  font-size: 0.95rem;
+}
+#people-list table tbody tr td .current-user-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+#people-list table tbody tr td .badge {
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+#people-list table .table-link a {
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+#people-list table .table-link a i {
+  font-size: 0.875rem;
+}
+#people-list table .table-link a:hover {
+  transform: translateY(-1px);
+}
+#people-list table .table-link .btn-dark {
+  margin-right: 0.5rem;
+}
+@media (max-width: 768px) {
+  #people-list .section-header .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+  #people-list #filter-tabs .nav-pills .nav-item .nav-link {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+  }
+  #people-list #filter-tabs .nav-pills .nav-item .nav-link i {
+    font-size: 0.875rem;
+  }
+  #people-list table {
+    font-size: 0.875rem;
+  }
+  #people-list table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
 }/*# sourceMappingURL=style.css.map */

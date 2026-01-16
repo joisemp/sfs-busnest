@@ -212,13 +212,11 @@ tr .table-link a {
 
 #card-list {
   margin-top: 24px;
-}
-#card-list .refueling-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
 }
-#card-list .refueling-card {
+#card-list .schedule-card {
   background-color: #eef2ff;
   border-radius: 8px;
   padding: 70px 20px;
@@ -231,26 +229,27 @@ tr .table-link a {
   transition: all 0.3s ease;
   cursor: pointer;
 }
-#card-list .refueling-card:hover {
+#card-list .schedule-card:hover {
   border-color: #6366f1;
   background-color: #e0e7ff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
-#card-list .refueling-card .fuel-quantity {
-  font-size: 3rem;
+#card-list .schedule-card .schedule-name {
+  font-size: 2rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 8px;
   letter-spacing: -1px;
+  text-align: center;
 }
-#card-list .refueling-card .fuel-cost {
-  font-size: 1.5rem;
-  font-weight: 600;
+#card-list .schedule-card .student-count {
+  font-size: 3rem;
+  font-weight: 700;
   color: #374151;
   margin-bottom: 24px;
 }
-#card-list .refueling-card .fuel-type-badge {
+#card-list .schedule-card .time-badge {
   position: absolute;
   bottom: 20px;
   right: 20px;
@@ -262,12 +261,46 @@ tr .table-link a {
   font-weight: 500;
   letter-spacing: 0.3px;
 }
-#card-list .refueling-card .refuel-date {
-  position: absolute;
-  top: 20px;
-  left: 20px;
+
+.modal .student-section h6 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
 }
-#card-list .refueling-card .refuel-date small {
-  font-size: 0.75rem;
-  color: #4b5563;
+.modal .student-section .table {
+  margin-bottom: 0;
+}
+.modal .student-section .table thead {
+  background-color: #f9fafb;
+}
+.modal .student-section .table thead th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #374151;
+}
+.modal .student-section .table tbody tr:hover {
+  background-color: #eef2ff;
+}
+.modal .student-section .table tbody tr td {
+  font-size: 0.9rem;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  #card-section .card {
+    height: auto;
+    text-align: center;
+  }
+  #card-section .card .seat-count {
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  #card-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }/*# sourceMappingURL=style.css.map */

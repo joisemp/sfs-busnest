@@ -282,7 +282,10 @@ class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context_object_name (str): The name of the context variable that will contain the list of buses.
     Methods:
         get_queryset(self):
-            Returns a queryset of Bus objects filtered by the organization of the currently logged-in user.
+            Returns a queryset of Bus objects filtered by the organization of the currently logged-in user
+            and optionally filtered by availability status.
+        get_context_data(**kwargs):
+            Adds status counts and current filter to the context.
     """
     model = Bus
     template_name = 'central_admin/bus_list.html'
@@ -290,7 +293,31 @@ class BusListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     
     def get_queryset(self):
         queryset = Bus.objects.filter(org=self.request.user.profile.org)
+        
+        # Filter by status if specified in query parameters
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'available':
+            queryset = queryset.filter(is_available=True)
+        elif status_filter == 'maintenance':
+            queryset = queryset.filter(is_available=False)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all buses in the organization for counting
+        all_buses = Bus.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_buses.count()
+        context['available_count'] = all_buses.filter(is_available=True).count()
+        context['maintenance_count'] = all_buses.filter(is_available=False).count()
+        
+        # Add current filter to context
+        context['status_filter'] = self.request.GET.get('status')
+        
+        return context
 
 
 class BusCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -400,7 +427,7 @@ class BusDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteView)
 
 class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView):
     """
-    BusDetailView displays detailed information about a bus including refueling records.
+    BusDetailView displays detailed information about a bus including refueling records and statistics.
     It requires the user to be logged in and have central admin access.
     Attributes:
         template_name (str): The path to the template used to render the view.
@@ -408,20 +435,63 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         context_object_name (str): The name of the context variable for the bus object.
     Methods:
         get_context_data(**kwargs):
-            Adds refueling records and form to the context.
+            Adds refueling records, form, and statistics (mileage, odometer, etc.) to the context.
     """
     model = Bus
     template_name = 'central_admin/bus_detail.html'
     context_object_name = 'bus'
     
     def get_context_data(self, **kwargs):
+        from django.db.models import Sum, Max, Min
+        
         context = super().get_context_data(**kwargs)
         bus = self.get_object()
-        context['refueling_records'] = RefuelingRecord.objects.filter(
+        
+        refueling_records = RefuelingRecord.objects.filter(
             bus=bus, 
             org=self.request.user.profile.org
-        ).order_by('-refuel_date', '-created_at')
+        ).order_by('odometer_reading')
+        
+        context['refueling_records'] = refueling_records.order_by('-refuel_date', '-created_at')
         context['form'] = RefuelingRecordForm()
+        
+        # Calculate statistics
+        mileage = None
+        latest_odometer = None
+        total_fuel_cost = 0
+        total_fuel_amount = 0
+        refueling_count = refueling_records.count()
+        
+        if refueling_records.exists():
+            # Get latest odometer reading
+            latest_record = refueling_records.last()
+            latest_odometer = latest_record.odometer_reading
+            
+            # Calculate mileage (km per liter)
+            if refueling_records.count() >= 2:
+                first_record = refueling_records.first()
+                total_distance = latest_record.odometer_reading - first_record.odometer_reading
+                total_fuel = refueling_records.exclude(id=first_record.id).aggregate(
+                    total=Sum('fuel_amount')
+                )['total'] or 0
+                
+                if total_fuel > 0 and total_distance > 0:
+                    mileage = round(total_distance / float(total_fuel), 2)
+            
+            # Get refueling statistics
+            stats = refueling_records.aggregate(
+                total_cost=Sum('fuel_cost'),
+                total_fuel=Sum('fuel_amount')
+            )
+            total_fuel_cost = stats['total_cost'] or 0
+            total_fuel_amount = stats['total_fuel'] or 0
+        
+        context['mileage'] = mileage
+        context['latest_odometer'] = latest_odometer
+        context['total_fuel_cost'] = total_fuel_cost
+        context['total_fuel_amount'] = total_fuel_amount
+        context['refueling_count'] = refueling_count
+        
         return context
 
 
@@ -555,8 +625,8 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                 bus=None, 
                 registration__slug=self.kwargs["registration_slug"]
             ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
-                pickup_ticket_count=Count('pickup_tickets', distinct=True),
-                drop_ticket_count=Count('drop_tickets', distinct=True),
+                pickup_ticket_count=Count('pickup_tickets', filter=Q(pickup_tickets__is_terminated=False), distinct=True),
+                drop_ticket_count=Count('drop_tickets', filter=Q(drop_tickets__is_terminated=False), distinct=True),
                 trip_count=Count('trips', distinct=True)
             )
         else:
@@ -564,8 +634,8 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                 org=self.request.user.profile.org, 
                 registration__slug=self.kwargs["registration_slug"]
             ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
-                pickup_ticket_count=Count('pickup_tickets', distinct=True),
-                drop_ticket_count=Count('drop_tickets', distinct=True),
+                pickup_ticket_count=Count('pickup_tickets', filter=Q(pickup_tickets__is_terminated=False), distinct=True),
+                drop_ticket_count=Count('drop_tickets', filter=Q(drop_tickets__is_terminated=False), distinct=True),
                 trip_count=Count('trips', distinct=True)
             )
         return queryset
@@ -1561,14 +1631,39 @@ class PeopleListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
         context_object_name (str): The context variable name for the list of people.
     Methods:
         get_queryset(): Returns a queryset of UserProfile objects filtered by the organization of the current user.
+        get_context_data(**kwargs): Adds role counts and current filter to the context.
     """
     model = UserProfile
     template_name = 'central_admin/people_list.html'
     context_object_name = 'people'
     
     def get_queryset(self):
-        queryset = UserProfile.objects.filter(org=self.request.user.profile.org)
+        queryset = UserProfile.objects.filter(org=self.request.user.profile.org).exclude(pk=self.request.user.profile.pk)
+        
+        # Filter by role if specified in query parameters
+        role_filter = self.request.GET.get('role')
+        if role_filter:
+            queryset = queryset.filter(role=role_filter)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all people in the organization for counting
+        all_people = UserProfile.objects.filter(org=self.request.user.profile.org)
+        
+        # Add role counts
+        context['all_count'] = all_people.count()
+        context['central_admin_count'] = all_people.filter(role='central_admin').count()
+        context['institution_admin_count'] = all_people.filter(role='institution_admin').count()
+        context['driver_count'] = all_people.filter(role='driver').count()
+        context['student_count'] = all_people.filter(role='student').count()
+        
+        # Add current filter to context
+        context['role_filter'] = self.request.GET.get('role')
+        
+        return context
     
 
 class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -2053,7 +2148,9 @@ class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     Methods:
         get_queryset(self):
             Returns a queryset of Registration objects filtered by the organization
-            of the currently logged-in user's profile.
+            of the currently logged-in user's profile and optionally filtered by status.
+        get_context_data(**kwargs):
+            Adds status counts and current filter to the context.
     """
     model = Registration
     template_name = 'central_admin/registration_list.html'
@@ -2061,7 +2158,34 @@ class RegistraionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     
     def get_queryset(self):
         queryset = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Filter by status if specified in query parameters
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'open':
+            queryset = queryset.filter(status=True)
+        elif status_filter == 'closed':
+            queryset = queryset.filter(status=False)
+        
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all registrations in the organization for counting
+        all_registrations = Registration.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_registrations.count()
+        context['active_count'] = all_registrations.filter(is_active=True).count()
+        context['open_count'] = all_registrations.filter(status=True).count()
+        context['closed_count'] = all_registrations.filter(status=False).count()
+        
+        # Add current filter to context
+        context['status_filter'] = self.request.GET.get('status')
+        
+        return context
     
     
 class RegistrationCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateView):
@@ -3559,6 +3683,15 @@ class ReservationListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Templ
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Get all reservations in the organization for counting
+        all_reservations = BusReservationRequest.objects.filter(org=self.request.user.profile.org)
+        
+        # Add status counts
+        context['all_count'] = all_reservations.count()
+        context['pending_count'] = all_reservations.filter(status='pending').count()
+        context['approved_count'] = all_reservations.filter(status='approved').count()
+        context['rejected_count'] = all_reservations.filter(status='rejected').count()
         
         # Get month filter from query params or default to current month
         from datetime import datetime

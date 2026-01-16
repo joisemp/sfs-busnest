@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Students{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/driver/students_list/style.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% if bus_record %}
+  <section id="card-section">
+    <div class="card">
+      <div class="card-body">
+        <h3>{{ bus_record.label }}</h3>
+        <p>{{ bus_record.bus.registration_no }}</p>
+      </div>
+      <div class="seat-count">
+        <p>{{ bus_record.bus.capacity }} seats</p>
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+  <section id="link" class="d-flex">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'refueling_list' %}active{% endif %}" 
+           href="{% url 'drivers:refueling_list' %}">Refueling</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'students_list' %}active{% endif %}" 
+           href="{% url 'drivers:students_list' %}">Students</a>
+      </li>
+    </ul>
+  </section>
+
+  {% if has_assignment %}
+  <section id="card-list">
+    {% if schedules_data %}
+      {% for schedule_data in schedules_data %}
+      <div class="schedule-card" data-bs-toggle="modal" data-bs-target="#scheduleModal{{ forloop.counter }}" style="cursor: pointer;">
+        <div class="schedule-name">{{ schedule_data.schedule.name }}</div>
+        <div class="student-count">{{ schedule_data.total_students }}</div>
+        <span class="time-badge">{{ schedule_data.schedule.start_time|time:"h:i A" }}</span>
+      </div>
+      
+      <!-- Detail Modal for each schedule -->
+      <div class="modal fade" id="scheduleModal{{ forloop.counter }}" tabindex="-1" aria-labelledby="scheduleModalLabel{{ forloop.counter }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="scheduleModalLabel{{ forloop.counter }}">
+                <i class="fa-solid fa-clock me-2"></i>{{ schedule_data.schedule.name }} - Students
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row mb-3">
+                <div class="col-12">
+                  <div class="alert alert-info">
+                    <strong>Time:</strong> {{ schedule_data.schedule.start_time|time:"h:i A" }} - {{ schedule_data.schedule.end_time|time:"h:i A" }}
+                    <br>
+                    <strong>Total Students:</strong> {{ schedule_data.total_students }}
+                  </div>
+                </div>
+              </div>
+
+              {% if schedule_data.pickup_students %}
+              <div class="student-section mb-4">
+                <h6 class="text-success">
+                  <i class="fa-solid fa-arrow-up me-2"></i>Pickup Students ({{ schedule_data.pickup_students.count }})
+                </h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Institution</th>
+                        <th>Stop</th>
+                        <th>Contact</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for ticket in schedule_data.pickup_students %}
+                      <tr>
+                        <td>{{ ticket.student_id }}</td>
+                        <td>{{ ticket.student_name }}</td>
+                        <td>{{ ticket.student_group }}</td>
+                        <td>{{ ticket.institution.name }}</td>
+                        <td>
+                          {% if ticket.pickup_point %}
+                          {{ ticket.pickup_point.name }}
+                          {% else %}
+                          <span class="text-muted">N/A</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ ticket.contact_no }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if schedule_data.drop_students %}
+              <div class="student-section">
+                <h6 class="text-danger">
+                  <i class="fa-solid fa-arrow-down me-2"></i>Drop Students ({{ schedule_data.drop_students.count }})
+                </h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Institution</th>
+                        <th>Stop</th>
+                        <th>Contact</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for ticket in schedule_data.drop_students %}
+                      <tr>
+                        <td>{{ ticket.student_id }}</td>
+                        <td>{{ ticket.student_name }}</td>
+                        <td>{{ ticket.student_group }}</td>
+                        <td>{{ ticket.institution.name }}</td>
+                        <td>
+                          {% if ticket.drop_point %}
+                          {{ ticket.drop_point.name }}
+                          {% else %}
+                          <span class="text-muted">N/A</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ ticket.contact_no }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fa-solid fa-users fa-4x mb-3 opacity-25"></i>
+      <p class="lead">No students assigned yet</p>
+      <p>Students will appear here once they book tickets for your bus.</p>
+    </div>
+    {% endif %}
+  </section>
+  {% else %}
+  <div class="alert alert-warning mt-3">
+    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+    {% if not active_registration %}
+    <strong>No active registration</strong> - There is no active registration at the moment.
+    {% else %}
+    <strong>No active assignment</strong> - You don't have a bus assigned in the active registration.
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% endblock content %}

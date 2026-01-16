@@ -13,79 +13,110 @@
 
 <section id="bus-detail">
   
-  <div class="section-header">
-    <div class="mb-3">
-      <a href="{% url 'central_admin:bus_list' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="fa-solid fa-arrow-left me-2"></i>Back to Buses
-      </a>
-    </div>
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h2>Bus Details - {{bus.registration_no}}</h2>
-      </div>
-      <div class="button-group">
-        <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-primary">
-          <i class="fa-solid fa-pen me-2"></i>Edit Bus
-        </a>
-        <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-danger">
-          <i class="fa-solid fa-trash me-2"></i>Delete
-        </a>
-      </div>
-    </div>
-    <hr>
+  <div class="section-header mb-3">
+    <a href="{% url 'central_admin:bus_list' %}" class="btn btn-outline-dark btn-sm">
+      <i class="fa-solid fa-arrow-left me-2"></i>Back to Buses
+    </a>
   </div>
 
-  <!-- Bus Information Card -->
-  <div class="card bus-info-card mb-4">
-    <div class="card-body">
-      <h4 class="card-title mb-3">
-        <i class="fa-solid fa-bus me-2"></i>{{bus.registration_no}}
-      </h4>
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <div class="info-item">
-            <span class="label">Registration Number</span>
-            <span class="value">{{bus.registration_no}}</span>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="info-item">
-            <span class="label">Capacity</span>
-            <span class="value">{{bus.capacity}} seats</span>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="info-item">
-            <span class="label">Status</span>
-            <span class="value">
-              {% if bus.is_available %}
-              <span class="badge bg-success">Available</span>
-              {% else %}
-              <span class="badge bg-danger">Maintenance</span>
-              {% endif %}
-            </span>
-          </div>
-        </div>
+  <!-- Bus Information Card (Same style as driver) -->
+  <section id="card-section">
+    <div class="card">
+      <div class="card-body">
+        <h3>{{bus.registration_no}}</h3>
+        <p>
+          {% if bus.is_available %}
+          <span class="badge bg-success">Available</span>
+          {% else %}
+          <span class="badge bg-danger">Maintenance</span>
+          {% endif %}
+        </p>
+      </div>
+      <div class="seat-count">
+        <p>{{bus.capacity}} seats</p>
       </div>
     </div>
+  </section>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons-section mt-3 mb-3">
+    <a href="{% url 'central_admin:bus_update' slug=bus.slug %}" class="btn btn-primary">
+      <i class="fa-solid fa-pen me-2"></i>Edit Bus
+    </a>
+    <a href="{% url 'central_admin:bus_delete' slug=bus.slug %}" class="btn btn-danger">
+      <i class="fa-solid fa-trash me-2"></i>Delete
+    </a>
   </div>
+
+  <!-- Statistics Cards (Same style as driver dashboard) -->
+  <section id="card-list">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-gauge-high"></i>
+      </div>
+      <div class="stat-value">
+        {% if mileage %}{{ mileage }}{% else %}N/A{% endif %}
+      </div>
+      <div class="stat-label">km/L Mileage</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-tachometer-alt"></i>
+      </div>
+      <div class="stat-value">
+        {% if latest_odometer %}{{ latest_odometer|floatformat:0 }}{% else %}0{% endif %}
+      </div>
+      <div class="stat-label">Current Odometer (km)</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-gas-pump"></i>
+      </div>
+      <div class="stat-value">
+        {{ refueling_count }}
+      </div>
+      <div class="stat-label">Total Refuelings</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-indian-rupee-sign"></i>
+      </div>
+      <div class="stat-value">
+        ₹{{ total_fuel_cost|floatformat:0 }}
+      </div>
+      <div class="stat-label">Total Fuel Cost</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-droplet"></i>
+      </div>
+      <div class="stat-value">
+        {{ total_fuel_amount|floatformat:0 }}
+      </div>
+      <div class="stat-label">Total Fuel (L)</div>
+    </div>
+  </section>
 
   <!-- Refueling Records Section -->
-  <div class="refueling-section">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4><i class="fa-solid fa-gas-pump me-2"></i>Refueling Records</h4>
+  <div class="refueling-section mt-4">
+    <div class="section-title">
+      <h4>Refueling Records</h4>
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRefuelingModal">
-        <i class="fa-solid fa-plus me-2"></i>Add Refueling Record
+        <i class="fa-solid fa-plus me-2"></i>Add Record
       </button>
     </div>
 
     {% if refueling_records %}
     <div class="table-responsive">
-      <table class="table table-hover">
+      <table class="table">
         <thead>
           <tr>
             <th>Date</th>
-            <th>Fuel Type</th>
+            <th>Type</th>
             <th>Amount</th>
             <th>Cost</th>
             <th>Odometer</th>
@@ -96,29 +127,51 @@
         <tbody>
           {% for record in refueling_records %}
           <tr>
-            <td>{{record.refuel_date|date:"d M Y"}}</td>
             <td>
-              <span class="badge bg-info">{{record.get_fuel_type_display}}</span>
+              <div class="date-cell">
+                <i class="fa-solid fa-calendar-day"></i>
+                <span>{{record.refuel_date|date:"d M Y"}}</span>
+              </div>
             </td>
-            <td>{{record.fuel_amount}} L</td>
-            <td>₹{{record.fuel_cost}}</td>
-            <td>{{record.odometer_reading}} km</td>
+            <td>
+              <span class="fuel-badge">{{record.get_fuel_type_display}}</span>
+            </td>
+            <td>
+              <div class="amount-cell">
+                <i class="fa-solid fa-droplet"></i>
+                <span>{{record.fuel_amount}} L</span>
+              </div>
+            </td>
+            <td>
+              <div class="cost-cell">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                <span>{{record.fuel_cost}}</span>
+              </div>
+            </td>
+            <td>
+              <div class="odometer-cell">
+                <i class="fa-solid fa-tachometer-alt"></i>
+                <span>{{record.odometer_reading}} km</span>
+              </div>
+            </td>
             <td>
               {% if record.notes %}
-              <span class="notes-preview">{{record.notes|truncatewords:10}}</span>
+              <span class="notes-text">{{record.notes|truncatewords:8}}</span>
               {% else %}
-              <span class="text-muted">-</span>
+              <span class="text-muted">—</span>
               {% endif %}
             </td>
-            <td class="action-buttons">
-              <a href="{% url 'central_admin:refueling_record_update' slug=record.slug %}" 
-                 class="btn btn-sm btn-dark" title="Edit">
-                <i class="fa-solid fa-pen"></i>
-              </a>
-              <a href="{% url 'central_admin:refueling_record_delete' slug=record.slug %}" 
-                 class="btn btn-sm btn-danger" title="Delete">
-                <i class="fa-solid fa-trash"></i>
-              </a>
+            <td>
+              <div class="action-buttons">
+                <a href="{% url 'central_admin:refueling_record_update' slug=record.slug %}" 
+                   class="btn-action btn-edit" title="Edit">
+                  <i class="fa-solid fa-pen"></i>
+                </a>
+                <a href="{% url 'central_admin:refueling_record_delete' slug=record.slug %}" 
+                   class="btn-action btn-delete" title="Delete">
+                  <i class="fa-solid fa-trash"></i>
+                </a>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -126,8 +179,9 @@
       </table>
     </div>
     {% else %}
-    <div class="alert alert-info">
-      <i class="fa-solid fa-info-circle me-2"></i>No refueling records found for this bus.
+    <div class="empty-state">
+      <i class="fa-solid fa-inbox"></i>
+      <p>No refueling records found</p>
     </div>
     {% endif %}
   </div>
