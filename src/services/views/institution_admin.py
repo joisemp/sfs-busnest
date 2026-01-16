@@ -1659,10 +1659,12 @@ class PaymentDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Dele
         model (Payment): The Payment model.
         slug_field (str): The field used for slug lookup.
         slug_url_kwarg (str): The URL keyword argument for the slug.
+        template_name (str): The template used for the delete confirmation page.
     """
     model = None  # Will be imported dynamically
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
+    template_name = 'institution_admin/payment_confirm_delete.html'
     
     def dispatch(self, request, *args, **kwargs):
         """
