@@ -92,7 +92,15 @@ class BusRequest(models.Model):
     student_group = models.ForeignKey(StudentGroup, null=True, on_delete=models.SET_NULL)
     student_name = models.CharField(max_length=300)
     pickup_address = models.CharField(max_length=500)
+    pickup_location_map_link = models.URLField(
+        max_length=1000,
+        help_text="Google Maps or other map link for the pickup location"
+    )
     drop_address = models.CharField(max_length=500)
+    drop_location_map_link = models.URLField(
+        max_length=1000,
+        help_text="Google Maps or other map link for the drop location"
+    )
     contact_no = models.CharField(
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
