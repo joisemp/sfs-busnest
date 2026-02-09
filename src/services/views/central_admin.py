@@ -2564,10 +2564,10 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['ticket_types'] = Ticket.TICKET_TYPES
         context['selected_ticket_type'] = self.request.GET.get('ticket_type', '')
         context['selected_student_group'] = self.request.GET.get('student_group', '')
-        context['bus_records'] = BusRecord.objects.filter(org=self.request.user.profile.org)
+        context['bus_records'] = BusRecord.objects.filter(org=self.request.user.profile.org, registration=self.registration)
         context['selected_pickup_bus'] = self.request.GET.get('pickup_bus', '')
         context['selected_drop_bus'] = self.request.GET.get('drop_bus', '')
-        context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
+        context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org, registration=self.registration)
         context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
         context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
         context['stops'] = Stop.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('name')
