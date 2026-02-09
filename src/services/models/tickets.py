@@ -130,12 +130,12 @@ class Ticket(models.Model):
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
-    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='pickup_tickets')
-    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='drop_tickets')
-    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='ticket_pickups')
-    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='ticket_drops')
-    pickup_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='pickup_tickets')
-    drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='drop_tickets')
+    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, blank=True, related_name='pickup_tickets')
+    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, blank=True, related_name='drop_tickets')
+    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_pickups')
+    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_drops')
+    pickup_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='pickup_tickets')
+    drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='drop_tickets')
     ticket_type = models.CharField(max_length=300, choices=TICKET_TYPES, default='twoway')
     status = models.BooleanField(default=False)
     is_terminated = models.BooleanField(default=False)
