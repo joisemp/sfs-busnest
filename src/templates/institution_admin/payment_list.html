@@ -14,6 +14,12 @@
     <h3>Payment Records - {{ registration.name }}</h3>
 </div>
 
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <a href="{% url 'institution_admin:installment_date_list' registration_slug=registration.slug %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-calendar-days me-2"></i>Manage Installments
+    </a>
+</div>
+
 <div class="table-responsive">
     <table class="table">
         <thead>

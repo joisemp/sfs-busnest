@@ -89,5 +89,10 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/payments/<slug:slug>/', institution_admin.PaymentDetailView.as_view(), name='payment_detail'),
      path('registrations/<slug:registration_slug>/payments/<slug:slug>/delete/', institution_admin.PaymentDeleteView.as_view(), name='payment_delete'),
      
+     path('registrations/<slug:registration_slug>/installments/', institution_admin.InstallmentDateListView.as_view(), name='installment_date_list'),
+     path('registrations/<slug:registration_slug>/installments/create/', institution_admin.InstallmentDateCreateView.as_view(), name='installment_date_create'),
+     path('registrations/<slug:registration_slug>/installments/<slug:slug>/update/', institution_admin.InstallmentDateUpdateView.as_view(), name='installment_date_update'),
+     path('registrations/<slug:registration_slug>/installments/<slug:slug>/delete/', institution_admin.InstallmentDateDeleteView.as_view(), name='installment_date_delete'),
+     
      path('export/<slug:registration_slug>/', institution_admin.TicketExportView.as_view(), name='ticket_export'),
 ]

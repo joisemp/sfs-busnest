@@ -9,8 +9,48 @@ Forms:
 """
 
 from django import forms
-from services.models import RefuelingRecord
+from services.models import RefuelingRecord, TripRecord
 from config.mixins import form_mixin
+
+
+class DriverTripRecordForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for drivers to add daily trip records (pickup/drop).
+    Fields: record_date, actual_pickup_time, actual_drop_time, students_picked, students_dropped, odometer_reading, notes
+    """
+    class Meta:
+        model = TripRecord
+        fields = [
+            'record_date', 'actual_pickup_time', 'actual_drop_time', 
+            'students_picked', 'students_dropped', 'odometer_reading', 'notes'
+        ]
+        widgets = {
+            'record_date': forms.DateInput(attrs={'type': 'date'}),
+            'actual_pickup_time': forms.TimeInput(attrs={'type': 'time'}),
+            'actual_drop_time': forms.TimeInput(attrs={'type': 'time'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional notes about this trip...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Customizes field labels and help text.
+        """
+        super(DriverTripRecordForm, self).__init__(*args, **kwargs)
+        self.fields['record_date'].label = "Trip Date"
+        self.fields['actual_pickup_time'].label = "Actual Pickup Time"
+        self.fields['actual_pickup_time'].required = False
+        self.fields['actual_drop_time'].label = "Actual Drop Time"
+        self.fields['actual_drop_time'].required = False
+        self.fields['students_picked'].label = "Students Picked Up"
+        self.fields['students_picked'].required = False
+        self.fields['students_picked'].widget.attrs['placeholder'] = 'Number of students'
+        self.fields['students_dropped'].label = "Students Dropped"
+        self.fields['students_dropped'].required = False
+        self.fields['students_dropped'].widget.attrs['placeholder'] = 'Number of students'
+        self.fields['odometer_reading'].label = "Odometer Reading (km)"
+        self.fields['odometer_reading'].required = False
+        self.fields['odometer_reading'].widget.attrs['placeholder'] = 'e.g., 125000'
+        self.fields['notes'].required = False
 
 
 class DriverRefuelingRecordForm(form_mixin.BootstrapFormMixin, forms.ModelForm):

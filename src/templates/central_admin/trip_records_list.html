@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Trip Records - {{ bus.registration_no }}{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/driver/refueling_list/style.css' %}">
+{% endblock %}
+
+{% block sidebar %}
+{% include 'central_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+
+<div class="section-header mb-3">
+  <a href="{% url 'central_admin:bus_detail' slug=bus.slug %}" class="btn btn-outline-dark btn-sm">
+    <i class="fa-solid fa-arrow-left me-2"></i>Back to Bus Details
+  </a>
+</div>
+
+<section id="card-section">
+  <div class="card">
+    <div class="card-body">
+      <h3>{{ bus.registration_no }}</h3>
+      <p>
+        {% if bus.is_available %}
+        <span class="badge bg-success">Available</span>
+        {% else %}
+        <span class="badge bg-danger">Maintenance</span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="seat-count">
+      <p>{{ bus.capacity }} seats</p>
+    </div>
+  </div>
+</section>
+
+<section id="card-list" class="mb-5 mt-4">
+  <h4 class="mb-3">All Trip Records</h4>
+  {% if trip_records %}
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for record in trip_records %}
+    <div class="col">
+      <div class="card h-100 border-0" data-bs-toggle="modal" data-bs-target="#detailModal{{ record.id }}" style="cursor: pointer; transition: transform 0.2s;">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <h5 class="mb-0 fw-bold">{{ record.record_date|date:"d M Y" }}</h5>
+          </div>
+          
+          {% if record.trip %}
+          <div class="mb-3">
+            <div class="fw-semibold">{{ record.trip.schedule.name }}</div>
+            <small class="text-muted">{{ record.trip.route.name }}</small>
+          </div>
+          {% else %}
+          <div class="mb-3">
+            <span class="badge bg-light text-dark border">General</span>
+          </div>
+          {% endif %}
+          
+          <div class="row g-3 small">
+            <div class="col-6">
+              <div class="text-muted mb-1">Pickup</div>
+              <div>{{ record.actual_pickup_time|time:"h:i A"|default:"—" }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted mb-1">Drop</div>
+              <div>{{ record.actual_drop_time|time:"h:i A"|default:"—" }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted mb-1">Picked</div>
+              <div>{{ record.students_picked|default:"—" }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted mb-1">Dropped</div>
+              <div>{{ record.students_dropped|default:"—" }}</div>
+            </div>
+            {% if record.odometer_reading %}
+            <div class="col-12 pt-2 border-top">
+              <div class="text-muted mb-1">Odometer</div>
+              <div>{{ record.odometer_reading }} km</div>
+            </div>
+            {% endif %}
+            <div class="col-12 pt-2 border-top">
+              <div class="text-muted mb-1">Recorded By</div>
+              <div>{{ record.recorded_by.get_full_name|default:record.recorded_by.email }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+        
+        <!-- Detail Modal for each record -->
+        <div class="modal fade" id="detailModal{{ record.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ record.id }}" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel{{ record.id }}">
+                  <i class="fa-solid fa-clipboard-list me-2"></i>Trip Record Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Date:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.record_date|date:"d M Y" }}
+                  </div>
+                </div>
+                {% if record.trip %}
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Trip:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.trip.schedule.name }}<br>
+                    <small class="text-muted">{{ record.trip.route.name }}</small>
+                  </div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Bus:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.bus.registration_no }}
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Recorded By:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.recorded_by.get_full_name|default:record.recorded_by.email }}
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Actual Pickup Time:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.actual_pickup_time|time:"h:i A"|default:"Not recorded" }}
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Actual Drop Time:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.actual_drop_time|time:"h:i A"|default:"Not recorded" }}
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Students Picked:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.students_picked|default:"Not recorded" }}
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Students Dropped:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.students_dropped|default:"Not recorded" }}
+                  </div>
+                </div>
+                {% if record.odometer_reading %}
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Odometer Reading:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.odometer_reading }} km
+                  </div>
+                </div>
+                {% endif %}
+                {% if record.notes %}
+                <div class="row mb-3">
+                  <div class="col-12">
+                    <strong>Notes:</strong>
+                  </div>
+                  <div class="col-12 mt-2">
+                    <p class="mb-0">{{ record.notes }}</p>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    {% endfor %}
+  </div>
+  
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page=1" aria-label="First">
+          <span aria-hidden="true">&laquo;&laquo;</span>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+          <span aria-hidden="true">&raquo;&raquo;</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+  
+  {% else %}
+  <div class="empty-state text-center py-5">
+    <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
+    <p class="text-muted">No trip records found for this bus</p>
+  </div>
+  {% endif %}
+</section>
+
+{% endblock content %}

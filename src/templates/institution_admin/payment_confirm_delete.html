@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/institution_admin/receipt_delete/style.css' %}">
+{% endblock style %}
+
+{% block sidebar %}
+{% include 'institution_admin/sidebar.html' %}
+{% endblock sidebar %}
+
+{% block content %}
+<h5>Delete payment [{{ object.payment_id }}]?</h5>
+
+<p>
+    <strong>Payment Details:</strong><br>
+    Payment ID: {{ object.payment_id }}<br>
+    Ticket: {{ object.ticket.ticket_id }}<br>
+    Student: {{ object.ticket.student_name }}<br>
+    Amount: ₹{{ object.amount }}<br>
+    Payment Date: {{ object.payment_date }}<br>
+    Payment Mode: {{ object.get_payment_mode_display }}
+</p>
+
+<p class="text-danger">
+    <strong>Warning:</strong> This action cannot be undone. The payment record will be permanently deleted.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-danger" type="submit">Yes, delete payment</button>
+    <a class="btn btn-sm text-primary" href="{% url 'institution_admin:payment_list' registration_slug=object.registration.slug %}">Cancel</a>
+</form>
+{% endblock %}

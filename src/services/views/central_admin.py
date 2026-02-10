@@ -51,6 +51,7 @@ from services.models import (
     Institution, 
     Bus, 
     RefuelingRecord,
+    TripRecord,
     Stop, 
     Route, 
     RouteFile, 
@@ -462,11 +463,49 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         total_fuel_amount = 0
         refueling_count = refueling_records.count()
         
+        # Get latest odometer reading from both refueling records and trip records
+        latest_refueling_odometer = None
+        latest_refueling_date = None
+        latest_trip_odometer = None
+        latest_trip_date = None
+        
+        # Get most recent refueling record by date (not by odometer value)
+        latest_refueling_by_date = refueling_records.order_by('-refuel_date', '-created_at').first()
+        if latest_refueling_by_date:
+            latest_refueling_odometer = latest_refueling_by_date.odometer_reading
+            latest_refueling_date = latest_refueling_by_date.refuel_date
+        
+        # Keep the highest odometer refueling record for mileage calculation
         if refueling_records.exists():
-            # Get latest odometer reading
             latest_record = refueling_records.last()
-            latest_odometer = latest_record.odometer_reading
-            
+        
+        # Get latest odometer from trip records
+        trip_records_with_odometer = TripRecord.objects.filter(
+            bus=bus,
+            org=self.request.user.profile.org,
+            odometer_reading__isnull=False
+        ).order_by('-record_date', '-created_at')
+        
+        if trip_records_with_odometer.exists():
+            latest_trip = trip_records_with_odometer.first()
+            latest_trip_odometer = latest_trip.odometer_reading
+            latest_trip_date = latest_trip.record_date
+        
+        # Compare and use the latest odometer reading based on most recent date
+        if latest_refueling_odometer is not None and latest_trip_odometer is not None:
+            # Both exist - use the one with the latest date
+            if latest_trip_date > latest_refueling_date:
+                latest_odometer = latest_trip_odometer
+            else:
+                latest_odometer = latest_refueling_odometer
+        elif latest_trip_odometer is not None:
+            # Only trip record exists
+            latest_odometer = latest_trip_odometer
+        elif latest_refueling_odometer is not None:
+            # Only refueling record exists
+            latest_odometer = latest_refueling_odometer
+        
+        if refueling_records.exists():
             # Calculate mileage (km per liter)
             if refueling_records.count() >= 2:
                 first_record = refueling_records.first()
@@ -491,6 +530,13 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         context['total_fuel_cost'] = total_fuel_cost
         context['total_fuel_amount'] = total_fuel_amount
         context['refueling_count'] = refueling_count
+        
+        # Get recent trip records (last 5)
+        trip_records = TripRecord.objects.filter(
+            bus=bus,
+            org=self.request.user.profile.org
+        ).select_related('trip', 'recorded_by').order_by('-record_date', '-created_at')[:5]
+        context['recent_trip_records'] = trip_records
         
         return context
 
@@ -528,7 +574,21 @@ class RefuelingRecordCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin,
     
     def form_invalid(self, form):
         bus_slug = self.kwargs.get('bus_slug')
-        messages.error(self.request, "Error adding refueling record. Please check the form.")
+        
+        # Collect all form errors
+        error_messages = []
+        for field, errors in form.errors.items():
+            if field == '__all__':
+                error_messages.extend(errors)
+            else:
+                field_label = form.fields[field].label or field
+                for error in errors:
+                    error_messages.append(f"{field_label}: {error}")
+        
+        # Display each error as a separate message
+        for error in error_messages:
+            messages.error(self.request, error)
+        
         return redirect('central_admin:bus_detail', slug=bus_slug)
 
 
@@ -593,6 +653,44 @@ class RefuelingRecordDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin,
         )
         messages.success(request, "Refueling record deleted successfully!")
         return super().delete(request, *args, **kwargs)
+
+
+class CentralAdminTripRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
+    """
+    CentralAdminTripRecordListView displays all trip records for a specific bus.
+    It requires the user to be logged in and have central admin access.
+    Attributes:
+        model (Model): The model associated with this view (TripRecord).
+        template_name (str): The path to the template used to render the view.
+        context_object_name (str): The name of the context variable for the trip records.
+        paginate_by (int): The number of records per page.
+    Methods:
+        get_queryset():
+            Returns trip records filtered by the bus slug from URL and user's org.
+        get_context_data(**kwargs):
+            Adds bus information to the context.
+    """
+    model = TripRecord
+    template_name = 'central_admin/trip_records_list.html'
+    context_object_name = 'trip_records'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        bus_slug = self.kwargs.get('bus_slug')
+        if bus_slug:
+            bus = get_object_or_404(Bus, slug=bus_slug, org=self.request.user.profile.org)
+            return TripRecord.objects.filter(
+                bus=bus,
+                org=self.request.user.profile.org
+            ).select_related('trip', 'bus', 'recorded_by').order_by('-record_date', '-created_at')
+        return TripRecord.objects.filter(org=self.request.user.profile.org).order_by('-record_date', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        bus_slug = self.kwargs.get('bus_slug')
+        if bus_slug:
+            context['bus'] = get_object_or_404(Bus, slug=bus_slug, org=self.request.user.profile.org)
+        return context
     
 
 class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
@@ -2564,10 +2662,10 @@ class TicketFilterView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView
         context['ticket_types'] = Ticket.TICKET_TYPES
         context['selected_ticket_type'] = self.request.GET.get('ticket_type', '')
         context['selected_student_group'] = self.request.GET.get('student_group', '')
-        context['bus_records'] = BusRecord.objects.filter(org=self.request.user.profile.org)
+        context['bus_records'] = BusRecord.objects.filter(org=self.request.user.profile.org, registration=self.registration)
         context['selected_pickup_bus'] = self.request.GET.get('pickup_bus', '')
         context['selected_drop_bus'] = self.request.GET.get('drop_bus', '')
-        context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org)
+        context['schedules'] = Schedule.objects.filter(org=self.request.user.profile.org, registration=self.registration)
         context['selected_pickup_schedule'] = self.request.GET.get('pickup_schedule', '')
         context['selected_drop_schedule'] = self.request.GET.get('drop_schedule', '')
         context['stops'] = Stop.objects.filter(org=self.request.user.profile.org, registration=self.registration).order_by('name')

@@ -1,8 +1,8 @@
 """
 drivers.py - Views for driver-related functionality
 
-This module contains view classes for driver users including refueling record management
-and trip information.
+This module contains view classes for driver users including trip record management,
+refueling record management, and trip information.
 
 Driver Access Pattern:
 - Only one registration is active at a time (Registration.is_active=True)
@@ -16,6 +16,239 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from config.mixins.access_mixin import DriverOnlyAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
+
+
+class DriverTripRecordListView(LoginRequiredMixin, DriverOnlyAccessMixin, ListView):
+    """
+    View for drivers to see and manage daily trip records (pickup/drop).
+    
+    Shows:
+    - All trip records for the driver's assigned bus trips
+    - Form to add new records (only if driver has an active assignment)
+    """
+    template_name = 'drivers/trip_records_list.html'
+    context_object_name = 'trip_records'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        from services.models import TripRecord, BusRecord, Registration, Trip
+        
+        # Get active registration
+        active_registration = Registration.objects.filter(
+            org=self.request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        if not active_registration:
+            return TripRecord.objects.none()
+        
+        # Get driver's bus record in active registration
+        bus_record = BusRecord.objects.filter(
+            registration=active_registration,
+            assigned_driver=self.request.user
+        ).select_related('bus').first()
+        
+        if not bus_record:
+            return TripRecord.objects.none()
+        
+        # Get trip records for this driver's bus (either linked to trips or just bus records)
+        records = TripRecord.objects.filter(
+            bus=bus_record.bus,
+            org=self.request.user.profile.org
+        ).select_related('trip__schedule', 'trip__route', 'trip__record__bus', 'bus', 'recorded_by').order_by('-record_date', '-created_at')
+        
+        return records
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        from services.models import BusRecord, Registration, Trip
+        from services.forms.drivers import DriverTripRecordForm
+        
+        # Get active registration
+        active_registration = Registration.objects.filter(
+            org=self.request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        bus_record = None
+        trips = []
+        if active_registration:
+            bus_record = BusRecord.objects.filter(
+                registration=active_registration,
+                assigned_driver=self.request.user
+            ).select_related('bus').first()
+            
+            if bus_record:
+                trips = Trip.objects.filter(
+                    record=bus_record,
+                    registration=active_registration
+                ).select_related('schedule', 'route')
+        
+        context['active_registration'] = active_registration
+        context['bus_record'] = bus_record
+        context['assigned_bus'] = bus_record.bus if bus_record else None
+        context['trips'] = trips
+        context['form'] = DriverTripRecordForm()
+        context['has_assignment'] = bus_record is not None
+        
+        return context
+
+
+class DriverTripRecordCreateView(LoginRequiredMixin, DriverOnlyAccessMixin, CreateView):
+    """
+    View for drivers to add daily trip records for their assigned bus.
+    
+    Only allows drivers to add records for their trips in the active registration.
+    """
+    template_name = 'drivers/trip_records_list.html'
+    success_url = reverse_lazy('drivers:trip_records_list')
+    
+    def get_form_class(self):
+        from services.forms.drivers import DriverTripRecordForm
+        return DriverTripRecordForm
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Verify driver has an active assignment before allowing access."""
+        from services.models import BusRecord, Registration
+        
+        # Get active registration
+        active_registration = Registration.objects.filter(
+            org=request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        if not active_registration:
+            messages.error(request, "No active registration found.")
+            return redirect('drivers:trip_records_list')
+        
+        # Get driver's bus record
+        bus_record = BusRecord.objects.filter(
+            registration=active_registration,
+            assigned_driver=request.user
+        ).first()
+        
+        if not bus_record:
+            messages.error(request, "You don't have an active bus assignment.")
+            return redirect('drivers:trip_records_list')
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        from services.models import BusRecord, Registration, Trip, log_user_activity
+        
+        # Get active registration
+        active_registration = Registration.objects.filter(
+            org=self.request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        # Get driver's bus record
+        bus_record = BusRecord.objects.filter(
+            registration=active_registration,
+            assigned_driver=self.request.user
+        ).select_related('bus').first()
+        
+        # Get trip from POST data
+        trip_id = self.request.POST.get('trip')
+        trip = None
+        if trip_id:
+            trip = get_object_or_404(Trip, id=trip_id, record=bus_record, registration=active_registration)
+            form.instance.trip = trip
+        
+        # Auto-populate fields
+        form.instance.org = self.request.user.profile.org
+        form.instance.bus = bus_record.bus
+        form.instance.recorded_by = self.request.user
+        
+        # Save the form
+        response = super().form_valid(form)
+        
+        # Log activity
+        trip_info = f"{trip}" if trip else "No specific trip"
+        log_user_activity(
+            user=self.request.user,
+            action='create',
+            description=f"Added trip record for {trip_info} on {form.instance.record_date}"
+        )
+        
+        messages.success(self.request, "Trip record added successfully!")
+        return response
+
+
+class DriverTripRecordUpdateView(LoginRequiredMixin, DriverOnlyAccessMixin, UpdateView):
+    """
+    View for drivers to update their trip records.
+    
+    Only allows drivers to update records for their own bus trips.
+    """
+    template_name = 'drivers/trip_record_update.html'
+    success_url = reverse_lazy('drivers:trip_records_list')
+    
+    def get_form_class(self):
+        from services.forms.drivers import DriverTripRecordForm
+        return DriverTripRecordForm
+    
+    def get_queryset(self):
+        from services.models import TripRecord, BusRecord, Registration, Trip
+        
+        # Get active registration
+        active_registration = Registration.objects.filter(
+            org=self.request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        if not active_registration:
+            return TripRecord.objects.none()
+        
+        # Get driver's bus record
+        bus_record = BusRecord.objects.filter(
+            registration=active_registration,
+            assigned_driver=self.request.user
+        ).first()
+        
+        if not bus_record:
+            return TripRecord.objects.none()
+        
+        # Return trip records for this driver's bus
+        return TripRecord.objects.filter(
+            bus=bus_record.bus,
+            org=self.request.user.profile.org
+        ).select_related('trip__schedule', 'trip__route', 'trip__record__bus', 'bus', 'recorded_by')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        from services.models import BusRecord, Registration
+        
+        # Get active registration and bus record
+        active_registration = Registration.objects.filter(
+            org=self.request.user.profile.org,
+            is_active=True
+        ).first()
+        
+        bus_record = BusRecord.objects.filter(
+            registration=active_registration,
+            assigned_driver=self.request.user
+        ).select_related('bus').first()
+        
+        context['bus_record'] = bus_record
+        context['active_registration'] = active_registration
+        
+        return context
+    
+    def form_valid(self, form):
+        from services.models import log_user_activity
+        
+        # Log activity
+        log_user_activity(
+            user=self.request.user,
+            action='update',
+            description=f"Updated trip record for {form.instance.trip} on {form.instance.record_date}"
+        )
+        
+        messages.success(self.request, "Trip record updated successfully!")
+        return super().form_valid(form)
 
 
 class DriverRefuelingListView(LoginRequiredMixin, DriverOnlyAccessMixin, ListView):

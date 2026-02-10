@@ -47,6 +47,7 @@ from .buses import (
 from .bus_operations import (
     BusRecord,
     Trip,
+    TripRecord,
 )
 
 # Ticket and payment models

@@ -130,12 +130,12 @@ class Ticket(models.Model):
         max_length=12,
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
-    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='pickup_tickets')
-    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='drop_tickets')
-    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='ticket_pickups')
-    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='ticket_drops')
-    pickup_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='pickup_tickets')
-    drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, default=None, related_name='drop_tickets')
+    pickup_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, blank=True, related_name='pickup_tickets')
+    drop_bus_record = models.ForeignKey(BusRecord, on_delete=models.CASCADE, null=True, blank=True, related_name='drop_tickets')
+    pickup_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_pickups')
+    drop_point = models.ForeignKey(Stop, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_drops')
+    pickup_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='pickup_tickets')
+    drop_schedule = models.ForeignKey(Schedule, on_delete=models.SET_NULL, null=True, related_name='drop_tickets')
     ticket_type = models.CharField(max_length=300, choices=TICKET_TYPES, default='twoway')
     status = models.BooleanField(default=False)
     is_terminated = models.BooleanField(default=False)
@@ -170,9 +170,12 @@ class Ticket(models.Model):
     def get_pending_installments(self):
         """
         Returns installment dates for this ticket's registration that have no payment recorded.
+        Includes both global installments (institution=None) and institution-specific ones.
         """
         paid_installment_ids = self.payments.values_list('installment_date_id', flat=True)
-        return self.registration.installment_dates.exclude(
+        return self.registration.installment_dates.filter(
+            models.Q(institution=None) | models.Q(institution=self.institution)
+        ).exclude(
             id__in=paid_installment_ids
         ).filter(due_date__lte=models.functions.Now())
     
@@ -210,14 +213,16 @@ class Ticket(models.Model):
 class InstallmentDate(models.Model):
     """
     Represents an installment due date for a registration cycle.
+    Can be defined centrally (institution=None) or by a specific institution.
     Fields:
-        org, registration, title, due_date, description, slug, created_at, updated_at
+        org, registration, institution, title, due_date, description, slug, created_at, updated_at
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns installment description.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='installment_dates')
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='installment_dates')
+    institution = models.ForeignKey('Institution', on_delete=models.CASCADE, null=True, blank=True, related_name='installment_dates', help_text="If set, this installment is specific to one institution. If null, it applies to all institutions.")
     title = models.CharField(max_length=100, default='Installment', help_text="Installment title (e.g., 'First Installment', 'Mid-term Payment')")
     due_date = models.DateField(help_text="Date by which payment should be made")
     description = models.CharField(max_length=255, blank=True, help_text="Optional description of installment")

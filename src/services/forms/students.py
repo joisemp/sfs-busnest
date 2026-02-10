@@ -76,5 +76,5 @@ class BusRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = BusRequest
         fields = [
-            "student_name", "pickup_address", "drop_address", "contact_no", "contact_email"
+            "student_name", "pickup_address", "pickup_location_map_link", "drop_address", "drop_location_map_link", "contact_no", "contact_email"
         ]

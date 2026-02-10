@@ -14,6 +14,7 @@ Forms:
 """
 
 from django import forms
+from django.db import models
 from config.mixins import form_mixin
 from services.models import Receipt, StudentGroup, Ticket, Stop, Schedule, BusReservationRequest, Payment, InstallmentDate
 
@@ -170,10 +171,12 @@ class PaymentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
             # Filter tickets to only show tickets from the institution (not used in form anymore)
             pass
             
-        if registration:
-            # Filter installment dates to only show those for the registration
+        if registration and institution:
+            # Filter installment dates to show global ones (institution=None) and institution-specific ones
             self.fields['installment_date'].queryset = InstallmentDate.objects.filter(
                 registration=registration
+            ).filter(
+                models.Q(institution=None) | models.Q(institution=institution)
             ).order_by('due_date')
         else:
             self.fields['installment_date'].queryset = InstallmentDate.objects.none()
@@ -210,4 +213,19 @@ class PaymentForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         widgets = {
             'payment_date': forms.DateInput(attrs={'type': 'date'}),
             'notes': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class InstallmentDateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
+    """
+    Form for managing installment dates in the institution admin interface.
+    Fields: title, due_date, description
+    
+    Institution admins can create installment dates specific to their institution.
+    """
+    
+    class Meta:
+        model = InstallmentDate
+        fields = ['title', 'due_date', 'description']
+        widgets = {
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
         }

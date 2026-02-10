@@ -103,6 +103,7 @@ urlpatterns = [
      path('buses/<slug:bus_slug>/refueling/add/', central_admin.RefuelingRecordCreateView.as_view(), name='refueling_record_create'),
      path('buses/refueling/<slug:slug>/update/', central_admin.RefuelingRecordUpdateView.as_view(), name='refueling_record_update'),
      path('buses/refueling/<slug:slug>/delete/', central_admin.RefuelingRecordDeleteView.as_view(), name='refueling_record_delete'),
+     path('buses/<slug:bus_slug>/trip-records/', central_admin.CentralAdminTripRecordListView.as_view(), name='trip_records_list'),
      
      path('people/', central_admin.PeopleListView.as_view(), name='people_list'),
      path('people/add/', central_admin.PeopleCreateView.as_view(), name='people_create'),

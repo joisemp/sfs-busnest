@@ -60,9 +60,14 @@
                                     <i class="fa-solid fa-key me-2"></i>Change password
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item py-3 text-danger" href="{% url 'core:logout' %}">
-                                    <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Logout
-                                </a></li>
+                                <li>
+                                    <form method="post" action="{% url 'core:logout' %}" style="margin: 0;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item py-3 text-danger" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
+                                            <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </li>
                             </ul>
                         </div>
                     </div>
