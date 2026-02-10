@@ -42,13 +42,20 @@ User = get_user_model()
 class LoginView(LoginView):
     """
     Handles user login using a custom authentication form.
-    On successful authentication, logs in the user and redirects to the landing page.
+    On successful authentication, logs in the user and redirects based on user role.
     """
     form_class = CustomAuthenticationForm
     template_name = 'core/login.html'
 
     def form_valid(self, form):
-        login(self.request, form.get_user())
+        user = form.get_user()
+        login(self.request, user)
+        
+        # Redirect based on user role
+        if hasattr(user, 'profile'):
+            if user.profile.is_driver:
+                return redirect('drivers:trip_records_list')
+        
         return redirect('landing_page')
     
 

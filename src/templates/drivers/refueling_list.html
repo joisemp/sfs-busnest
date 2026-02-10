@@ -27,6 +27,10 @@
   <section id="link" class="d-flex">
     <ul class="nav nav-pills">
       <li class="nav-item">
+        <a class="nav-link {% if 'trip_record' in request.resolver_match.url_name %}active{% endif %}" 
+           href="{% url 'drivers:trip_records_list' %}">Trip Records</a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name == 'refueling_list' %}active{% endif %}" 
            href="{% url 'drivers:refueling_list' %}">Refueling</a>
       </li>

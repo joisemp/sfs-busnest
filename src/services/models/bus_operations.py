@@ -132,3 +132,68 @@ class Trip(models.Model):
         String representation of the Trip.
         """
         return f"{self.schedule} | {self.route}"
+
+
+class TripRecord(models.Model):
+    """
+    Represents a daily pickup/drop record entered by drivers for their assigned trips.
+    
+    Fields:
+        org: Organization reference
+        trip: The trip this record is for (route + schedule + bus record) - optional
+        bus: The bus for this record (auto-populated from driver's assignment)
+        recorded_by: The user (driver) who created this record (auto-populated)
+        record_date: Date when pickup/drop occurred
+        actual_pickup_time: Actual time when pickup started (optional)
+        actual_drop_time: Actual time when drop completed (optional)
+        students_picked: Number of students picked up (optional)
+        students_dropped: Number of students dropped (optional)
+        odometer_reading: Odometer reading at start of trip (optional)
+        notes: Additional notes/observations by driver
+        slug: Unique identifier for URL routing
+        created_at: Timestamp when record was created
+        updated_at: Timestamp when record was last updated
+        
+    Methods:
+        save: Auto-generates unique slug on creation
+        __str__: Returns formatted string with trip and date
+    """
+    org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='trip_records')
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='daily_records', null=True, blank=True)
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='trip_records', help_text='Bus for this trip record')
+    recorded_by = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='trip_records', help_text='Driver who recorded this entry')
+    record_date = models.DateField(help_text='Date of the trip')
+    actual_pickup_time = models.TimeField(null=True, blank=True, help_text='Actual pickup start time')
+    actual_drop_time = models.TimeField(null=True, blank=True, help_text='Actual drop completion time')
+    students_picked = models.PositiveIntegerField(null=True, blank=True, help_text='Number of students picked up')
+    students_dropped = models.PositiveIntegerField(null=True, blank=True, help_text='Number of students dropped')
+    odometer_reading = models.PositiveIntegerField(null=True, blank=True, help_text='Odometer reading at trip start (km)')
+    notes = models.TextField(blank=True, help_text='Additional notes or observations')
+    slug = models.SlugField(unique=True, db_index=True, max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-record_date', '-created_at']
+        unique_together = []
+    
+    def save(self, *args, **kwargs):
+        """
+        Overrides save to generate a unique slug if not present.
+        """
+        if not self.slug:
+            if self.trip:
+                base_slug = f"{self.trip.schedule.name}-{self.trip.route.name}-{self.record_date}"
+            else:
+                base_slug = f"{self.bus.registration_no}-{self.record_date}"
+            self.slug = generate_unique_slug(self, base_slug)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        """
+        String representation of the TripRecord.
+        """
+        if self.trip:
+            return f"{self.trip} - {self.record_date}"
+        else:
+            return f"{self.bus.registration_no if self.bus else 'No Bus'} - {self.record_date}"
