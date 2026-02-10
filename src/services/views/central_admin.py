@@ -469,12 +469,15 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         latest_trip_odometer = None
         latest_trip_date = None
         
+        # Get most recent refueling record by date (not by odometer value)
+        latest_refueling_by_date = refueling_records.order_by('-refuel_date', '-created_at').first()
+        if latest_refueling_by_date:
+            latest_refueling_odometer = latest_refueling_by_date.odometer_reading
+            latest_refueling_date = latest_refueling_by_date.refuel_date
+        
+        # Keep the highest odometer refueling record for mileage calculation
         if refueling_records.exists():
-            # Get latest odometer from refueling records (ordered by odometer_reading)
-            latest_refueling = refueling_records.last()
-            latest_refueling_odometer = latest_refueling.odometer_reading
-            latest_refueling_date = latest_refueling.refuel_date
-            latest_record = latest_refueling  # Keep for mileage calculation
+            latest_record = refueling_records.last()
         
         # Get latest odometer from trip records
         trip_records_with_odometer = TripRecord.objects.filter(
@@ -488,7 +491,7 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
             latest_trip_odometer = latest_trip.odometer_reading
             latest_trip_date = latest_trip.record_date
         
-        # Compare and use the latest odometer reading
+        # Compare and use the latest odometer reading based on most recent date
         if latest_refueling_odometer is not None and latest_trip_odometer is not None:
             # Both exist - use the one with the latest date
             if latest_trip_date > latest_refueling_date:
