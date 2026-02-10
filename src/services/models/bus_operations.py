@@ -183,9 +183,9 @@ class TripRecord(models.Model):
         """
         if not self.slug:
             if self.trip:
-                base_slug = f"{self.trip.schedule.name}-{self.trip.route.name}-{self.record_date}"
+                base_slug = slugify(f"{self.trip.schedule.name}-{self.trip.route.name}-{self.record_date}")
             else:
-                base_slug = f"{self.bus.registration_no}-{self.record_date}"
+                base_slug = slugify(f"{self.bus.registration_no}-{self.record_date}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
     
