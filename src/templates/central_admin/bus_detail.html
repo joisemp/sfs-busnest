@@ -101,6 +101,96 @@
     </div>
   </section>
 
+  <!-- Trip Records Section -->
+  <div class="refueling-section mt-4">
+    <div class="section-title">
+      <h4>Recent Trip Records</h4>
+      <a href="{% url 'central_admin:trip_records_list' bus_slug=bus.slug %}" class="btn btn-outline-primary">
+        <i class="fa-solid fa-list me-2"></i>Show All
+      </a>
+    </div>
+
+    {% if recent_trip_records %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Trip</th>
+            <th>Pickup Time</th>
+            <th>Drop Time</th>
+            <th>Students Picked</th>
+            <th>Students Dropped</th>
+            <th>Recorded By</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in recent_trip_records %}
+          <tr>
+            <td>
+              <div class="date-cell">
+                <i class="fa-solid fa-calendar-day"></i>
+                <span>{{record.record_date|date:"d M Y"}}</span>
+              </div>
+            </td>
+            <td>
+              {% if record.trip %}
+                <div class="fw-semibold">{{record.trip.schedule.name}}</div>
+                <small class="text-muted">{{record.trip.route.name}}</small>
+              {% else %}
+                <span class="badge bg-light text-dark border">General</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if record.actual_pickup_time %}
+                <div class="time-cell">
+                  <i class="fa-solid fa-clock"></i>
+                  <span>{{record.actual_pickup_time|time:"h:i A"}}</span>
+                </div>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if record.actual_drop_time %}
+                <div class="time-cell">
+                  <i class="fa-solid fa-clock"></i>
+                  <span>{{record.actual_drop_time|time:"h:i A"}}</span>
+                </div>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if record.students_picked %}
+                <span>{{record.students_picked}}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if record.students_dropped %}
+                <span>{{record.students_dropped}}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span>{{record.recorded_by.get_full_name|default:record.recorded_by.email}}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-inbox"></i>
+      <p>No trip records found</p>
+    </div>
+    {% endif %}
+  </div>
+
   <!-- Refueling Records Section -->
   <div class="refueling-section mt-4">
     <div class="section-title">
