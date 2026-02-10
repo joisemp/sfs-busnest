@@ -101,6 +101,7 @@ class LogoutView(LogoutView):
     Handles user logout and renders the logout template.
     """
     template_name = 'core/logout.html'
+    next_page = 'landing_page'  # Redirect to landing page after logout
 
 
 class ChangePasswordView(PasswordChangeView):
