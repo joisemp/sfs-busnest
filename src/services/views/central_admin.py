@@ -29,6 +29,7 @@ from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import FileResponse
@@ -1795,9 +1796,11 @@ class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVi
     @transaction.atomic
     def form_valid(self, form):
         try:
+            User = get_user_model()
             userprofile = form.save(commit=False)
 
-            random_password = BaseUserManager().make_random_password()
+            # Generate a random password (12 characters with letters and digits)
+            random_password = get_random_string(length=12)
 
             user = User.objects.create_user(
                 email=form.cleaned_data.get('email'),

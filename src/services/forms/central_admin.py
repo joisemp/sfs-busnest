@@ -46,6 +46,12 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Filter role choices to exclude 'student' - central admins can't create students
+        self.fields['role'].choices = [
+            (UserProfile.CENTRAL_ADMIN, 'Central Admin'),
+            (UserProfile.INSTITUTION_ADMIN, 'Institution Admin'),
+            (UserProfile.DRIVER, 'Driver'),
+        ]
         # Make years_of_experience not required by default
         self.fields['years_of_experience'].required = False
         self.fields['years_of_experience'].widget.attrs.update({
