@@ -1892,6 +1892,116 @@ class PeopleDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVi
     success_url = reverse_lazy('central_admin:people_list')
 
 
+class GeneratePasswordView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for generating a new password for a user in the central admin interface with HTMX support.
+
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users only.
+        - View: Base view for both GET and POST requests.
+
+    Methods:
+        get(request, slug):
+            Returns the modal content HTML for confirming password generation.
+            Used by HTMX to dynamically load modal content.
+
+        post(request, slug):
+            Generates a new random password for the user and displays it to the admin.
+            Returns HTML response for HTMX with the generated password.
+
+    Template:
+        central_admin/partials/generate_password_modal.html (for GET requests)
+
+    HTMX Response:
+        Returns a success message div with the generated password and copy button.
+    """
+
+    def get(self, request, slug):
+        """
+        Returns modal content for password generation confirmation.
+        """
+        profile = get_object_or_404(UserProfile, slug=slug, org=request.user.profile.org)
+        
+        # Prevent admin from seeing modal for their own account
+        if request.user == profile.user:
+            return HttpResponse(
+                '<div class="alert alert-danger">You cannot generate a password for your own account.</div>',
+                content_type='text/html'
+            )
+        
+        return render(request, 'central_admin/partials/generate_password_modal.html', {
+            'profile': profile
+        })
+
+    def post(self, request, slug):
+        """
+        Handles the password generation process.
+        Generates a random password for the user.
+        """
+        profile = get_object_or_404(UserProfile, slug=slug, org=request.user.profile.org)
+        user = profile.user
+
+        # Prevent admin from resetting their own password
+        if request.user == user:
+            return HttpResponse(
+                '<div class="alert alert-danger">You cannot generate a password for your own account.</div>',
+                content_type='text/html'
+            )
+
+        # Generate a random password (12 characters)
+        random_password = get_random_string(length=12)
+        user.set_password(random_password)
+        user.save()
+
+        # Log the activity
+        log_user_activity(
+            request.user,
+            f"Generated new password for {profile.first_name} {profile.last_name}",
+            f"A new password was generated for {user.email}."
+        )
+
+        # Return HTMX-friendly success message with password
+        success_html = f'''
+        <div class="modal-body">
+            <div class="alert alert-success">
+                <i class="fa-solid fa-check-circle me-2"></i>
+                <strong>Success!</strong> Password has been generated for {profile.first_name} {profile.last_name}.
+            </div>
+            
+            <div class="password-display-box mb-3">
+                <h6 class="text-muted mb-2">Generated Password:</h6>
+                <div class="password-container">
+                    <input type="text" 
+                           id="generatedPassword" 
+                           class="form-control" 
+                           value="{random_password}" 
+                           readonly 
+                           onclick="this.select()">
+                    <button type="button" 
+                            class="btn btn-primary copy-btn" 
+                            onclick="copyPassword()"
+                            title="Copy to clipboard">
+                        <i class="fa-solid fa-copy me-1"></i>Copy
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Share this password with the user <strong>{user.email}</strong>.
+                </small>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="closeModalAndReload()">
+                <i class="fa-solid fa-check me-2"></i>Done
+            </button>
+        </div>
+        '''
+        
+        return HttpResponse(success_html, content_type='text/html')
+
+
 class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
     """
     View for displaying a paginated list of Route objects for a specific registration in the central admin interface.
