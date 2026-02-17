@@ -55,6 +55,8 @@ class LoginView(LoginView):
         if hasattr(user, 'profile'):
             if user.profile.is_driver:
                 return redirect('drivers:trip_records_list')
+            if user.profile.is_mechanic:
+                return redirect('mechanics:dashboard')
         
         return redirect('landing_page')
     

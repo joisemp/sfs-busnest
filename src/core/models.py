@@ -54,11 +54,11 @@ class UserProfile(models.Model):
         org (ForeignKey): References the Organisation the user belongs to. Nullable.
         first_name (CharField): The user's first name.
         last_name (CharField): The user's last name.
-        role (CharField): The single role assigned to this user (central_admin, institution_admin, driver, student).
+        role (CharField): The single role assigned to this user (central_admin, institution_admin, driver, mechanic, student).
         slug (SlugField): Unique slug for the profile, auto-generated if not provided.
     
     Role Constants:
-        CENTRAL_ADMIN, INSTITUTION_ADMIN, DRIVER, STUDENT: Pre-defined role identifiers.
+        CENTRAL_ADMIN, INSTITUTION_ADMIN, DRIVER, MECHANIC, STUDENT: Pre-defined role identifiers.
     
     Methods:
         save(*args, **kwargs): Auto-generates unique slug if not set.
@@ -67,19 +67,21 @@ class UserProfile(models.Model):
         get_role_display_name(): Get human-readable role name.
     
     Properties:
-        is_central_admin, is_institution_admin, is_driver, is_student: Backward-compatible role checks.
+        is_central_admin, is_institution_admin, is_driver, is_mechanic, is_student: Backward-compatible role checks.
     """
     
     # Role constants
     CENTRAL_ADMIN = 'central_admin'
     INSTITUTION_ADMIN = 'institution_admin'
     DRIVER = 'driver'
+    MECHANIC = 'mechanic'
     STUDENT = 'student'
     
     ROLE_CHOICES = [
         (CENTRAL_ADMIN, _('Central Admin')),
         (INSTITUTION_ADMIN, _('Institution Admin')),
         (DRIVER, _('Driver')),
+        (MECHANIC, _('Mechanic')),
         (STUDENT, _('Student')),
     ]
     
@@ -157,6 +159,17 @@ class UserProfile(models.Model):
         """Set driver role (for backward compatibility)."""
         if value:
             self.role = self.DRIVER
+    
+    @property
+    def is_mechanic(self):
+        """Check if user has mechanic role."""
+        return self.role == self.MECHANIC
+    
+    @is_mechanic.setter
+    def is_mechanic(self, value):
+        """Set mechanic role (for backward compatibility)."""
+        if value:
+            self.role = self.MECHANIC
     
     @property
     def is_student(self):
