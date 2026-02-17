@@ -43,11 +43,16 @@ class RefuelingRecordAdmin(admin.ModelAdmin):
 
 @admin.register(TripRecord)
 class TripRecordAdmin(admin.ModelAdmin):
-    list_display = ('record_date', 'bus', 'recorded_by', 'trip', 'actual_pickup_time', 'actual_drop_time', 'students_picked', 'students_dropped', 'odometer_reading')
-    list_filter = ('record_date', 'bus', 'recorded_by', 'trip__schedule', 'trip__route')
-    search_fields = ('bus__registration_no', 'recorded_by__email', 'recorded_by__first_name', 'recorded_by__last_name', 'trip__route__name', 'trip__schedule__name', 'notes')
+    list_display = ('record_date', 'bus', 'recorded_by', 'trip_type', 'actual_time', 'odometer_reading', 'distance_covered')
+    list_filter = ('record_date', 'bus', 'recorded_by', 'trip_type')
+    search_fields = ('bus__registration_no', 'recorded_by__email', 'recorded_by__first_name', 'recorded_by__last_name', 'notes')
     date_hierarchy = 'record_date'
     readonly_fields = ('created_at', 'updated_at')
+    
+    def distance_covered(self, obj):
+        """Display distance covered for this trip"""
+        return f"{obj.distance_covered()} km"
+    distance_covered.short_description = 'Distance'
     
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):

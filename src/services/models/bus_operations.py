@@ -136,19 +136,21 @@ class Trip(models.Model):
 
 class TripRecord(models.Model):
     """
-    Represents a daily pickup/drop record entered by drivers for their assigned trips.
+    Represents a daily pickup/drop record entered by drivers.
+    Simplified model - drivers record only 2 entries per day:
+    - PICKUP: Entered when driver takes the bus and starts work (records starting odometer)
+    - DROP: Entered when driver completes work and parks the bus (records ending odometer)
+    
+    Distance is calculated as: Drop odometer - Pickup odometer (same date)
     
     Fields:
         org: Organization reference
-        trip: The trip this record is for (route + schedule + bus record) - optional
         bus: The bus for this record (auto-populated from driver's assignment)
         recorded_by: The user (driver) who created this record (auto-populated)
-        record_date: Date when pickup/drop occurred
-        actual_pickup_time: Actual time when pickup started (optional)
-        actual_drop_time: Actual time when drop completed (optional)
-        students_picked: Number of students picked up (optional)
-        students_dropped: Number of students dropped (optional)
-        odometer_reading: Odometer reading at start of trip (optional)
+        record_date: Date when trip occurred
+        trip_type: Type of trip - 'pickup' (start of work) or 'drop' (end of work)
+        actual_time: Time when driver took the bus (pickup) or parked it (drop)
+        odometer_reading: Odometer reading when starting work (pickup) or ending work (drop) - in km
         notes: Additional notes/observations by driver
         slug: Unique identifier for URL routing
         created_at: Timestamp when record was created
@@ -156,44 +158,120 @@ class TripRecord(models.Model):
         
     Methods:
         save: Auto-generates unique slug on creation
-        __str__: Returns formatted string with trip and date
+        distance_covered: Calculates distance for DROP records (drop odometer - pickup odometer)
+        __str__: Returns formatted string with bus, type and date
     """
+    TRIP_TYPE_CHOICES = [
+        ('pickup', 'Pickup'),
+        ('drop', 'Drop'),
+    ]
+    
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='trip_records')
-    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='daily_records', null=True, blank=True)
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='trip_records', help_text='Bus for this trip record')
     recorded_by = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='trip_records', help_text='Driver who recorded this entry')
     record_date = models.DateField(help_text='Date of the trip')
-    actual_pickup_time = models.TimeField(null=True, blank=True, help_text='Actual pickup start time')
-    actual_drop_time = models.TimeField(null=True, blank=True, help_text='Actual drop completion time')
-    students_picked = models.PositiveIntegerField(null=True, blank=True, help_text='Number of students picked up')
-    students_dropped = models.PositiveIntegerField(null=True, blank=True, help_text='Number of students dropped')
-    odometer_reading = models.PositiveIntegerField(null=True, blank=True, help_text='Odometer reading at trip start (km)')
+    trip_type = models.CharField(max_length=10, choices=TRIP_TYPE_CHOICES, default='pickup', help_text='Pickup (when starting work) or Drop (when completing work)')
+    actual_time = models.TimeField(default='00:00:00', help_text='Time when driver started work (pickup) or completed work (drop)')
+    odometer_reading = models.PositiveIntegerField(default=0, help_text='Odometer reading when taking the bus (pickup) or parking it (drop) - in km')
     notes = models.TextField(blank=True, help_text='Additional notes or observations')
     slug = models.SlugField(unique=True, db_index=True, max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-record_date', '-created_at']
-        unique_together = []
+        ordering = ['-record_date', '-actual_time']
+        unique_together = [('bus', 'record_date', 'trip_type')]  # Only one pickup and one drop per bus per day
     
     def save(self, *args, **kwargs):
         """
         Overrides save to generate a unique slug if not present.
         """
         if not self.slug:
-            if self.trip:
-                base_slug = slugify(f"{self.trip.schedule.name}-{self.trip.route.name}-{self.record_date}")
-            else:
-                base_slug = slugify(f"{self.bus.registration_no}-{self.record_date}")
+            base_slug = slugify(f"{self.bus.registration_no}-{self.trip_type}-{self.record_date}")
             self.slug = generate_unique_slug(self, base_slug)
         super().save(*args, **kwargs)
+    
+    def distance_covered(self):
+        """
+        Calculate distance covered based on trip type:
+        - For DROP records: Returns distance between pickup and drop of the same day
+        - For PICKUP records: Returns None (trip not yet complete)
+        
+        Returns: Distance in km (int) or None if calculation not possible
+        """
+        if not self.odometer_reading:
+            return None
+        
+        if self.trip_type == 'drop':
+            # Find the pickup record for the same date
+            pickup_record = TripRecord.objects.filter(
+                bus=self.bus,
+                record_date=self.record_date,
+                trip_type='pickup',
+                odometer_reading__isnull=False
+            ).first()
+            
+            if pickup_record and self.odometer_reading > pickup_record.odometer_reading:
+                return self.odometer_reading - pickup_record.odometer_reading
+        
+        return None
+    
+    @classmethod
+    def calculate_mileage(cls, bus, start_date=None, end_date=None):
+        """
+        Calculate average mileage for a bus based on refueling records and trip records.
+        
+        Args:
+            bus: Bus instance
+            start_date: Start date for calculation (optional)
+            end_date: End date for calculation (optional)
+        
+        Returns:
+            dict: {
+                'average_mileage': float (km per liter),
+                'total_distance': int (km),
+                'total_fuel': float (liters),
+                'period': str
+            }
+        """
+        from services.models import RefuelingRecord
+        from datetime import date
+        
+        # Get refueling records for the period
+        refuel_query = RefuelingRecord.objects.filter(bus=bus)
+        if start_date:
+            refuel_query = refuel_query.filter(refuel_date__gte=start_date)
+        if end_date:
+            refuel_query = refuel_query.filter(refuel_date__lte=end_date)
+        
+        refuel_records = list(refuel_query.order_by('refuel_date', 'odometer_reading'))
+        
+        if len(refuel_records) < 2:
+            return {
+                'average_mileage': 0,
+                'total_distance': 0,
+                'total_fuel': 0,
+                'period': 'Insufficient data (need at least 2 refueling records)'
+            }
+        
+        # Calculate based on refueling records
+        first_refuel = refuel_records[0]
+        last_refuel = refuel_records[-1]
+        
+        total_distance = last_refuel.odometer_reading - first_refuel.odometer_reading
+        total_fuel = sum(record.fuel_amount for record in refuel_records[1:])  # Exclude first refuel
+        
+        average_mileage = float(total_distance) / float(total_fuel) if total_fuel > 0 else 0
+        
+        return {
+            'average_mileage': round(average_mileage, 2),
+            'total_distance': total_distance,
+            'total_fuel': float(total_fuel),
+            'period': f"{first_refuel.refuel_date} to {last_refuel.refuel_date}"
+        }
     
     def __str__(self):
         """
         String representation of the TripRecord.
         """
-        if self.trip:
-            return f"{self.trip} - {self.record_date}"
-        else:
-            return f"{self.bus.registration_no if self.bus else 'No Bus'} - {self.record_date}"
+        return f"{self.bus.registration_no} - {self.get_trip_type_display()} - {self.record_date}"
