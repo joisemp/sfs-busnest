@@ -145,13 +145,20 @@ def create_dummy_data():
         central_admin_user.set_password("password123")
         central_admin_user.save()
     
-    central_profile, _ = UserProfile.objects.get_or_create(
+    central_profile, profile_created = UserProfile.objects.get_or_create(
         user=central_admin_user,
         defaults={
             'org': org,
             'role': UserProfile.CENTRAL_ADMIN
         }
     )
+    # Ensure the profile has the correct org (in case it existed from a previous run or org was set to NULL)
+    if not profile_created:
+        if central_profile.org != org:
+            central_profile.org = org
+            central_profile.save()
+            print(f"   ✓ Updated Central Admin org association")
+    
     print(f"   ✓ Central Admin: {central_admin_user.email}")
     
     # ========== STEP 2: Institutions ==========
@@ -188,7 +195,7 @@ def create_dummy_data():
             admin_user.set_password("password123")
             admin_user.save()
         
-        admin_profile, _ = UserProfile.objects.get_or_create(
+        admin_profile, profile_created = UserProfile.objects.get_or_create(
             user=admin_user,
             defaults={
                 'org': org,
@@ -197,6 +204,11 @@ def create_dummy_data():
                 'role': UserProfile.INSTITUTION_ADMIN
             }
         )
+        # Ensure the profile has the correct org (in case it existed from a previous run or org was set to NULL)
+        if not profile_created:
+            if admin_profile.org != org:
+                admin_profile.org = org
+                admin_profile.save()
         
         # Set institution incharge
         inst.incharge = admin_profile
@@ -207,29 +219,40 @@ def create_dummy_data():
     # ========== STEP 2.5: Driver Users ==========
     print("\n🚗 Step 2.5: Creating Driver Users...")
     
-    drivers_data = [
-        {"first_name": "Rajesh", "last_name": "Kumar", "email": "rajesh.driver@sfs.edu", "experience": 15},
-        {"first_name": "Suresh", "last_name": "Babu", "email": "suresh.driver@sfs.edu", "experience": 12},
-        {"first_name": "Mahesh", "last_name": "Reddy", "email": "mahesh.driver@sfs.edu", "experience": 10},
-        {"first_name": "Ramesh", "last_name": "Sharma", "email": "ramesh.driver@sfs.edu", "experience": 8},
-        {"first_name": "Ganesh", "last_name": "Patel", "email": "ganesh.driver@sfs.edu", "experience": 7},
-        {"first_name": "Naresh", "last_name": "Singh", "email": "naresh.driver@sfs.edu", "experience": 14},
-        {"first_name": "Dinesh", "last_name": "Gupta", "email": "dinesh.driver@sfs.edu", "experience": 9},
-        {"first_name": "Mukesh", "last_name": "Rao", "email": "mukesh.driver@sfs.edu", "experience": 11},
-        {"first_name": "Lokesh", "last_name": "Verma", "email": "lokesh.driver@sfs.edu", "experience": 6},
-        {"first_name": "Prakash", "last_name": "Nair", "email": "prakash.driver@sfs.edu", "experience": 13},
-        {"first_name": "Anil", "last_name": "Joshi", "email": "anil.driver@sfs.edu", "experience": 10},
-        {"first_name": "Vishal", "last_name": "Desai", "email": "vishal.driver@sfs.edu", "experience": 8},
+    # Generate 84 drivers programmatically
+    first_names = [
+        "Rajesh", "Suresh", "Mahesh", "Ramesh", "Ganesh", "Naresh", "Dinesh", "Mukesh",
+        "Lokesh", "Prakash", "Anil", "Vishal", "Amit", "Ajay", "Vijay", "Sanjay",
+        "Manoj", "Arun", "Vinod", "Ashok", "Deepak", "Ravi", "Santosh", "Pankaj",
+        "Rajendra", "Krishna", "Harish", "Satish", "Rakesh", "Yogesh", "Sunil", "Anand",
+        "Pradeep", "Naveen", "Sachin", "Kiran", "Mohan", "Nitin", "Rohit", "Abhishek",
+        "Siddharth", "Akash", "Arjun", "Dev", "Dharam", "Gopal", "Hari", "Inder",
+        "Jagdish", "Kailash", "Lakshman", "Mahendra", "Narayan", "Om", "Pavan", "Raghav",
+        "Shyam", "Tarun", "Uday", "Varun", "Wasim", "Yash", "Zakir", "Aarav",
+        "Bhuvan", "Chetan", "Dhanush", "Eshan", "Farhan", "Gautam", "Hemant", "Ishaan",
+        "Jatin", "Keshav", "Lalit", "Mayur", "Neeraj", "Omkar", "Pramod", "Rajat",
+        "Sameer", "Tanmay", "Utkarsh", "Vimal"
+    ]
+    
+    last_names = [
+        "Kumar", "Babu", "Reddy", "Sharma", "Patel", "Singh", "Gupta", "Rao",
+        "Verma", "Nair", "Joshi", "Desai", "Mehta", "Shah", "Agarwal", "Malhotra",
+        "Kapoor", "Bhat", "Kulkarni", "Pillai", "Iyer", "Menon", "Naik", "Gowda"
     ]
     
     drivers = []
-    for driver_data in drivers_data:
+    for i in range(84):
+        first_name = first_names[i % len(first_names)]
+        last_name = last_names[i % len(last_names)]
+        email = f"driver{i+1}@sfs.edu"
+        experience = random.randint(5, 20)
+        
         # Create Driver User
         driver_user, created = User.objects.get_or_create(
-            email=driver_data['email'],
+            email=email,
             defaults={
-                'first_name': driver_data['first_name'],
-                'last_name': driver_data['last_name']
+                'first_name': first_name,
+                'last_name': last_name
             }
         )
         if created:
@@ -237,18 +260,26 @@ def create_dummy_data():
             driver_user.save()
         
         # Create Driver Profile
-        driver_profile, _ = UserProfile.objects.get_or_create(
+        driver_profile, profile_created = UserProfile.objects.get_or_create(
             user=driver_user,
             defaults={
                 'org': org,
-                'first_name': driver_data['first_name'],
-                'last_name': driver_data['last_name'],
+                'first_name': first_name,
+                'last_name': last_name,
                 'role': UserProfile.DRIVER,
-                'years_of_experience': driver_data['experience']
+                'years_of_experience': experience
             }
         )
+        # Ensure the profile has the correct org (in case it existed from a previous run or org was set to NULL)
+        if not profile_created:
+            if driver_profile.org != org:
+                driver_profile.org = org
+                driver_profile.save()
         drivers.append(driver_user)
-        print(f"   ✓ Driver: {driver_user.first_name} {driver_user.last_name} ({driver_data['experience']} years exp) - {driver_user.email}")
+        if (i + 1) % 10 == 0:  # Print every 10th driver to avoid clutter
+            print(f"   ✓ Created {i+1} drivers...")
+    
+    print(f"   ✅ Total Drivers Created: {len(drivers)}")
     
     # ========== STEP 3: Registration & Installments ==========
     print("\n📅 Step 3: Creating Registration and Installment Dates...")
@@ -330,25 +361,31 @@ def create_dummy_data():
     # ========== STEP 5: Buses & Schedules ==========
     print("\n🚌 Step 5: Creating Buses and Schedules...")
     
-    # Create Buses
-    buses_data = [
-        {"registration_no": "KA01AB1234", "capacity": 50},
-        {"registration_no": "KA02CD5678", "capacity": 45},
-        {"registration_no": "KA03EF9012", "capacity": 52},
-    ]
+    # Create 84 Buses programmatically
+    state_codes = ["KA01", "KA02", "KA03", "KA04", "KA05", "KA06", "KA07", "KA08", "KA09", "KA10"]
+    series_codes = ["AB", "CD", "EF", "GH", "IJ", "KL", "MN", "OP", "QR", "ST"]
     
     buses = []
-    for bus_data in buses_data:
+    for i in range(84):
+        state_code = state_codes[i % len(state_codes)]
+        series_code = series_codes[(i // 10) % len(series_codes)]
+        number = 1000 + i * 100 + random.randint(0, 99)
+        registration_no = f"{state_code}{series_code}{number}"
+        capacity = random.choice([40, 45, 50, 52, 55])
+        
         bus, _ = Bus.objects.get_or_create(
             org=org,
-            registration_no=bus_data['registration_no'],
+            registration_no=registration_no,
             defaults={
-                'capacity': bus_data['capacity'],
+                'capacity': capacity,
                 'is_available': True
             }
         )
         buses.append(bus)
-        print(f"   ✓ Bus: {bus.registration_no} ({bus.capacity} seats)")
+        if (i + 1) % 10 == 0:  # Print every 10th bus to avoid clutter
+            print(f"   ✓ Created {i+1} buses...")
+    
+    print(f"   ✅ Total Buses Created: {len(buses)}")
     
     reset_sequence('services_bus')
     
@@ -398,37 +435,47 @@ def create_dummy_data():
     bus_records = []
     trips = []
     
-    for idx, (route, bus) in enumerate(zip(routes, buses[:3])):
-        # Assign driver to bus record
-        assigned_driver = drivers[idx] if idx < len(drivers) else None
+    # Distribute 84 buses across 3 routes (28 buses per route)
+    buses_per_route = 28
+    
+    for route_idx, route in enumerate(routes):
+        start_bus_idx = route_idx * buses_per_route
+        end_bus_idx = start_bus_idx + buses_per_route
+        route_buses = buses[start_bus_idx:end_bus_idx]
         
-        bus_record, _ = BusRecord.objects.get_or_create(
-            org=org,
-            bus=bus,
-            registration=reg,
-            defaults={
-                'label': f"Bus Record {idx+1}",
-                'min_required_capacity': 0,
-                'assigned_driver': assigned_driver
-            }
-        )
-        bus_records.append(bus_record)
-        driver_info = f" (Driver: {assigned_driver.first_name} {assigned_driver.last_name})" if assigned_driver else ""
-        print(f"   ✓ Bus Record: {bus.registration_no} → {route.name}{driver_info}")
-        
-        # Create trips for both schedules
-        for schedule in schedules:
-            trip, _ = Trip.objects.get_or_create(
+        for bus_idx, bus in enumerate(route_buses):
+            global_bus_idx = start_bus_idx + bus_idx
+            # Assign driver to bus record (each bus gets one driver)
+            assigned_driver = drivers[global_bus_idx] if global_bus_idx < len(drivers) else None
+            
+            bus_record, _ = BusRecord.objects.get_or_create(
+                org=org,
+                bus=bus,
                 registration=reg,
-                record=bus_record,
-                route=route,
-                schedule=schedule,
                 defaults={
-                    'booking_count': 0
+                    'label': f"Bus Record {global_bus_idx+1}",
+                    'min_required_capacity': 0,
+                    'assigned_driver': assigned_driver
                 }
             )
-            trips.append(trip)
-            print(f"      • Trip: {route.name} - {schedule.name}")
+            bus_records.append(bus_record)
+            
+            # Create trips for both schedules (morning & evening)
+            for schedule in schedules:
+                trip, _ = Trip.objects.get_or_create(
+                    registration=reg,
+                    record=bus_record,
+                    route=route,
+                    schedule=schedule,
+                    defaults={
+                        'booking_count': 0
+                    }
+                )
+                trips.append(trip)
+        
+        print(f"   ✓ Route {route_idx+1} ({route.name}): Created {len(route_buses)} bus records with {len(route_buses) * 2} trips")
+    
+    print(f"   ✅ Total Bus Records: {len(bus_records)}, Total Trips: {len(trips)}")
     
     reset_sequence('services_busrecord')
     reset_sequence('services_trip')
@@ -588,9 +635,8 @@ def create_dummy_data():
     print(f"   Central Admin: central@sfs.edu / password123")
     print(f"   Institution Admin 1: highschool@sfs.edu / password123")
     print(f"   Institution Admin 2: college@sfs.edu / password123")
-    print(f"   Sample Driver 1: rajesh.driver@sfs.edu / password123")
-    print(f"   Sample Driver 2: suresh.driver@sfs.edu / password123")
-    print(f"   (All drivers use password: password123)")
+    print(f"   Drivers: driver1@sfs.edu through driver84@sfs.edu / password123")
+    print(f"   (All users use password: password123)")
     print("\n🎉 System is ready for comprehensive testing!")
     print("="*60)
 
