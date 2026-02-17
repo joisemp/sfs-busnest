@@ -49,33 +49,18 @@
             <h5 class="mb-0 fw-bold">{{ record.record_date|date:"d M Y" }}</h5>
           </div>
           
-          {% if record.trip %}
           <div class="mb-3">
-            <div class="fw-semibold">{{ record.trip.schedule.name }}</div>
-            <small class="text-muted">{{ record.trip.route.name }}</small>
+            <span class="badge {% if record.trip_type == 'pickup' %}bg-primary{% else %}bg-success{% endif %}">{{ record.get_trip_type_display }}</span>
           </div>
-          {% else %}
-          <div class="mb-3">
-            <span class="badge bg-light text-dark border">General</span>
-          </div>
-          {% endif %}
           
           <div class="row g-3 small">
             <div class="col-6">
-              <div class="text-muted mb-1">Pickup</div>
-              <div>{{ record.actual_pickup_time|time:"h:i A"|default:"—" }}</div>
+              <div class="text-muted mb-1">Time</div>
+              <div>{{ record.actual_time|time:"h:i A"|default:"—" }}</div>
             </div>
             <div class="col-6">
-              <div class="text-muted mb-1">Drop</div>
-              <div>{{ record.actual_drop_time|time:"h:i A"|default:"—" }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-muted mb-1">Picked</div>
-              <div>{{ record.students_picked|default:"—" }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-muted mb-1">Dropped</div>
-              <div>{{ record.students_dropped|default:"—" }}</div>
+              <div class="text-muted mb-1">Bus</div>
+              <div>{{ record.bus.registration_no }}</div>
             </div>
             {% if record.odometer_reading %}
             <div class="col-12 pt-2 border-top">
@@ -111,17 +96,22 @@
                     {{ record.record_date|date:"d M Y" }}
                   </div>
                 </div>
-                {% if record.trip %}
                 <div class="row mb-3">
                   <div class="col-6">
-                    <strong>Trip:</strong>
+                    <strong>Trip Type:</strong>
                   </div>
                   <div class="col-6">
-                    {{ record.trip.schedule.name }}<br>
-                    <small class="text-muted">{{ record.trip.route.name }}</small>
+                    <span class="badge {% if record.trip_type == 'pickup' %}bg-primary{% else %}bg-success{% endif %}">{{ record.get_trip_type_display }}</span>
                   </div>
                 </div>
-                {% endif %}
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <strong>Time:</strong>
+                  </div>
+                  <div class="col-6">
+                    {{ record.actual_time|time:"h:i A"|default:"Not recorded" }}
+                  </div>
+                </div>
                 <div class="row mb-3">
                   <div class="col-6">
                     <strong>Bus:</strong>
@@ -136,38 +126,6 @@
                   </div>
                   <div class="col-6">
                     {{ record.recorded_by.get_full_name|default:record.recorded_by.email }}
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-6">
-                    <strong>Actual Pickup Time:</strong>
-                  </div>
-                  <div class="col-6">
-                    {{ record.actual_pickup_time|time:"h:i A"|default:"Not recorded" }}
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-6">
-                    <strong>Actual Drop Time:</strong>
-                  </div>
-                  <div class="col-6">
-                    {{ record.actual_drop_time|time:"h:i A"|default:"Not recorded" }}
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-6">
-                    <strong>Students Picked:</strong>
-                  </div>
-                  <div class="col-6">
-                    {{ record.students_picked|default:"Not recorded" }}
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-6">
-                    <strong>Students Dropped:</strong>
-                  </div>
-                  <div class="col-6">
-                    {{ record.students_dropped|default:"Not recorded" }}
                   </div>
                 </div>
                 {% if record.odometer_reading %}

@@ -57,30 +57,7 @@
     </button>
   </div>
   
-  {% if mileage_data and mileage_data.average_mileage > 0 %}
-  <div class="alert alert-info mt-3">
-    <div class="row text-center">
-      <div class="col-md-3">
-        <strong>Average Mileage</strong><br>
-        <span class="fs-5">{{ mileage_data.average_mileage }} km/L</span>
-      </div>
-      <div class="col-md-3">
-        <strong>Total Distance</strong><br>
-        <span class="fs-5">{{ mileage_data.total_distance }} km</span>
-      </div>
-      <div class="col-md-3">
-        <strong>Total Fuel</strong><br>
-        <span class="fs-5">{{ mileage_data.total_fuel }} L</span>
-      </div>
-      <div class="col-md-3">
-        <strong>Period</strong><br>
-        <small>{{ mileage_data.period }}</small>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-  
-  <section id="card-list" class="mb-5">
+  <section id="card-list" class="mb-5 mt-3">
     {% if trip_records %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-2">
       {% for record in trip_records %}

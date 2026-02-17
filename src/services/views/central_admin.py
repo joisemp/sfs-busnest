@@ -536,7 +536,7 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         trip_records = TripRecord.objects.filter(
             bus=bus,
             org=self.request.user.profile.org
-        ).select_related('trip', 'recorded_by').order_by('-record_date', '-created_at')[:5]
+        ).select_related('bus', 'recorded_by').order_by('-record_date', '-created_at')[:5]
         context['recent_trip_records'] = trip_records
         
         return context
@@ -683,7 +683,7 @@ class CentralAdminTripRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessM
             return TripRecord.objects.filter(
                 bus=bus,
                 org=self.request.user.profile.org
-            ).select_related('trip', 'bus', 'recorded_by').order_by('-record_date', '-created_at')
+            ).select_related('bus', 'recorded_by').order_by('-record_date', '-created_at')
         return TripRecord.objects.filter(org=self.request.user.profile.org).order_by('-record_date', '-created_at')
     
     def get_context_data(self, **kwargs):

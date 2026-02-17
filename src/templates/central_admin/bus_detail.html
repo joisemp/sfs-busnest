@@ -116,11 +116,10 @@
         <thead>
           <tr>
             <th>Date</th>
-            <th>Trip</th>
-            <th>Pickup Time</th>
-            <th>Drop Time</th>
-            <th>Students Picked</th>
-            <th>Students Dropped</th>
+            <th>Trip Type</th>
+            <th>Time</th>
+            <th>Odometer Reading</th>
+            <th>Distance Covered</th>
             <th>Recorded By</th>
           </tr>
         </thead>
@@ -134,43 +133,28 @@
               </div>
             </td>
             <td>
-              {% if record.trip %}
-                <div class="fw-semibold">{{record.trip.schedule.name}}</div>
-                <small class="text-muted">{{record.trip.route.name}}</small>
-              {% else %}
-                <span class="badge bg-light text-dark border">General</span>
-              {% endif %}
+              <span class="badge {% if record.trip_type == 'pickup' %}bg-primary{% else %}bg-success{% endif %}">{{ record.get_trip_type_display }}</span>
             </td>
             <td>
-              {% if record.actual_pickup_time %}
+              {% if record.actual_time %}
                 <div class="time-cell">
                   <i class="fa-solid fa-clock"></i>
-                  <span>{{record.actual_pickup_time|time:"h:i A"}}</span>
+                  <span>{{record.actual_time|time:"h:i A"}}</span>
                 </div>
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td>
-              {% if record.actual_drop_time %}
-                <div class="time-cell">
-                  <i class="fa-solid fa-clock"></i>
-                  <span>{{record.actual_drop_time|time:"h:i A"}}</span>
-                </div>
+              {% if record.odometer_reading %}
+                <span>{{record.odometer_reading}} km</span>
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td>
-              {% if record.students_picked %}
-                <span>{{record.students_picked}}</span>
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if record.students_dropped %}
-                <span>{{record.students_dropped}}</span>
+              {% if record.distance_covered %}
+                <span class="text-success fw-semibold">{{record.distance_covered}} km</span>
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}
