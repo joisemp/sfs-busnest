@@ -508,15 +508,45 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         
         if refueling_records.exists():
             # Calculate mileage (km per liter)
+            # Correct formula: For each refueling, calculate (current odometer - previous odometer) / previous fuel amount
+            # Then average all these mileage values
             if refueling_records.count() >= 2:
-                first_record = refueling_records.first()
-                total_distance = latest_record.odometer_reading - first_record.odometer_reading
-                total_fuel = refueling_records.exclude(id=first_record.id).aggregate(
-                    total=Sum('fuel_amount')
-                )['total'] or 0
+                refueling_list = list(refueling_records.values('id', 'refuel_date', 'odometer_reading', 'fuel_amount'))
                 
-                if total_fuel > 0 and total_distance > 0:
-                    mileage = round(total_distance / float(total_fuel), 2)
+                mileage_calculations = []
+                intervals = []
+                
+                for i in range(1, len(refueling_list)):
+                    previous = refueling_list[i-1]
+                    current = refueling_list[i]
+                    
+                    distance = current['odometer_reading'] - previous['odometer_reading']
+                    fuel_used = previous['fuel_amount']  # Fuel from previous refueling
+                    
+                    if fuel_used > 0 and distance > 0:
+                        interval_mileage = distance / float(fuel_used)
+                        mileage_calculations.append(interval_mileage)
+                        
+                        intervals.append({
+                            'from_date': previous['refuel_date'],
+                            'to_date': current['refuel_date'],
+                            'from_odometer': previous['odometer_reading'],
+                            'to_odometer': current['odometer_reading'],
+                            'distance': distance,
+                            'fuel_used': fuel_used,
+                            'mileage': round(interval_mileage, 2)
+                        })
+                
+                if mileage_calculations:
+                    mileage = round(sum(mileage_calculations) / len(mileage_calculations), 2)
+                    
+                    # Pass calculation details for modal
+                    context['mileage_calculation'] = {
+                        'intervals': intervals,
+                        'num_intervals': len(intervals),
+                        'total_refuelings': refueling_records.count(),
+                        'mileage': mileage
+                    }
             
             # Get refueling statistics
             stats = refueling_records.aggregate(

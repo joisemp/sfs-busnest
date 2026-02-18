@@ -219,7 +219,12 @@ class TripRecord(models.Model):
     @classmethod
     def calculate_mileage(cls, bus, start_date=None, end_date=None):
         """
-        Calculate average mileage for a bus based on refueling records and trip records.
+        Calculate average mileage for a bus based on refueling records.
+        
+        For each refueling interval:
+        - Distance = current odometer - previous odometer
+        - Mileage = distance / previous fuel amount
+        Average all interval mileages.
         
         Args:
             bus: Bus instance
@@ -254,14 +259,28 @@ class TripRecord(models.Model):
                 'period': 'Insufficient data (need at least 2 refueling records)'
             }
         
-        # Calculate based on refueling records
+        # Calculate mileage for each interval
+        mileage_calculations = []
+        total_distance = 0
+        total_fuel = 0
+        
+        for i in range(1, len(refuel_records)):
+            previous = refuel_records[i-1]
+            current = refuel_records[i]
+            
+            distance = current.odometer_reading - previous.odometer_reading
+            fuel_used = previous.fuel_amount  # Fuel from previous refueling
+            
+            if fuel_used > 0 and distance > 0:
+                interval_mileage = distance / float(fuel_used)
+                mileage_calculations.append(interval_mileage)
+                total_distance += distance
+                total_fuel += fuel_used
+        
+        average_mileage = sum(mileage_calculations) / len(mileage_calculations) if mileage_calculations else 0
+        
         first_refuel = refuel_records[0]
         last_refuel = refuel_records[-1]
-        
-        total_distance = last_refuel.odometer_reading - first_refuel.odometer_reading
-        total_fuel = sum(record.fuel_amount for record in refuel_records[1:])  # Exclude first refuel
-        
-        average_mileage = float(total_distance) / float(total_fuel) if total_fuel > 0 else 0
         
         return {
             'average_mileage': round(average_mileage, 2),
