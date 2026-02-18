@@ -3,6 +3,41 @@
 from django.db import migrations, models
 
 
+def cleanup_duplicate_trip_records(apps, schema_editor):
+    """
+    Remove duplicate TripRecord entries before applying unique constraint.
+    Keeps the most recent record (highest ID) for each (bus, record_date, trip_type) combination.
+    """
+    TripRecord = apps.get_model('services', 'TripRecord')
+    db_alias = schema_editor.connection.alias
+    
+    # Find all duplicate groups
+    from django.db.models import Count
+    duplicates = (
+        TripRecord.objects.using(db_alias)
+        .values('bus_id', 'record_date')
+        .annotate(count=Count('id'))
+        .filter(count__gt=1)
+    )
+    
+    deleted_count = 0
+    for dup in duplicates:
+        # Get all records in this duplicate group
+        records = TripRecord.objects.using(db_alias).filter(
+            bus_id=dup['bus_id'],
+            record_date=dup['record_date']
+        ).order_by('id')
+        
+        # Keep the latest record, delete the rest
+        records_to_delete = list(records)[:-1]
+        for record in records_to_delete:
+            record.delete()
+            deleted_count += 1
+    
+    if deleted_count > 0:
+        print(f"Cleaned up {deleted_count} duplicate TripRecord(s)")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,7 +45,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # First, remove old fields
+        # First, clean up any duplicate records before schema changes
+        migrations.RunPython(cleanup_duplicate_trip_records, reverse_code=migrations.RunPython.noop),
+        # Then, remove old fields
         migrations.RemoveField(
             model_name='triprecord',
             name='actual_drop_time',
