@@ -290,6 +290,12 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
 }
+@media (max-width: 768px) {
+  #card-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
 #card-list .stat-card {
   background-color: #eef2ff;
   border-radius: 8px;
@@ -302,6 +308,12 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   min-height: 200px;
   transition: all 0.3s ease;
 }
+@media (max-width: 768px) {
+  #card-list .stat-card {
+    padding: 24px 12px;
+    min-height: 160px;
+  }
+}
 #card-list .stat-card:hover {
   border-color: #6366f1;
   background-color: #e0e7ff;
@@ -312,6 +324,12 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-size: 2.5rem;
   color: #4f46e5;
   margin-bottom: 16px;
+}
+@media (max-width: 768px) {
+  #card-list .stat-card .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
 }
 #card-list .stat-card .stat-icon i {
   display: block;
@@ -324,11 +342,21 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   letter-spacing: -1px;
   text-align: center;
 }
+@media (max-width: 768px) {
+  #card-list .stat-card .stat-value {
+    font-size: 1.75rem;
+  }
+}
 #card-list .stat-card .stat-label {
   font-size: 0.9rem;
   font-weight: 500;
   color: #4b5563;
   text-align: center;
+}
+@media (max-width: 768px) {
+  #card-list .stat-card .stat-label {
+    font-size: 0.75rem;
+  }
 }
 
 .refueling-section {
