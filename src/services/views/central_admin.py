@@ -3071,6 +3071,9 @@ class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, C
         template_name (str): The template used for rendering the form.
         form_class (ScheduleGroupForm): The form class used for input validation and rendering.
     Methods:
+        get_form(form_class=None):
+            Filters the pick_up_schedule and drop_schedule querysets to only show schedules
+            from the current registration.
         form_valid(form):
             Associates the new ScheduleGroup with the Registration specified by the 'registration_slug' URL parameter,
             saves the instance, and proceeds with the default form_valid behavior.
@@ -3082,6 +3085,13 @@ class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, C
     model = ScheduleGroup
     template_name = 'central_admin/schedule_group_create.html'
     form_class = ScheduleGroupForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        form.fields['pick_up_schedule'].queryset = Schedule.objects.filter(registration=registration)
+        form.fields['drop_schedule'].queryset = Schedule.objects.filter(registration=registration)
+        return form
     
     def form_valid(self, form):
         schedule_group = form.save(commit=False)
