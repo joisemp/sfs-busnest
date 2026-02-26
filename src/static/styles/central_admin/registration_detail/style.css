@@ -254,7 +254,7 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 #registration-dashobard .header-button-group {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 #registration-dashobard .header-button-group .back .btn {
   background: #ffffff;
@@ -267,6 +267,40 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   border: 1px solid #3730a3;
   padding: 5px 9px;
   font-weight: 600;
+}
+#registration-dashobard .chart-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+#registration-dashobard .chart-card .card-body {
+  padding: 1.5rem;
+}
+#registration-dashobard .chart-card .card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 1rem;
+}
+#registration-dashobard .chart-card .card-title i {
+  color: #4f46e5;
+}
+#registration-dashobard .chart-card .chart-container {
+  position: relative;
+  width: 100%;
+}
+#registration-dashobard .chart-card .chart-container canvas {
+  display: block;
+  width: 100% !important;
+}
+@media screen and (max-width: 768px) {
+  #registration-dashobard .chart-card .card-body {
+    padding: 1rem;
+  }
+  #registration-dashobard .chart-card .card-title {
+    font-size: 1rem;
+  }
 }
 @media screen and (min-width: 768px) and (max-width: 991px) {
   #registration-dashobard .content {

@@ -3,6 +3,7 @@
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'styles/central_admin/registration_detail/style.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endblock style %}
 
 {% block sidebar %}
@@ -12,10 +13,9 @@
 {% block content %}
 
 <section id="registration-dashobard">
-    <div class="row">
-
-
-        <div class="col-12 col-lg-6">
+    <!-- Header Section -->
+    <div class="row mb-3">
+        <div class="col-12">
             <div class="header-button-group">
                 <div class="back">
                     <a href="{% url 'central_admin:registration_list' %}">
@@ -32,6 +32,27 @@
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card chart-card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="fa-solid fa-chart-line me-2"></i>Registration Trends
+                    </h5>
+                    <div class="chart-container">
+                        <canvas id="registrationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-6">
             <div class="content">
 
                 <div class="card registration-count">
@@ -142,4 +163,86 @@
 
     </div>
 </section>
+
+<script>
+// Registration Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('registrationChart').getContext('2d');
+    
+    const chartData = {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: 'Active Tickets',
+            data: {{ chart_data|safe }},
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+        }]
+    };
+    
+    const config = {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Tickets: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    };
+    
+    new Chart(ctx, config);
+});
+</script>
 {% endblock content %}

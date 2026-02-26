@@ -2,6 +2,7 @@
 
 #registration-dashobard {
     padding-top: 1rem;
+    
     .header-button-group {
         @media screen and (max-width:767px) {
             justify-content: left;
@@ -13,7 +14,7 @@
 
         display: flex;
         justify-content: space-between;
-        margin-bottom: 1rem;
+        margin-bottom: 0;
 
         // back button design
         .back {
@@ -36,6 +37,48 @@
         }
     }
 
+    // Chart card
+    .chart-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: $slate-700;
+            margin-bottom: 1rem;
+
+            i {
+                color: $indigo-600;
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            
+            canvas {
+                display: block;
+                width: 100% !important;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .card-body {
+                padding: 1rem;
+            }
+
+            .card-title {
+                font-size: 1rem;
+            }
+        }
+    }
 
     .content {
         @media screen and (min-width:768px) and (max-width:991px) {

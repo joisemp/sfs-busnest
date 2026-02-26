@@ -2511,6 +2511,42 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
         remaining_capacity = total_capacity - total_active_tickets
         context['remaining_capacity'] = remaining_capacity
         
+        # Prepare chart data - tickets created over the last 14 days
+        from datetime import datetime, timedelta
+        from django.db.models import Count
+        from django.db.models.functions import TruncDate
+        import json
+        
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=13)  # Last 14 days
+        
+        # Get ticket counts grouped by date
+        ticket_counts = self.object.tickets.filter(
+            org=self.request.user.profile.org,
+            is_terminated=False,
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date
+        ).annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        
+        # Create a dictionary for easy lookup
+        counts_dict = {item['date']: item['count'] for item in ticket_counts}
+        
+        # Generate labels and data for all 14 days
+        chart_labels = []
+        chart_data = []
+        
+        for i in range(14):
+            date = start_date + timedelta(days=i)
+            chart_labels.append(date.strftime('%b %d'))
+            chart_data.append(counts_dict.get(date, 0))
+        
+        context['chart_labels'] = json.dumps(chart_labels)
+        context['chart_data'] = json.dumps(chart_data)
+        
         return context
 
 
