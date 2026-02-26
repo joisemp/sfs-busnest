@@ -2484,8 +2484,33 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tickets = self.object.tickets.filter(org=self.request.user.profile.org).order_by('-created_at')[:10]
+        
+        # Get only non-deleted tickets for recent display
+        tickets = self.object.tickets.filter(
+            org=self.request.user.profile.org,
+            is_terminated=False
+        ).order_by('-created_at')[:10]
         context['recent_tickets'] = tickets
+        
+        # Calculate ticket statistics (only active/non-deleted tickets)
+        total_active_tickets = self.object.tickets.filter(
+            org=self.request.user.profile.org,
+            is_terminated=False
+        ).count()
+        context['total_active_tickets'] = total_active_tickets
+        
+        # Calculate total bus capacity
+        bus_records = self.object.bus_records.filter(
+            org=self.request.user.profile.org,
+            bus__isnull=False
+        )
+        total_capacity = sum(record.bus.capacity for record in bus_records if record.bus)
+        context['total_capacity'] = total_capacity
+        
+        # Calculate remaining capacity
+        remaining_capacity = total_capacity - total_active_tickets
+        context['remaining_capacity'] = remaining_capacity
+        
         return context
 
 
