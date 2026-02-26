@@ -2473,8 +2473,12 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
         slug_url_kwarg (str): The URL keyword argument for the slug.
     Methods:
         get_context_data(self, **kwargs):
-            Extends the context data with the 10 most recent tickets related to the registration,
-            filtered by the current user's organization.
+            Extends the context data with comprehensive ticket analytics including:
+            - Recent tickets and statistics
+            - Top pickup and drop points
+            - Route-wise distribution
+            - Ticket type breakdown (one-way vs two-way)
+            - Institution-wise distribution
     """
     template_name = 'central_admin/registration_detail.html'
     model = Registration
@@ -2511,41 +2515,115 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
         remaining_capacity = total_capacity - total_active_tickets
         context['remaining_capacity'] = remaining_capacity
         
-        # Prepare chart data - tickets created over the last 14 days
-        from datetime import datetime, timedelta
-        from django.db.models import Count
-        from django.db.models.functions import TruncDate
+        # Prepare comprehensive chart data for maximum insights
+        from django.db.models import Count, Q
         import json
         
-        end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=13)  # Last 14 days
-        
-        # Get ticket counts grouped by date
-        ticket_counts = self.object.tickets.filter(
+        # Get all active tickets for this registration
+        active_tickets = self.object.tickets.filter(
             org=self.request.user.profile.org,
-            is_terminated=False,
-            created_at__date__gte=start_date,
-            created_at__date__lte=end_date
+            is_terminated=False
+        )
+        
+        # 1. Top Pickup Points - Most popular pickup locations
+        top_pickup_points = active_tickets.filter(
+            pickup_point__isnull=False
+        ).values(
+            'pickup_point__name',
+            'pickup_point__route__name'
         ).annotate(
-            date=TruncDate('created_at')
-        ).values('date').annotate(
             count=Count('id')
-        ).order_by('date')
+        ).order_by('-count')[:10]  # Top 10 pickup points
         
-        # Create a dictionary for easy lookup
-        counts_dict = {item['date']: item['count'] for item in ticket_counts}
+        # 2. Top Drop Points - Most popular drop locations
+        top_drop_points = active_tickets.filter(
+            drop_point__isnull=False
+        ).values(
+            'drop_point__name',
+            'drop_point__route__name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]  # Top 10 drop points
         
-        # Generate labels and data for all 14 days
-        chart_labels = []
-        chart_data = []
+        # 3. Route-wise distribution
+        route_distribution = {}
         
-        for i in range(14):
-            date = start_date + timedelta(days=i)
-            chart_labels.append(date.strftime('%b %d'))
-            chart_data.append(counts_dict.get(date, 0))
+        # Count pickup routes
+        pickup_routes = active_tickets.filter(
+            pickup_point__route__isnull=False
+        ).values(
+            'pickup_point__route__name'
+        ).annotate(
+            count=Count('id')
+        )
         
-        context['chart_labels'] = json.dumps(chart_labels)
-        context['chart_data'] = json.dumps(chart_data)
+        for item in pickup_routes:
+            route_name = item['pickup_point__route__name']
+            if route_name not in route_distribution:
+                route_distribution[route_name] = {'pickup': 0, 'drop': 0}
+            route_distribution[route_name]['pickup'] = item['count']
+        
+        # Count drop routes
+        drop_routes = active_tickets.filter(
+            drop_point__route__isnull=False
+        ).values(
+            'drop_point__route__name'
+        ).annotate(
+            count=Count('id')
+        )
+        
+        for item in drop_routes:
+            route_name = item['drop_point__route__name']
+            if route_name not in route_distribution:
+                route_distribution[route_name] = {'pickup': 0, 'drop': 0}
+            route_distribution[route_name]['drop'] = item['count']
+        
+        # Sort routes by total usage (pickup + drop)
+        sorted_routes = sorted(
+            route_distribution.items(),
+            key=lambda x: x[1]['pickup'] + x[1]['drop'],
+            reverse=True
+        )[:8]  # Top 8 routes
+        
+        # 4. Ticket type distribution
+        ticket_type_stats = active_tickets.values('ticket_type').annotate(
+            count=Count('id')
+        )
+        ticket_types = {item['ticket_type']: item['count'] for item in ticket_type_stats}
+        
+        # 5. Institution-wise distribution (top 5)
+        institution_distribution = active_tickets.values(
+            'institution__name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        
+        # Prepare data for charts
+        context['stop_chart_data'] = json.dumps({
+            'pickup_stops': [f"{item['pickup_point__name']} ({item['pickup_point__route__name']})" for item in top_pickup_points],
+            'pickup_counts': [item['count'] for item in top_pickup_points],
+            'drop_stops': [f"{item['drop_point__name']} ({item['drop_point__route__name']})" for item in top_drop_points],
+            'drop_counts': [item['count'] for item in top_drop_points],
+        })
+        
+        context['route_chart_data'] = json.dumps({
+            'labels': [route[0] for route in sorted_routes],
+            'pickup': [route[1]['pickup'] for route in sorted_routes],
+            'drop': [route[1]['drop'] for route in sorted_routes],
+        })
+        
+        context['ticket_type_data'] = json.dumps({
+            'labels': ['One Way', 'Two Way'],
+            'values': [
+                ticket_types.get('one_way', 0),
+                ticket_types.get('two_way', 0)
+            ]
+        })
+        
+        context['institution_data'] = json.dumps({
+            'labels': [item['institution__name'] for item in institution_distribution],
+            'values': [item['count'] for item in institution_distribution],
+        })
         
         return context
 

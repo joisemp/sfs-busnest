@@ -13,18 +13,25 @@
 {% block content %}
 
 <section id="registration-dashobard">
-    <!-- Header Section -->
-    <div class="row mb-3">
+    <!-- Page Title Section -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="header-button-group">
-                <div class="back">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h1 class="h3 fw-bold text-slate-900 mb-2" style="color: #1e293b; letter-spacing: -0.02em;">
+                        {{ registration.name }}
+                    </h1>
+                    <p class="text-muted mb-0" style="font-size: 0.9375rem;">
+                        <i class="fa-solid fa-calendar-days me-2" style="color: #6366f1;"></i>
+                        {{ registration.start_date|date:"M d, Y" }} - {{ registration.end_date|date:"M d, Y" }}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
                     <a href="{% url 'central_admin:registration_list' %}">
                         <button type="button" class="btn btn-outline-dark btn-sm">
                             <i class="fa-solid fa-arrow-left me-2"></i>Go back
                         </button>
                     </a>
-                </div>
-                <div class="setting">
                     <a href="{% url 'central_admin:registration_update' registration_slug=registration.slug %}">
                         <button type="button" class="btn btn-sm">
                             <i class="fa-solid fa-gear me-2"></i>Settings
@@ -35,16 +42,88 @@
         </div>
     </div>
 
-    <!-- Chart Section -->
-    <div class="row mb-4">
-        <div class="col-12">
+    <!-- Analytics Dashboard Section -->
+    <div class="row mb-4 analytics-section">
+        <!-- Route Distribution Chart -->
+        <div class="col-12 col-xl-8 mb-4">
             <div class="card chart-card">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="fa-solid fa-chart-line me-2"></i>Registration Trends
+                    <h5 class="card-title">
+                        <i class="fa-solid fa-route"></i>Route-wise Ticket Distribution
                     </h5>
+                    <p class="text-muted small mb-3">
+                        Shows demand across different routes - helps optimize bus allocation
+                    </p>
                     <div class="chart-container">
-                        <canvas id="registrationChart"></canvas>
+                        <canvas id="routeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Type Distribution -->
+        <div class="col-12 col-xl-4 mb-4">
+            <div class="card chart-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fa-solid fa-ticket"></i>Ticket Types
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        One-way vs Two-way passengers
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="ticketTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Pickup Points -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="card chart-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fa-solid fa-location-dot"></i>Top Pickup Points
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        Most popular pickup locations
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="pickupStopsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Drop Points -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="card chart-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fa-solid fa-location-dot"></i>Top Drop Points
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        Most popular drop locations
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="dropStopsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Institution Distribution -->
+        <div class="col-12 mb-4">
+            <div class="card chart-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fa-solid fa-school"></i>Institution-wise Distribution
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        Top institutions by ticket count
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="institutionChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -95,11 +174,12 @@
                     <div class="card-body">
                         <h5 class="card-title">Manage Installment Dates</h5>
                         <div>
-                            <p class="text-muted">
+                            <p class="text-muted mb-3">
                                 Set up payment installment schedules with due dates to track student payments effectively.
                             </p>
-                            <a class="btn btn-secondary" href="{% url 'central_admin:installment_date_list' registration_slug=registration.slug %}">
-                                Manage Installments<i class="fa-solid fa-arrow-right ms-2"></i>
+                            <a href="{% url 'central_admin:installment_date_list' registration_slug=registration.slug %}" class="btn btn-secondary">
+                                Manage Installments
+                                <i class="fa-solid fa-arrow-right"></i>
                             </a>
                         </div>
                     </div>
@@ -165,84 +245,304 @@
 </section>
 
 <script>
-// Registration Chart
+// Comprehensive Analytics Dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('registrationChart').getContext('2d');
+    const stopChartData = {{ stop_chart_data|safe }};
+    const routeChartData = {{ route_chart_data|safe }};
+    const ticketTypeData = {{ ticket_type_data|safe }};
+    const institutionData = {{ institution_data|safe }};
     
-    const chartData = {
-        labels: {{ chart_labels|safe }},
-        datasets: [{
-            label: 'Active Tickets',
-            data: {{ chart_data|safe }},
-            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            borderColor: 'rgba(79, 70, 229, 1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: 'rgba(79, 70, 229, 1)',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
-        }]
-    };
-    
-    const config = {
-        type: 'line',
-        data: chartData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2.5,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: {
-                        size: 14
-                    },
-                    bodyFont: {
-                        size: 13
-                    },
-                    displayColors: false,
-                    callbacks: {
-                        label: function(context) {
-                            return 'Tickets: ' + context.parsed.y;
-                        }
+    // Common chart options
+    const commonBarOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                displayColors: false,
+                callbacks: {
+                    label: function(context) {
+                        return 'Tickets: ' + context.parsed.y;
                     }
                 }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0,
-                        font: {
-                            size: 11
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0,
+                    font: { size: 11 }
                 },
-                x: {
-                    ticks: {
-                        font: {
-                            size: 11
-                        }
-                    },
-                    grid: {
-                        display: false
-                    }
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                ticks: {
+                    font: { size: 10 },
+                    maxRotation: 45,
+                    minRotation: 45
+                },
+                grid: {
+                    display: false
                 }
             }
         }
     };
-    
-    new Chart(ctx, config);
+
+    // 1. Route Distribution Chart (Main insight)
+    if (routeChartData.labels.length > 0) {
+        const routeCtx = document.getElementById('routeChart').getContext('2d');
+        new Chart(routeCtx, {
+            type: 'bar',
+            data: {
+                labels: routeChartData.labels,
+                datasets: [
+                    {
+                        label: 'Pickups',
+                        data: routeChartData.pickup,
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Drops',
+                        data: routeChartData.drop,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2.5,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: { size: 12 },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' tickets';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Ticket Type Distribution (Doughnut)
+    if (ticketTypeData.values.some(v => v > 0)) {
+        const ticketTypeCtx = document.getElementById('ticketTypeChart').getContext('2d');
+        new Chart(ticketTypeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ticketTypeData.labels,
+                datasets: [{
+                    data: ticketTypeData.values,
+                    backgroundColor: [
+                        'rgba(79, 70, 229, 0.8)',
+                        'rgba(16, 185, 129, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(79, 70, 229, 1)',
+                        'rgba(16, 185, 129, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 12 },
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Top Pickup Points
+    if (stopChartData.pickup_stops.length > 0) {
+        const pickupCtx = document.getElementById('pickupStopsChart').getContext('2d');
+        new Chart(pickupCtx, {
+            type: 'bar',
+            data: {
+                labels: stopChartData.pickup_stops,
+                datasets: [{
+                    label: 'Pickups',
+                    data: stopChartData.pickup_counts,
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...commonBarOptions,
+                indexAxis: 'y',
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            font: { size: 10 }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Top Drop Points
+    if (stopChartData.drop_stops.length > 0) {
+        const dropCtx = document.getElementById('dropStopsChart').getContext('2d');
+        new Chart(dropCtx, {
+            type: 'bar',
+            data: {
+                labels: stopChartData.drop_stops,
+                datasets: [{
+                    label: 'Drops',
+                    data: stopChartData.drop_counts,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...commonBarOptions,
+                indexAxis: 'y',
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            font: { size: 10 }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 5. Institution Distribution
+    if (institutionData.labels.length > 0) {
+        const institutionCtx = document.getElementById('institutionChart').getContext('2d');
+        new Chart(institutionCtx, {
+            type: 'bar',
+            data: {
+                labels: institutionData.labels,
+                datasets: [{
+                    label: 'Tickets',
+                    data: institutionData.values,
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...commonBarOptions,
+                aspectRatio: 3,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Tickets: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock content %}
