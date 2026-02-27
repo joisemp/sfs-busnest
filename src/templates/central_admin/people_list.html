@@ -13,102 +13,190 @@
 
 <section id="people-list">
   
-  <div class="section-header">
+  <!-- Page Header -->
+  <div class="page-header-section">
     <div class="d-flex justify-content-between align-items-center">
       <div>
-        <h2>People</h2>
+        <h1 class="page-header">People Management</h1>
+        <p class="page-subtitle">Manage user accounts and roles across your organization</p>
       </div>
       <div>
-        <a href="{% url 'central_admin:people_create' %}" class="btn btn-primary">
-          <i class="fa-solid fa-plus me-md-2 me-0"></i><span class="d-none d-md-inline">Add People</span>
+        <a href="{% url 'central_admin:people_create' %}" class="btn-primary">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Add Person</span>
         </a>
       </div>
     </div>
   </div>
 
-  <!-- Filter Tabs -->
-  <section id="filter-tabs" class="mt-4 mb-3">
-    <ul class="nav nav-pills">
-      <li class="nav-item">
-        <a class="nav-link {% if not role_filter %}active{% endif %}" 
-           href="{% url 'central_admin:people_list' %}">
-          <i class="fa-solid fa-users me-2"></i>All
-          <span class="badge bg-light text-dark ms-1">{{ all_count }}</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if role_filter == 'central_admin' %}active{% endif %}" 
-           href="{% url 'central_admin:people_list' %}?role=central_admin">
-          <i class="fa-solid fa-user-shield me-2"></i>Central Admin
-          <span class="badge bg-light text-dark ms-1">{{ central_admin_count }}</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if role_filter == 'institution_admin' %}active{% endif %}" 
-           href="{% url 'central_admin:people_list' %}?role=institution_admin">
-          <i class="fa-solid fa-user-tie me-2"></i>Institution Admin
-          <span class="badge bg-light text-dark ms-1">{{ institution_admin_count }}</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if role_filter == 'driver' %}active{% endif %}" 
-           href="{% url 'central_admin:people_list' %}?role=driver">
-          <i class="fa-solid fa-id-card me-2"></i>Drivers
-          <span class="badge bg-light text-dark ms-1">{{ driver_count }}</span>
-        </a>
-      </li>
-    </ul>
-  </section>
-
-  <!-- Current User Warning Card -->
-  <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
-    <i class="fa-solid fa-user-shield me-3" style="font-size: 1.5rem;"></i>
-    <div>
-      <strong>Your Account</strong>
-      <p class="mb-0">{{ user.get_full_name|default:user.username }} ({{ user.profile.get_role_display }}) - You cannot edit or delete your own account from this list.</p>
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="stat-details">
+        <p class="stat-label">Total People</p>
+        <h3 class="stat-value">{{ all_count }}</h3>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <div class="stat-details">
+        <p class="stat-label">Central Admins</p>
+        <h3 class="stat-value">{{ central_admin_count }}</h3>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+        <i class="fa-solid fa-user-tie"></i>
+      </div>
+      <div class="stat-details">
+        <p class="stat-label">Institution Admins</p>
+        <h3 class="stat-value">{{ institution_admin_count }}</h3>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+      <div class="stat-details">
+        <p class="stat-label">Drivers</p>
+        <h3 class="stat-value">{{ driver_count }}</h3>
+      </div>
     </div>
   </div>
 
-  <!-- table -->
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <td class="text-muted">Name</td>
-          <th class="text-muted">Role</th>
-          <th class="text-muted">Experience</th>
-          <th class="text-muted">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for person in people %}
-        <tr>
-          <td>
-            <span class="fw-bold text-dark">{{person.first_name}} {{person.last_name}}</span>
-          </td>
-          <td>
-            <span class="badge bg-primary">{{ person.get_role_display }}</span>
-          </td>
-          <td>
-            {% if person.role == 'driver' and person.years_of_experience %}
-              {{ person.years_of_experience }} year{{ person.years_of_experience|pluralize }}
-            {% else %}
-              <span class="text-muted">N/A</span>
-            {% endif %}
-          </td>
-          <td class="table-link">
-            <a href="{% url 'central_admin:people_update' slug=person.slug %}" class="btn btn-sm btn-dark"><i class="fa-solid fa-pen-to-square me-1"></i>Edit</a>
-            <button type="button" 
-                    class="btn btn-sm btn-warning password-btn"
-                    onclick="openPasswordModal('{% url 'central_admin:generate_password' slug=person.slug %}')">
-              <i class="fa-solid fa-key me-1"></i>Password
-            </button>
-            <a href="{% url 'central_admin:people_delete' slug=person.slug %}" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <div class="filter-header">
+      <h3 class="filter-title">Filter by Role</h3>
+    </div>
+    <div class="filter-buttons">
+      <a href="{% url 'central_admin:people_list' %}" 
+         class="filter-btn {% if not role_filter %}active{% endif %}">
+        <i class="fa-solid fa-users"></i>
+        <span>All People</span>
+        <span class="filter-badge">{{ all_count }}</span>
+      </a>
+      <a href="{% url 'central_admin:people_list' %}?role=central_admin" 
+         class="filter-btn {% if role_filter == 'central_admin' %}active{% endif %}">
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Central Admin</span>
+        <span class="filter-badge">{{ central_admin_count }}</span>
+      </a>
+      <a href="{% url 'central_admin:people_list' %}?role=institution_admin" 
+         class="filter-btn {% if role_filter == 'institution_admin' %}active{% endif %}">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Institution Admin</span>
+        <span class="filter-badge">{{ institution_admin_count }}</span>
+      </a>
+      <a href="{% url 'central_admin:people_list' %}?role=driver" 
+         class="filter-btn {% if role_filter == 'driver' %}active{% endif %}">
+        <i class="fa-solid fa-id-card"></i>
+        <span>Drivers</span>
+        <span class="filter-badge">{{ driver_count }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Current User Info Card -->
+  <div class="info-card">
+    <div class="info-icon">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+    <div class="info-content">
+      <h4 class="info-title">Your Account</h4>
+      <p class="info-text">{{ user.get_full_name|default:user.username }} ({{ user.profile.get_role_display }}) - You cannot edit or delete your own account from this list.</p>
+    </div>
+  </div>
+
+  <!-- People List Card -->
+  <div class="people-list-card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fa-solid fa-users me-2"></i>
+        {% if role_filter == 'central_admin' %}Central Admin Users
+        {% elif role_filter == 'institution_admin' %}Institution Admin Users
+        {% elif role_filter == 'driver' %}Driver Users
+        {% else %}All Users{% endif %}
+      </h3>
+      <p class="card-subtitle">{{ people|length }} user{{ people|length|pluralize }} found</p>
+    </div>
+    
+    <div class="table-container">
+      <table class="people-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Experience</th>
+            <th class="actions-column">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for person in people %}
+          <tr>
+            <td>
+              <div class="user-info">
+                <div class="user-avatar">
+                  {{ person.first_name.0|upper }}{{ person.last_name.0|upper }}
+                </div>
+                <div class="user-details">
+                  <span class="user-name">{{ person.first_name }} {{ person.last_name }}</span>
+                  <span class="user-email">{{ person.user.email }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="role-badge role-{{ person.role }}">
+                {{ person.get_role_display }}
+              </span>
+            </td>
+            <td>
+              {% if person.role == 'driver' and person.years_of_experience %}
+                <span class="experience-text">{{ person.years_of_experience }} year{{ person.years_of_experience|pluralize }}</span>
+              {% else %}
+                <span class="text-muted">N/A</span>
+              {% endif %}
+            </td>
+            <td class="actions-column">
+              <div class="action-buttons">
+                <a href="{% url 'central_admin:people_update' slug=person.slug %}" 
+                   class="action-btn btn-edit" 
+                   title="Edit user">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <button type="button" 
+                        class="action-btn btn-password"
+                        onclick="openPasswordModal('{% url 'central_admin:generate_password' slug=person.slug %}')"
+                        title="Generate password">
+                  <i class="fa-solid fa-key"></i>
+                </button>
+                <a href="{% url 'central_admin:people_delete' slug=person.slug %}" 
+                   class="action-btn btn-delete"
+                   title="Delete user">
+                  <i class="fa-solid fa-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="empty-state">
+              <i class="fa-solid fa-users-slash"></i>
+              <p>No users found</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
