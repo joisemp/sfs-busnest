@@ -292,218 +292,339 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
-#institution-list {
-  padding: 1.5rem 0;
-  background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fc 100%);
-  min-height: 100vh;
-}
 @media screen and (max-width: 991px) {
+  #institution-list {
+    padding: 1.5rem 0;
+  }
+}
+@media screen and (max-width: 576px) {
   #institution-list {
     padding: 1rem 0;
   }
 }
-#institution-list .section-header h2 {
+#institution-list .page-header-section {
+  margin-bottom: 2rem;
+}
+#institution-list .page-header-section .page-header {
+  font-size: 2rem;
+  font-weight: 700;
   color: #0f172a;
-  font-size: 1.75rem;
-  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
 }
-@media screen and (max-width: 768px) {
-  #institution-list .section-header h2 {
-    font-size: 1.5rem;
-  }
+#institution-list .page-header-section .page-subtitle {
+  font-size: 1rem;
+  color: #334155;
+  font-weight: 400;
+  margin-bottom: 0;
 }
-#institution-list .section-header .text-muted {
-  font-size: 0.9375rem;
-}
-#institution-list .section-header .btn-primary {
+#institution-list .page-header-section .btn-primary {
   background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
   border: none;
-  font-weight: 600;
-  border-radius: 8px;
-  padding: 0.5rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 500;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
 }
-#institution-list .section-header .btn-primary:hover {
+#institution-list .page-header-section .btn-primary:hover {
   background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  color: white;
 }
-#institution-list .section-header .btn-primary:hover i {
+#institution-list .page-header-section .btn-primary:hover i {
   transform: translateX(3px);
 }
-#institution-list .section-header .btn-primary i {
+#institution-list .page-header-section .btn-primary i {
   transition: transform 0.3s ease;
 }
-@media screen and (max-width: 768px) {
-  #institution-list .section-header .btn-primary {
-    padding: 0.4rem 1rem;
-    font-size: 0.875rem;
-  }
+#institution-list .stats-section {
+  margin-bottom: 2rem;
 }
-#institution-list .search-section {
-  max-width: 600px;
-}
-#institution-list .search-section .search-input-group .input-group-text {
+#institution-list .stat-card {
   background: white;
-  border-right: none;
-  border-color: #e2e8f0;
-  border-radius: 8px 0 0 8px;
-  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  max-width: 400px;
 }
-#institution-list .search-section .search-input-group .form-control {
-  border-left: none;
-  border-color: #e2e8f0;
-  padding: 0.625rem 1rem;
+#institution-list .stat-card:hover {
+  border-color: #4f46e5;
+}
+#institution-list .stat-card .stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+#institution-list .stat-card .stat-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+#institution-list .stat-card .stat-details {
+  flex: 1;
+}
+#institution-list .stat-card .stat-label {
+  font-size: 0.875rem;
+  color: #334155;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+#institution-list .stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0;
+  line-height: 1;
+}
+#institution-list .search-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+#institution-list .search-card .search-header {
+  margin-bottom: 1rem;
+}
+#institution-list .search-card .search-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+#institution-list .search-card .search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+#institution-list .search-card .search-input-wrapper .search-icon {
+  position: absolute;
+  left: 1rem;
+  color: #94a3b8;
+  font-size: 1rem;
+  pointer-events: none;
+}
+#institution-list .search-card .search-input-wrapper .search-input {
+  flex: 1;
+  padding: 0.75rem 1rem 0.75rem 3rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   font-size: 0.9375rem;
+  color: #0f172a;
+  transition: all 0.2s ease;
 }
-#institution-list .search-section .search-input-group .form-control:focus {
+#institution-list .search-card .search-input-wrapper .search-input:focus {
+  outline: none;
   border-color: #4f46e5;
-  box-shadow: none;
 }
-#institution-list .search-section .search-input-group .form-control:focus + .input-group-text {
-  border-color: #4f46e5;
-}
-#institution-list .search-section .search-input-group .form-control::-moz-placeholder {
+#institution-list .search-card .search-input-wrapper .search-input::-moz-placeholder {
   color: #94a3b8;
 }
-#institution-list .search-section .search-input-group .form-control::placeholder {
+#institution-list .search-card .search-input-wrapper .search-input::placeholder {
   color: #94a3b8;
 }
-#institution-list .search-section .search-input-group .btn-dark {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+#institution-list .search-card .search-input-wrapper .clear-btn {
+  position: absolute;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+#institution-list .search-card .search-input-wrapper .clear-btn:hover {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #dc2626;
+}
+#institution-list .search-card .search-input-wrapper .clear-btn i {
+  font-size: 0.875rem;
+}
+#institution-list .search-card .search-input-wrapper .search-btn {
+  margin-left: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
   border: none;
-  border-radius: 0 8px 8px 0;
-  padding: 0.625rem 1.25rem;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
-#institution-list .search-section .search-input-group .btn-dark:hover {
-  background: linear-gradient(135deg, #0f172a 0%, #000 100%);
+#institution-list .search-card .search-input-wrapper .search-btn:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
 }
-#institution-list .search-section .search-input-group .clear-btn {
-  border-radius: 0 8px 8px 0;
-  border-left: none;
-  color: #475569;
+#institution-list .institutions-grid-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
 }
-#institution-list .search-section .search-input-group .clear-btn:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+#institution-list .institutions-grid-section .section-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
 }
-#institution-list .institutions-grid {
+#institution-list .institutions-grid-section .section-header .section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+#institution-list .institutions-grid-section .section-header .section-subtitle {
+  font-size: 0.875rem;
+  color: #334155;
+  margin-bottom: 0;
+}
+#institution-list .institutions-grid-section .institutions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1rem;
-}
-@media screen and (max-width: 991px) {
-  #institution-list .institutions-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
-@media screen and (max-width: 430px) {
-  #institution-list .institutions-grid {
-    grid-template-columns: 1fr;
-  }
+  padding: 1.5rem;
 }
 #institution-list .institution-card {
   background: white;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 #institution-list .institution-card:hover {
   border-color: #4f46e5;
 }
-#institution-list .institution-card .card-header {
-  padding: 1.5rem;
+#institution-list .institution-card .card-header-section {
+  padding: 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
   border-bottom: 1px solid #f1f5f9;
 }
-#institution-list .institution-card .card-header .institution-icon-wrapper .institution-icon {
+#institution-list .institution-card .card-header-section .institution-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
   border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
 }
-#institution-list .institution-card .card-header .institution-icon-wrapper .institution-icon i {
-  color: white;
-  font-size: 1.25rem;
-}
-#institution-list .institution-card .card-header .institution-details {
+#institution-list .institution-card .card-header-section .institution-info {
   flex: 1;
   min-width: 0;
 }
-#institution-list .institution-card .card-header .institution-details .institution-name {
-  font-size: 1.0625rem;
+#institution-list .institution-card .card-header-section .institution-name {
+  font-size: 1rem;
   font-weight: 600;
   color: #0f172a;
-  margin: 0;
+  margin-bottom: 0.25rem;
   word-break: break-word;
 }
-#institution-list .institution-card .card-header .institution-details .institution-label {
+#institution-list .institution-card .card-header-section .institution-label {
   font-size: 0.8125rem;
-  color: #475569;
+  color: #334155;
+  margin-bottom: 0;
   word-break: break-word;
 }
-#institution-list .institution-card .card-body {
-  padding: 1.25rem 1.5rem;
+#institution-list .institution-card .card-body-section {
+  padding: 1.25rem;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 0.75rem;
 }
-#institution-list .institution-card .card-body .info-row {
+#institution-list .institution-card .card-body-section .info-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
-#institution-list .institution-card .card-body .info-row .info-icon {
-  color: #94a3b8;
+#institution-list .institution-card .card-body-section .info-row i {
   width: 16px;
   font-size: 0.875rem;
+  color: #94a3b8;
   flex-shrink: 0;
 }
-#institution-list .institution-card .card-body .info-row .info-text {
+#institution-list .institution-card .card-body-section .info-row span {
   font-size: 0.875rem;
   color: #334155;
   word-break: break-word;
 }
-#institution-list .institution-card .card-footer {
-  padding: 1rem 1.5rem;
+#institution-list .institution-card .card-actions {
+  padding: 1rem 1.25rem;
   background: #f8fafc;
   border-top: 1px solid #f1f5f9;
   display: flex;
   gap: 0.5rem;
 }
-#institution-list .institution-card .card-footer .btn {
-  font-weight: 600;
-  border-radius: 6px;
-  font-size: 0.8125rem;
-  transition: all 0.3s ease;
+#institution-list .institution-card .card-actions .action-btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
-#institution-list .institution-card .card-footer .btn i {
-  transition: transform 0.3s ease;
+#institution-list .institution-card .card-actions .action-btn i {
+  font-size: 0.875rem;
+  transition: transform 0.2s ease;
 }
-#institution-list .institution-card .card-footer .btn-dark {
+#institution-list .institution-card .card-actions .action-btn.btn-edit {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border: none;
-}
-#institution-list .institution-card .card-footer .btn-dark:hover {
-  background: linear-gradient(135deg, #0f172a 0%, #000 100%);
-}
-#institution-list .institution-card .card-footer .btn-dark:hover i {
-  transform: translateX(2px);
-}
-#institution-list .institution-card .card-footer .btn-outline-danger {
-  border-color: #dc2626;
-  color: #dc2626;
-}
-#institution-list .institution-card .card-footer .btn-outline-danger:hover {
-  background: #dc2626;
-  border-color: #dc2626;
   color: white;
 }
-#institution-list .institution-card .card-footer .btn-outline-danger:hover i {
+#institution-list .institution-card .card-actions .action-btn.btn-edit:hover {
+  background: linear-gradient(135deg, #0f172a 0%, #000 100%);
+}
+#institution-list .institution-card .card-actions .action-btn.btn-edit:hover i {
+  transform: translateX(2px);
+}
+#institution-list .institution-card .card-actions .action-btn.btn-delete {
+  background: white;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+}
+#institution-list .institution-card .card-actions .action-btn.btn-delete:hover {
+  background: #dc2626;
+  color: white;
+}
+#institution-list .institution-card .card-actions .action-btn.btn-delete:hover i {
   transform: scale(1.1);
 }
 #institution-list .empty-state {
@@ -511,8 +632,9 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 4rem 2rem;
+  text-align: center;
 }
-#institution-list .empty-state .empty-icon-wrapper {
+#institution-list .empty-state .empty-icon {
   width: 80px;
   height: 80px;
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
@@ -522,25 +644,36 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   justify-content: center;
   margin-bottom: 1.5rem;
 }
-#institution-list .empty-state .empty-icon-wrapper i {
+#institution-list .empty-state .empty-icon i {
   font-size: 2rem;
   color: #94a3b8;
 }
-#institution-list .empty-state h4 {
+#institution-list .empty-state .empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #0f172a;
+  margin-bottom: 0.75rem;
 }
-#institution-list .empty-state .text-muted {
+#institution-list .empty-state .empty-text {
+  font-size: 0.9375rem;
+  color: #334155;
   max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
 }
 #institution-list .empty-state .btn-primary {
   background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
   border: none;
-  font-weight: 600;
-  border-radius: 8px;
-  padding: 0.625rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 500;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
 }
 #institution-list .empty-state .btn-primary:hover {
   background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
@@ -550,4 +683,193 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
 }
 #institution-list .empty-state .btn-primary i {
   transition: transform 0.3s ease;
+}
+@media screen and (max-width: 991px) {
+  #institution-list .page-header-section {
+    margin-bottom: 1.5rem;
+  }
+  #institution-list .page-header-section .page-header {
+    font-size: 1.5rem;
+  }
+  #institution-list .page-header-section .page-subtitle {
+    font-size: 0.875rem;
+  }
+  #institution-list .page-header-section .btn-primary {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  #institution-list .stat-card {
+    padding: 1.25rem;
+  }
+  #institution-list .stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+  #institution-list .stat-card .stat-icon i {
+    font-size: 1.25rem;
+  }
+  #institution-list .stat-card .stat-label {
+    font-size: 0.8125rem;
+  }
+  #institution-list .stat-card .stat-value {
+    font-size: 1.5rem;
+  }
+  #institution-list .search-card {
+    padding: 1.25rem;
+  }
+  #institution-list .search-card .search-title {
+    font-size: 1rem;
+  }
+  #institution-list .institutions-grid-section .section-header {
+    padding: 1.25rem;
+  }
+  #institution-list .institutions-grid-section .section-header .section-title {
+    font-size: 1rem;
+  }
+  #institution-list .institutions-grid-section .institutions-grid {
+    padding: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+@media screen and (max-width: 768px) {
+  #institution-list .page-header-section .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  #institution-list .page-header-section .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+  #institution-list .stat-card {
+    max-width: 100%;
+  }
+  #institution-list .search-card .search-input-wrapper .search-btn span {
+    display: none;
+  }
+  #institution-list .search-card .search-input-wrapper .search-btn {
+    padding: 0.75rem 1rem;
+  }
+  #institution-list .institution-card .card-actions .action-btn {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+@media screen and (max-width: 576px) {
+  #institution-list .page-header-section {
+    margin-bottom: 1rem;
+  }
+  #institution-list .stats-section {
+    margin-bottom: 1.5rem;
+  }
+  #institution-list .stat-card {
+    padding: 1rem;
+  }
+  #institution-list .stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+  #institution-list .stat-card .stat-icon i {
+    font-size: 1.125rem;
+  }
+  #institution-list .stat-card .stat-label {
+    font-size: 0.75rem;
+  }
+  #institution-list .stat-card .stat-value {
+    font-size: 1.25rem;
+  }
+  #institution-list .search-card {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  #institution-list .search-card .search-header {
+    margin-bottom: 0.75rem;
+  }
+  #institution-list .search-card .search-title {
+    font-size: 0.9375rem;
+  }
+  #institution-list .search-card .search-title i {
+    font-size: 0.875rem;
+  }
+  #institution-list .search-card .search-input-wrapper .search-input {
+    font-size: 0.875rem;
+    padding: 0.625rem 1rem 0.625rem 2.75rem;
+  }
+  #institution-list .search-card .search-input-wrapper .search-icon {
+    left: 0.875rem;
+    font-size: 0.875rem;
+  }
+  #institution-list .search-card .search-input-wrapper .search-btn {
+    padding: 0.625rem 0.875rem;
+  }
+  #institution-list .search-card .search-input-wrapper .search-btn i {
+    font-size: 0.875rem;
+  }
+  #institution-list .search-card .search-input-wrapper .clear-btn {
+    width: 28px;
+    height: 28px;
+  }
+  #institution-list .institutions-grid-section .section-header {
+    padding: 1rem;
+  }
+  #institution-list .institutions-grid-section .section-header .section-title {
+    font-size: 0.9375rem;
+  }
+  #institution-list .institutions-grid-section .section-header .section-title i {
+    font-size: 0.875rem;
+  }
+  #institution-list .institutions-grid-section .section-header .section-subtitle {
+    font-size: 0.8125rem;
+  }
+  #institution-list .institutions-grid-section .institutions-grid {
+    padding: 1rem;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+  #institution-list .institution-card .card-header-section {
+    padding: 1rem;
+  }
+  #institution-list .institution-card .card-header-section .institution-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 0.75rem;
+  }
+  #institution-list .institution-card .card-header-section .institution-name {
+    font-size: 0.9375rem;
+  }
+  #institution-list .institution-card .card-header-section .institution-label {
+    font-size: 0.75rem;
+  }
+  #institution-list .institution-card .card-body-section {
+    padding: 1rem;
+  }
+  #institution-list .institution-card .card-body-section .info-row {
+    font-size: 0.8125rem;
+  }
+  #institution-list .institution-card .card-actions {
+    padding: 0.875rem 1rem;
+  }
+  #institution-list .institution-card .card-actions .action-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  #institution-list .institution-card .card-actions .action-btn span {
+    display: none;
+  }
+  #institution-list .empty-state {
+    padding: 3rem 1rem;
+  }
+  #institution-list .empty-state .empty-icon {
+    width: 64px;
+    height: 64px;
+  }
+  #institution-list .empty-state .empty-icon i {
+    font-size: 1.5rem;
+  }
+  #institution-list .empty-state .empty-title {
+    font-size: 1.125rem;
+  }
+  #institution-list .empty-state .empty-text {
+    font-size: 0.875rem;
+  }
 }/*# sourceMappingURL=style.css.map */
