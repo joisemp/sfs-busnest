@@ -29,6 +29,7 @@ from urllib.parse import urlencode
 from django.template.loader import render_to_string
 from django.utils.dateparse import parse_date
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import FileResponse
@@ -507,15 +508,45 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         
         if refueling_records.exists():
             # Calculate mileage (km per liter)
+            # Correct formula: For each refueling, calculate (current odometer - previous odometer) / previous fuel amount
+            # Then average all these mileage values
             if refueling_records.count() >= 2:
-                first_record = refueling_records.first()
-                total_distance = latest_record.odometer_reading - first_record.odometer_reading
-                total_fuel = refueling_records.exclude(id=first_record.id).aggregate(
-                    total=Sum('fuel_amount')
-                )['total'] or 0
+                refueling_list = list(refueling_records.values('id', 'refuel_date', 'odometer_reading', 'fuel_amount'))
                 
-                if total_fuel > 0 and total_distance > 0:
-                    mileage = round(total_distance / float(total_fuel), 2)
+                mileage_calculations = []
+                intervals = []
+                
+                for i in range(1, len(refueling_list)):
+                    previous = refueling_list[i-1]
+                    current = refueling_list[i]
+                    
+                    distance = current['odometer_reading'] - previous['odometer_reading']
+                    fuel_used = previous['fuel_amount']  # Fuel from previous refueling
+                    
+                    if fuel_used > 0 and distance > 0:
+                        interval_mileage = distance / float(fuel_used)
+                        mileage_calculations.append(interval_mileage)
+                        
+                        intervals.append({
+                            'from_date': previous['refuel_date'],
+                            'to_date': current['refuel_date'],
+                            'from_odometer': previous['odometer_reading'],
+                            'to_odometer': current['odometer_reading'],
+                            'distance': distance,
+                            'fuel_used': fuel_used,
+                            'mileage': round(interval_mileage, 2)
+                        })
+                
+                if mileage_calculations:
+                    mileage = round(sum(mileage_calculations) / len(mileage_calculations), 2)
+                    
+                    # Pass calculation details for modal
+                    context['mileage_calculation'] = {
+                        'intervals': intervals,
+                        'num_intervals': len(intervals),
+                        'total_refuelings': refueling_records.count(),
+                        'mileage': mileage
+                    }
             
             # Get refueling statistics
             stats = refueling_records.aggregate(
@@ -535,7 +566,7 @@ class BusDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DetailView)
         trip_records = TripRecord.objects.filter(
             bus=bus,
             org=self.request.user.profile.org
-        ).select_related('trip', 'recorded_by').order_by('-record_date', '-created_at')[:5]
+        ).select_related('bus', 'recorded_by').order_by('-record_date', '-created_at')[:5]
         context['recent_trip_records'] = trip_records
         
         return context
@@ -682,7 +713,7 @@ class CentralAdminTripRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessM
             return TripRecord.objects.filter(
                 bus=bus,
                 org=self.request.user.profile.org
-            ).select_related('trip', 'bus', 'recorded_by').order_by('-record_date', '-created_at')
+            ).select_related('bus', 'recorded_by').order_by('-record_date', '-created_at')
         return TripRecord.objects.filter(org=self.request.user.profile.org).order_by('-record_date', '-created_at')
     
     def get_context_data(self, **kwargs):
@@ -1795,9 +1826,11 @@ class PeopleCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, CreateVi
     @transaction.atomic
     def form_valid(self, form):
         try:
+            User = get_user_model()
             userprofile = form.save(commit=False)
 
-            random_password = BaseUserManager().make_random_password()
+            # Generate a random password (12 characters with letters and digits)
+            random_password = get_random_string(length=12)
 
             user = User.objects.create_user(
                 email=form.cleaned_data.get('email'),
@@ -1887,6 +1920,116 @@ class PeopleDeleteView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, DeleteVi
     model = UserProfile
     template_name = 'central_admin/people_confirm_delete.html'
     success_url = reverse_lazy('central_admin:people_list')
+
+
+class GeneratePasswordView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View for generating a new password for a user in the central admin interface with HTMX support.
+
+    Inherits from:
+        - LoginRequiredMixin: Ensures the user is authenticated.
+        - CentralAdminOnlyAccessMixin: Restricts access to central admin users only.
+        - View: Base view for both GET and POST requests.
+
+    Methods:
+        get(request, slug):
+            Returns the modal content HTML for confirming password generation.
+            Used by HTMX to dynamically load modal content.
+
+        post(request, slug):
+            Generates a new random password for the user and displays it to the admin.
+            Returns HTML response for HTMX with the generated password.
+
+    Template:
+        central_admin/partials/generate_password_modal.html (for GET requests)
+
+    HTMX Response:
+        Returns a success message div with the generated password and copy button.
+    """
+
+    def get(self, request, slug):
+        """
+        Returns modal content for password generation confirmation.
+        """
+        profile = get_object_or_404(UserProfile, slug=slug, org=request.user.profile.org)
+        
+        # Prevent admin from seeing modal for their own account
+        if request.user == profile.user:
+            return HttpResponse(
+                '<div class="alert alert-danger">You cannot generate a password for your own account.</div>',
+                content_type='text/html'
+            )
+        
+        return render(request, 'central_admin/partials/generate_password_modal.html', {
+            'profile': profile
+        })
+
+    def post(self, request, slug):
+        """
+        Handles the password generation process.
+        Generates a random password for the user.
+        """
+        profile = get_object_or_404(UserProfile, slug=slug, org=request.user.profile.org)
+        user = profile.user
+
+        # Prevent admin from resetting their own password
+        if request.user == user:
+            return HttpResponse(
+                '<div class="alert alert-danger">You cannot generate a password for your own account.</div>',
+                content_type='text/html'
+            )
+
+        # Generate a random password (12 characters)
+        random_password = get_random_string(length=12)
+        user.set_password(random_password)
+        user.save()
+
+        # Log the activity
+        log_user_activity(
+            request.user,
+            f"Generated new password for {profile.first_name} {profile.last_name}",
+            f"A new password was generated for {user.email}."
+        )
+
+        # Return HTMX-friendly success message with password
+        success_html = f'''
+        <div class="modal-body">
+            <div class="alert alert-success">
+                <i class="fa-solid fa-check-circle me-2"></i>
+                <strong>Success!</strong> Password has been generated for {profile.first_name} {profile.last_name}.
+            </div>
+            
+            <div class="password-display-box mb-3">
+                <h6 class="text-muted mb-2">Generated Password:</h6>
+                <div class="password-container">
+                    <input type="text" 
+                           id="generatedPassword" 
+                           class="form-control" 
+                           value="{random_password}" 
+                           readonly 
+                           onclick="this.select()">
+                    <button type="button" 
+                            class="btn btn-primary copy-btn" 
+                            onclick="copyPassword()"
+                            title="Copy to clipboard">
+                        <i class="fa-solid fa-copy me-1"></i>Copy
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Share this password with the user <strong>{user.email}</strong>.
+                </small>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="closeModalAndReload()">
+                <i class="fa-solid fa-check me-2"></i>Done
+            </button>
+        </div>
+        '''
+        
+        return HttpResponse(success_html, content_type='text/html')
 
 
 class RouteListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListView):
@@ -2330,8 +2473,12 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
         slug_url_kwarg (str): The URL keyword argument for the slug.
     Methods:
         get_context_data(self, **kwargs):
-            Extends the context data with the 10 most recent tickets related to the registration,
-            filtered by the current user's organization.
+            Extends the context data with comprehensive ticket analytics including:
+            - Recent tickets and statistics
+            - Top pickup and drop points
+            - Route-wise distribution
+            - Ticket type breakdown (one-way vs two-way)
+            - Institution-wise distribution
     """
     template_name = 'central_admin/registration_detail.html'
     model = Registration
@@ -2341,8 +2488,143 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tickets = self.object.tickets.filter(org=self.request.user.profile.org).order_by('-created_at')[:10]
+        
+        # Get only non-deleted tickets for recent display
+        tickets = self.object.tickets.filter(
+            org=self.request.user.profile.org,
+            is_terminated=False
+        ).order_by('-created_at')[:10]
         context['recent_tickets'] = tickets
+        
+        # Calculate ticket statistics (only active/non-deleted tickets)
+        total_active_tickets = self.object.tickets.filter(
+            org=self.request.user.profile.org,
+            is_terminated=False
+        ).count()
+        context['total_active_tickets'] = total_active_tickets
+        
+        # Calculate total bus capacity
+        bus_records = self.object.bus_records.filter(
+            org=self.request.user.profile.org,
+            bus__isnull=False
+        )
+        total_capacity = sum(record.bus.capacity for record in bus_records if record.bus)
+        context['total_capacity'] = total_capacity
+        
+        # Calculate remaining capacity
+        remaining_capacity = total_capacity - total_active_tickets
+        context['remaining_capacity'] = remaining_capacity
+        
+        # Prepare comprehensive chart data for maximum insights
+        from django.db.models import Count, Q
+        import json
+        
+        # Get all active tickets for this registration
+        active_tickets = self.object.tickets.filter(
+            org=self.request.user.profile.org,
+            is_terminated=False
+        )
+        
+        # 1. Top Pickup Points - Most popular pickup locations
+        top_pickup_points = active_tickets.filter(
+            pickup_point__isnull=False
+        ).values(
+            'pickup_point__name',
+            'pickup_point__route__name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]  # Top 10 pickup points
+        
+        # 2. Top Drop Points - Most popular drop locations
+        top_drop_points = active_tickets.filter(
+            drop_point__isnull=False
+        ).values(
+            'drop_point__name',
+            'drop_point__route__name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]  # Top 10 drop points
+        
+        # 3. Route-wise distribution
+        route_distribution = {}
+        
+        # Count pickup routes
+        pickup_routes = active_tickets.filter(
+            pickup_point__route__isnull=False
+        ).values(
+            'pickup_point__route__name'
+        ).annotate(
+            count=Count('id')
+        )
+        
+        for item in pickup_routes:
+            route_name = item['pickup_point__route__name']
+            if route_name not in route_distribution:
+                route_distribution[route_name] = {'pickup': 0, 'drop': 0}
+            route_distribution[route_name]['pickup'] = item['count']
+        
+        # Count drop routes
+        drop_routes = active_tickets.filter(
+            drop_point__route__isnull=False
+        ).values(
+            'drop_point__route__name'
+        ).annotate(
+            count=Count('id')
+        )
+        
+        for item in drop_routes:
+            route_name = item['drop_point__route__name']
+            if route_name not in route_distribution:
+                route_distribution[route_name] = {'pickup': 0, 'drop': 0}
+            route_distribution[route_name]['drop'] = item['count']
+        
+        # Sort routes by total usage (pickup + drop)
+        sorted_routes = sorted(
+            route_distribution.items(),
+            key=lambda x: x[1]['pickup'] + x[1]['drop'],
+            reverse=True
+        )[:8]  # Top 8 routes
+        
+        # 4. Ticket type distribution
+        ticket_type_stats = active_tickets.values('ticket_type').annotate(
+            count=Count('id')
+        )
+        ticket_types = {item['ticket_type']: item['count'] for item in ticket_type_stats}
+        
+        # 5. Institution-wise distribution (top 5)
+        institution_distribution = active_tickets.values(
+            'institution__name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        
+        # Prepare data for charts
+        context['stop_chart_data'] = json.dumps({
+            'pickup_stops': [f"{item['pickup_point__name']} ({item['pickup_point__route__name']})" for item in top_pickup_points],
+            'pickup_counts': [item['count'] for item in top_pickup_points],
+            'drop_stops': [f"{item['drop_point__name']} ({item['drop_point__route__name']})" for item in top_drop_points],
+            'drop_counts': [item['count'] for item in top_drop_points],
+        })
+        
+        context['route_chart_data'] = json.dumps({
+            'labels': [route[0] for route in sorted_routes],
+            'pickup': [route[1]['pickup'] for route in sorted_routes],
+            'drop': [route[1]['drop'] for route in sorted_routes],
+        })
+        
+        context['ticket_type_data'] = json.dumps({
+            'labels': ['One Way', 'Two Way'],
+            'values': [
+                ticket_types.get('one_way', 0),
+                ticket_types.get('two_way', 0)
+            ]
+        })
+        
+        context['institution_data'] = json.dumps({
+            'labels': [item['institution__name'] for item in institution_distribution],
+            'values': [item['count'] for item in institution_distribution],
+        })
+        
         return context
 
 
@@ -2928,6 +3210,9 @@ class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, C
         template_name (str): The template used for rendering the form.
         form_class (ScheduleGroupForm): The form class used for input validation and rendering.
     Methods:
+        get_form(form_class=None):
+            Filters the pick_up_schedule and drop_schedule querysets to only show schedules
+            from the current registration.
         form_valid(form):
             Associates the new ScheduleGroup with the Registration specified by the 'registration_slug' URL parameter,
             saves the instance, and proceeds with the default form_valid behavior.
@@ -2939,6 +3224,13 @@ class ScheduleGroupCreateView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, C
     model = ScheduleGroup
     template_name = 'central_admin/schedule_group_create.html'
     form_class = ScheduleGroupForm
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        registration = Registration.objects.get(slug=self.kwargs["registration_slug"])
+        form.fields['pick_up_schedule'].queryset = Schedule.objects.filter(registration=registration)
+        form.fields['drop_schedule'].queryset = Schedule.objects.filter(registration=registration)
+        return form
     
     def form_valid(self, form):
         schedule_group = form.save(commit=False)

@@ -5,6 +5,15 @@
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'styles/driver/refueling_list/style.css' %}">
+<style>
+  .htmx-indicator {
+    display: none;
+  }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator {
+    display: inline-block;
+  }
+</style>
 {% endblock %}
 
 
@@ -48,7 +57,7 @@
     </button>
   </div>
   
-  <section id="card-list" class="mb-5">
+  <section id="card-list" class="mb-5 mt-3">
     {% if trip_records %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-2">
       {% for record in trip_records %}
@@ -57,40 +66,24 @@
           <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
               <h5 class="mb-0 fw-bold">{{ record.record_date|date:"d M Y" }}</h5>
+              <span class="badge bg-{% if record.trip_type == 'pickup' %}primary{% else %}success{% endif %}">
+                {{ record.get_trip_type_display }}
+              </span>
             </div>
-            
-            {% if record.trip %}
-            <div class="mb-3">
-              <div class="fw-semibold">{{ record.trip.schedule.name }}</div>
-              <small class="text-muted">{{ record.trip.route.name }}</small>
-            </div>
-            {% else %}
-            <div class="mb-3">
-              <span class="badge bg-light text-dark border">General</span>
-            </div>
-            {% endif %}
             
             <div class="row g-3 small">
               <div class="col-6">
-                <div class="text-muted mb-1">Pickup</div>
-                <div>{{ record.actual_pickup_time|time:"h:i A"|default:"—" }}</div>
+                <div class="text-muted mb-1">Time</div>
+                <div>{{ record.actual_time|time:"h:i A" }}</div>
               </div>
               <div class="col-6">
-                <div class="text-muted mb-1">Drop</div>
-                <div>{{ record.actual_drop_time|time:"h:i A"|default:"—" }}</div>
-              </div>
-              <div class="col-6">
-                <div class="text-muted mb-1">Picked</div>
-                <div>{{ record.students_picked|default:"—" }}</div>
-              </div>
-              <div class="col-6">
-                <div class="text-muted mb-1">Dropped</div>
-                <div>{{ record.students_dropped|default:"—" }}</div>
-              </div>
-              {% if record.odometer_reading %}
-              <div class="col-12 pt-2 border-top">
                 <div class="text-muted mb-1">Odometer</div>
                 <div>{{ record.odometer_reading }} km</div>
+              </div>
+              {% if record.trip_type == 'drop' %}
+              <div class="col-12">
+                <div class="text-muted mb-1">Distance Covered</div>
+                <div><strong class="text-primary">{{ record.distance_covered|default:"N/A" }} km</strong></div>
               </div>
               {% endif %}
             </div>
@@ -117,17 +110,16 @@
                       {{ record.record_date|date:"d M Y" }}
                     </div>
                   </div>
-                  {% if record.trip %}
                   <div class="row mb-3">
                     <div class="col-6">
-                      <strong>Trip:</strong>
+                      <strong>Trip Type:</strong>
                     </div>
                     <div class="col-6">
-                      {{ record.trip.schedule.name }}<br>
-                      <small class="text-muted">{{ record.trip.route.name }}</small>
+                      <span class="badge bg-{% if record.trip_type == 'pickup' %}primary{% else %}success{% endif %}">
+                        {{ record.get_trip_type_display }}
+                      </span>
                     </div>
                   </div>
-                  {% endif %}
                   <div class="row mb-3">
                     <div class="col-6">
                       <strong>Bus:</strong>
@@ -138,34 +130,10 @@
                   </div>
                   <div class="row mb-3">
                     <div class="col-6">
-                      <strong>Actual Pickup Time:</strong>
+                      <strong>Trip Start Time:</strong>
                     </div>
                     <div class="col-6">
-                      {{ record.actual_pickup_time|time:"h:i A"|default:"Not recorded" }}
-                    </div>
-                  </div>
-                  <div class="row mb-3">
-                    <div class="col-6">
-                      <strong>Actual Drop Time:</strong>
-                    </div>
-                    <div class="col-6">
-                      {{ record.actual_drop_time|time:"h:i A"|default:"Not recorded" }}
-                    </div>
-                  </div>
-                  <div class="row mb-3">
-                    <div class="col-6">
-                      <strong>Students Picked:</strong>
-                    </div>
-                    <div class="col-6">
-                      {{ record.students_picked|default:"Not recorded" }}
-                    </div>
-                  </div>
-                  <div class="row mb-3">
-                    <div class="col-6">
-                      <strong>Students Dropped:</strong>
-                    </div>
-                    <div class="col-6">
-                      {{ record.students_dropped|default:"Not recorded" }}
+                      {{ record.actual_time|time:"h:i A" }}
                     </div>
                   </div>
                   <div class="row mb-3">
@@ -173,9 +141,19 @@
                       <strong>Odometer Reading:</strong>
                     </div>
                     <div class="col-6">
-                      {{ record.odometer_reading|default:"Not recorded" }} {% if record.odometer_reading %}km{% endif %}
+                      {{ record.odometer_reading }} km
                     </div>
                   </div>
+                  {% if record.trip_type == 'drop' %}
+                  <div class="row mb-3">
+                    <div class="col-6">
+                      <strong>Distance Covered:</strong>
+                    </div>
+                    <div class="col-6">
+                      <strong class="text-primary">{{ record.distance_covered|default:"N/A" }} km</strong>
+                    </div>
+                  </div>
+                  {% endif %}
                   {% if record.notes %}
                   <div class="row mb-3">
                     <div class="col-12">
@@ -250,7 +228,12 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form method="post" action="{% url 'drivers:trip_record_create' %}">
+      <form method="post" 
+            action="{% url 'drivers:trip_record_create' %}"
+            hx-post="{% url 'drivers:trip_record_create' %}"
+            hx-target="#trip-form-errors"
+            hx-swap="innerHTML"
+            hx-indicator=".htmx-indicator">
         {% csrf_token %}
         <div class="modal-body">
           <div class="alert alert-info mb-3">
@@ -259,99 +242,54 @@
             {% if active_registration %}
             | <strong>Registration:</strong> {{ active_registration.name }}
             {% endif %}
+            <br>
+            <small class="text-muted">Date and time will be recorded automatically when you submit</small>
           </div>
           
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.record_date.id_for_label }}" class="form-label">
-                {{ form.record_date.label }} <span class="text-danger">*</span>
-              </label>
-              {{ form.record_date }}
-              {% if form.record_date.errors %}
-              <div class="invalid-feedback d-block">{{ form.record_date.errors }}</div>
-              {% endif %}
-            </div>
-            
-            <div class="col-md-6 mb-3">
-              <label for="trip" class="form-label">
-                Select Trip (Optional)
-              </label>
-              <select name="trip" id="trip" class="form-select">
-                <option value="">Not specific to a trip</option>
-                {% for trip in trips %}
-                <option value="{{ trip.id }}">{{ trip.schedule.name }} - {{ trip.route.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.actual_pickup_time.id_for_label }}" class="form-label">
-                {{ form.actual_pickup_time.label }}
-              </label>
-              {{ form.actual_pickup_time }}
-              {% if form.actual_pickup_time.errors %}
-              <div class="invalid-feedback d-block">{{ form.actual_pickup_time.errors }}</div>
-              {% endif %}
-            </div>
-            
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.actual_drop_time.id_for_label }}" class="form-label">
-                {{ form.actual_drop_time.label }}
-              </label>
-              {{ form.actual_drop_time }}
-              {% if form.actual_drop_time.errors %}
-              <div class="invalid-feedback d-block">{{ form.actual_drop_time.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.students_picked.id_for_label }}" class="form-label">
-                {{ form.students_picked.label }}
-              </label>
-              {{ form.students_picked }}
-              {% if form.students_picked.errors %}
-              <div class="invalid-feedback d-block">{{ form.students_picked.errors }}</div>
-              {% endif %}
-            </div>
-            
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.students_dropped.id_for_label }}" class="form-label">
-                {{ form.students_dropped.label }}
-              </label>
-              {{ form.students_dropped }}
-              {% if form.students_dropped.errors %}
-              <div class="invalid-feedback d-block">{{ form.students_dropped.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
+          <div id="trip-form-errors"></div>
           
           <div class="mb-3">
-            <label for="{{ form.odometer_reading.id_for_label }}" class="form-label">
-              {{ form.odometer_reading.label }}
+            <label for="{{ form.trip_type.id_for_label }}" class="form-label">
+              {{ form.trip_type.label }} <span class="text-danger">*</span>
             </label>
-            {{ form.odometer_reading }}
-            {% if form.odometer_reading.errors %}
-            <div class="invalid-feedback d-block">{{ form.odometer_reading.errors }}</div>
+            {{ form.trip_type }}
+            {% if form.trip_type.errors %}
+            <div class="invalid-feedback d-block">{{ form.trip_type.errors }}</div>
             {% endif %}
+            <small class="form-text text-muted">Pickup = Start of work | Drop = End of work</small>
           </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.odometer_reading.id_for_label }}" class="form-label">
+                {{ form.odometer_reading.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.odometer_reading }}
+              {% if form.odometer_reading.errors %}
+              <div class="invalid-feedback d-block">{{ form.odometer_reading.errors }}</div>
+              {% endif %}
+              <small class="form-text text-muted">Enter current odometer reading from dashboard</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.notes.id_for_label }}" class="form-label">
+                {{ form.notes.label }}
+              </label>
+              {{ form.notes }}
+              {% if form.notes.errors %}
+              <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+              {% endif %}
+            </div>
           
-          <div class="mb-3">
-            <label for="{{ form.notes.id_for_label }}" class="form-label">
-              {{ form.notes.label }}
-            </label>
-            {{ form.notes }}
-            {% if form.notes.errors %}
-            <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
-            {% endif %}
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
           </div>
+          {% endif %}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">
+            <span class="htmx-indicator spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             <i class="fa-solid fa-save me-2"></i>Save Record
           </button>
         </div>

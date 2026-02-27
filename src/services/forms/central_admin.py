@@ -35,7 +35,7 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for creating a user profile in the central admin interface.
     Validates that the email is unique among all users.
-    Requires a role to be selected (central admin, institution admin, or driver).
+    Requires a role to be selected (central admin, institution admin, driver, or mechanic).
     Fields: email, first_name, last_name, role, years_of_experience
     """
     email = forms.EmailField(required=True)
@@ -46,6 +46,13 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Filter role choices to exclude 'student' - central admins can't create students
+        self.fields['role'].choices = [
+            (UserProfile.CENTRAL_ADMIN, 'Central Admin'),
+            (UserProfile.INSTITUTION_ADMIN, 'Institution Admin'),
+            (UserProfile.DRIVER, 'Driver'),
+            (UserProfile.MECHANIC, 'Mechanic'),
+        ]
         # Make years_of_experience not required by default
         self.fields['years_of_experience'].required = False
         self.fields['years_of_experience'].widget.attrs.update({
@@ -79,7 +86,7 @@ class PeopleCreateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
 class PeopleUpdateForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
     """
     Form for updating a user profile in the central admin interface.
-    Requires a role to be selected (central admin, institution admin, or driver).
+    Requires a role to be selected (central admin, institution admin, driver, or mechanic).
     Fields: first_name, last_name, role, years_of_experience
     """
     class Meta:

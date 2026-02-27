@@ -137,6 +137,12 @@
                                 <p>Drop Location Map : <a href="{{bus_request.drop_location_map_link}}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-map-location-dot"></i> View Map</a></p>
                                 <p>Contact No : {{bus_request.contact_no}}</p>
                                 <p>Contact Email : {{bus_request.contact_email}}</p>
+                                {% if bus_request.note %}
+                                <div class="alert alert-info">
+                                    <strong>Note:</strong>
+                                    <p class="mb-0">{{ bus_request.note }}</p>
+                                </div>
+                                {% endif %}
                                 <div class="comment-section" id="comment-section-{{bus_request.id}}">
                                     {% if bus_request.comments.all %}
                                     <h5>Comments</h5>

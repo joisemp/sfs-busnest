@@ -76,7 +76,7 @@ class BusRequest(models.Model):
     """
     Represents a student bus request.
     Fields:
-        org, institution, registration, receipt, student_group, student_name, pickup_address, drop_address, contact_no, contact_email, status, created_at, slug
+        org, institution, registration, receipt, student_group, student_name, pickup_address, drop_address, contact_no, contact_email, note, status, created_at, slug
     Methods:
         save: Generates a unique slug if not present.
         __str__: Returns the student name.
@@ -106,6 +106,7 @@ class BusRequest(models.Model):
         validators=[RegexValidator(r'^\d{10,12}$', 'Enter a valid contact number')],
     )
     contact_email = models.EmailField()
+    note = models.TextField(blank=True, null=True, help_text="Optional notes or additional comments")
     status = models.CharField(choices=STATUS_CHOICES, max_length=20, default='open')
     created_at = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, db_index=True, max_length=255)

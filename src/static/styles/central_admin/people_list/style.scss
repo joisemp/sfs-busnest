@@ -1,5 +1,76 @@
 @use '../../sidebar_navbar_base' as *;
 
+// Password generation modal styles
+.info-box {
+    background-color: #f8f9fa;
+    border-left: 4px solid #ffc107;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+
+    ul {
+        padding-left: 1.5rem;
+        margin-bottom: 0;
+        
+        li {
+            margin-bottom: 0.25rem;
+            color: #495057;
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+}
+
+.password-display-box {
+    background-color: #f8f9fa;
+    border: 2px solid #28a745;
+    padding: 1rem;
+    border-radius: 0.5rem;
+
+    .password-container {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+
+        input {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background-color: #fff;
+            border: 2px solid #dee2e6;
+            padding: 0.75rem;
+            
+            &:focus {
+                border-color: #28a745;
+                box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+            }
+        }
+
+        .copy-btn {
+            flex-shrink: 0;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+            
+            i {
+                font-size: 1rem;
+            }
+        }
+    }
+}
+
+#passwordModal {
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .spinner-border {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
 #people-list {
     .section-header {
         margin-bottom: 1rem;
@@ -166,5 +237,38 @@
                 padding: 0.75rem 0.5rem;
             }
         }
+    }
+}
+
+// Password generation modal styles
+.info-box {
+    background-color: #f8f9fa;
+    border-left: 4px solid #ffc107;
+    padding: 1rem;
+    border-radius: 0.375rem;
+
+    ul {
+        padding-left: 1.5rem;
+        margin-bottom: 0;
+        
+        li {
+            margin-bottom: 0.5rem;
+            color: #495057;
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+}
+
+#passwordModal {
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .spinner-border {
+        width: 2rem;
+        height: 2rem;
     }
 }

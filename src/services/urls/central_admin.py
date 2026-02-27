@@ -109,6 +109,7 @@ urlpatterns = [
      path('people/add/', central_admin.PeopleCreateView.as_view(), name='people_create'),
      path('people/<slug:slug>/update/', central_admin.PeopleUpdateView.as_view(), name='people_update'),
      path('people/<slug:slug>/delete/', central_admin.PeopleDeleteView.as_view(), name='people_delete'),
+     path('people/<slug:slug>/generate-password/', central_admin.GeneratePasswordView.as_view(), name='generate_password'),
      
      path('registrations/', central_admin.RegistraionListView.as_view(), name='registration_list'),
      path('registrations/create/', central_admin.RegistrationCreateView.as_view(), name='registration_create'),

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load expense_filters %}
+
+{% block title %}Mechanic Dashboard{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'styles/mechanic/dashboard/style.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% if has_buses %}
+  <section id="card-section">
+    <div class="card">
+      <div class="card-body">
+        <h3>Fleet Overview</h3>
+        <p>Total: {{ total_buses }} | Available: {{ total_available }} | Maintenance: {{ total_maintenance }}</p>
+      </div>
+      {% if active_registration %}
+      <div class="registration-info">
+        <p>{{ active_registration.name }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+
+  <section id="link" class="d-flex">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a class="nav-link active" href="{% url 'mechanics:dashboard' %}">Under Maintenance</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Available Buses</a>
+      </li>
+    </ul>
+  </section>
+
+  {% if has_buses %}
+  <section id="card-list">
+    {% if maintenance_buses %}
+    <div class="bus-grid">
+      {% for bus in maintenance_buses %}
+      <div class="bus-card">
+        {% if bus.id in bus_labels %}
+        <div class="bus-label">{{ bus_labels|get_item:bus.id }}</div>
+        {% endif %}
+        <div class="bus-registration">{{ bus.registration_no }}</div>
+        <div class="bus-capacity">{{ bus.capacity }} seats</div>
+        <span class="status-badge maintenance">Maintenance</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fa-solid fa-wrench fa-4x mb-3 opacity-25"></i>
+      <p class="lead">No buses under maintenance</p>
+    </div>
+    {% endif %}
+  </section>
+  {% else %}
+  <div class="alert alert-warning mt-3">
+    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+    {% if not active_registration %}
+    <strong>No active registration</strong> - There is no active registration at the moment.
+    {% else %}
+    <strong>No buses available</strong> - No buses have been added to your organization yet.
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% endblock content %}

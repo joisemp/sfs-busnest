@@ -1,0 +1,293 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border: 1px solid #4f46e5;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  opacity: 0.9;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: rgb(41.1656398104, 30.5801895735, 217.5898104265);
+  border-color: rgb(41.1656398104, 30.5801895735, 217.5898104265);
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #eef2ff;
+  color: #312e81;
+  border: 1px solid #eef2ff;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+}
+.btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active {
+  opacity: 0.9;
+}
+.btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active {
+  color: #312e81;
+  background-color: #eef2ff;
+  border-color: #eef2ff;
+}
+
+.btn-outline {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: trasparent;
+  color: #0f172a;
+  border: 1px solid #94a3b8;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+}
+.btn-outline:hover, .btn-outline:focus, .btn-outline:active {
+  opacity: 0.9;
+}
+.btn-outline:hover, .btn-outline:focus, .btn-outline:active {
+  color: #ffffff;
+  background-color: #0f172a;
+  border-color: #0f172a;
+}
+
+.btn-link {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: transparent;
+  color: #4f46e5;
+  border: 1px solid none;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+}
+.btn-link:hover, .btn-link:focus, .btn-link:active {
+  opacity: 0.9;
+}
+.btn-link {
+  font-weight: 500;
+}
+
+.link {
+  color: #4f46e5;
+  font-weight: 500;
+}
+.link:hover, .link:focus, .link:active {
+  color: rgb(41.1656398104, 30.5801895735, 217.5898104265);
+}
+
+.initial-wrap {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+}
+.initial-wrap .header {
+  background-color: #ffffff;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  height: 60px;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  align-items: center;
+}
+.initial-wrap .header .header-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+}
+.initial-wrap .header .notification {
+  display: flex;
+  align-items: center;
+}
+.initial-wrap .header .notification .dropdown ul {
+  padding-bottom: 0px;
+}
+.initial-wrap .header .notification .dropdown ul li .color {
+  background-color: #e0e7ff;
+  padding: 10px;
+}
+.initial-wrap .header .notification .dropdown ul li .color span {
+  font-size: 14px;
+  font-weight: 500;
+}
+.initial-wrap .header .notification .dropdown ul li .color a {
+  text-decoration: none !important;
+  color: #4f46e5;
+}
+.initial-wrap .main-content {
+  margin-top: 60px;
+}
+
+tbody,
+td,
+tfoot,
+th,
+thead,
+tr {
+  background: rgba(255, 255, 255, 0) !important;
+  white-space: nowrap;
+  padding: 1rem !important;
+}
+tbody .text-muted,
+td .text-muted,
+tfoot .text-muted,
+th .text-muted,
+thead .text-muted,
+tr .text-muted {
+  font-weight: 508;
+}
+tbody .table-link a,
+td .table-link a,
+tfoot .table-link a,
+th .table-link a,
+thead .table-link a,
+tr .table-link a {
+  text-decoration: none !important;
+  font-weight: 500;
+}
+
+#card-section {
+  margin-top: 20px;
+}
+#card-section .card {
+  background-color: #4f46e5;
+  color: #ffffff;
+  padding: 30px;
+  height: 200px;
+}
+#card-section .card .card-body {
+  padding: 0;
+}
+#card-section .card h3 {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+#card-section .card p {
+  font-weight: 500;
+  margin-bottom: 0;
+}
+#card-section .card .registration-info {
+  display: flex;
+  justify-content: right;
+  margin-top: 20px;
+}
+#card-section .card .registration-info p {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+}
+
+#link .nav-pills {
+  margin-top: 20px;
+}
+#link .nav-pills .nav-item .nav-link {
+  color: #000000 !important;
+  background-color: transparent !important;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#link .nav-pills .nav-item .nav-link:hover {
+  border-radius: 5px !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#link .nav-pills .nav-item .nav-link.active {
+  border-radius: 5px !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#link .nav-pills .nav-item .nav-link:focus, #link .nav-pills .nav-item .nav-link:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#card-list {
+  margin-top: 24px;
+}
+#card-list .bus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+#card-list .bus-card {
+  background-color: #eef2ff;
+  border-radius: 8px;
+  padding: 70px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+#card-list .bus-card:hover {
+  background-color: #e0e7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+#card-list .bus-card .bus-label {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4338ca;
+  background-color: rgba(99, 102, 241, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+#card-list .bus-card .bus-registration {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+#card-list .bus-card .bus-capacity {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 24px;
+}
+#card-list .bus-card .status-badge {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+#card-list .bus-card .status-badge.maintenance {
+  background-color: #ea580c;
+  color: white;
+}
+#card-list .bus-card .status-badge.available {
+  background-color: #16a34a;
+  color: white;
+}/*# sourceMappingURL=style.css.map */
