@@ -2,12 +2,12 @@
 @use '../../sidebar_navbar_base' as *;
 
 #institution-list {
-    padding: 1.5rem;
+    padding: 1.5rem 0;
     background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fc 100%);
     min-height: 100vh;
 
     @media screen and (max-width: 991px) {
-        padding: 1rem;
+        padding: 1rem 0;
     }
 
     // Section Header
