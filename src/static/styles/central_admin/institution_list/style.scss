@@ -1,49 +1,312 @@
+@use '../../base/colors' as *;
 @use '../../sidebar_navbar_base' as *;
 
 #institution-list {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fc 100%);
+    min-height: 100vh;
+
+    @media screen and (max-width: 991px) {
+        padding: 1rem;
+    }
+
+    // Section Header
     .section-header {
         h2 {
-            font-weight: 600;
-        }
-    }
-}
+            color: $slate-900;
+            font-size: 1.75rem;
+            letter-spacing: -0.02em;
 
-.wrap{
-    display:flex;
-    flex-wrap: wrap;
-    @media  screen and (max-width:805px) {
-        justify-content: center;
-    }
-    .card-wrap{
-        max-width:20rem;
-        width:100%;
-        margin:5px;
-
-         // for tablet,mobile
-         @media  screen and (max-width:805px) {
-             max-width:26rem;
-         }
-       .card{
-        width:100%;
-        padding: 30px 20px;
-        transition: all 0.2s ease;
-        
-        &:hover {
-            border: 3px solid #000 !important;
-        }
-        
-        .card-title {
-            font-size: 1rem;
-            color: #1f2937;
-        }
-        
-        .btn {
-            transition: all 0.2s ease;
-            
-            &:hover {
-                transform: translateX(2px);
+            @media screen and (max-width: 768px) {
+                font-size: 1.5rem;
             }
         }
-       }
+
+        .text-muted {
+            font-size: 0.9375rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background: linear-gradient(135deg, $indigo-700 0%, $indigo-800 100%);
+
+                i {
+                    transform: translateX(3px);
+                }
+            }
+
+            i {
+                transition: transform 0.3s ease;
+            }
+
+            @media screen and (max-width: 768px) {
+                padding: 0.4rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+    }
+
+    // Search Section
+    .search-section {
+        max-width: 600px;
+
+        .search-input-group {
+            .input-group-text {
+                background: white;
+                border-right: none;
+                border-color: $slate-200;
+                border-radius: 8px 0 0 8px;
+                color: $slate-400;
+            }
+
+            .form-control {
+                border-left: none;
+                border-color: $slate-200;
+                padding: 0.625rem 1rem;
+                font-size: 0.9375rem;
+
+                &:focus {
+                    border-color: $indigo-600;
+                    box-shadow: none;
+
+                    + .input-group-text {
+                        border-color: $indigo-600;
+                    }
+                }
+
+                &::placeholder {
+                    color: $slate-400;
+                }
+            }
+
+            .btn-dark {
+                background: linear-gradient(135deg, $slate-800 0%, $slate-900 100%);
+                border: none;
+                border-radius: 0 8px 8px 0;
+                padding: 0.625rem 1.25rem;
+
+                &:hover {
+                    background: linear-gradient(135deg, $slate-900 0%, #000 100%);
+                }
+            }
+
+            .clear-btn {
+                border-radius: 0 8px 8px 0;
+                border-left: none;
+                color: $slate-600;
+
+                &:hover {
+                    background: $slate-100;
+                    color: $slate-800;
+                }
+            }
+        }
+    }
+
+    // Institutions Grid
+    .institutions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+
+        @media screen and (max-width: 991px) {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+
+        @media screen and (max-width: 430px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    // Institution Card
+    .institution-card {
+        background: white;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+
+        &:hover {
+            border-color: $indigo-600;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid $slate-100;
+
+            .institution-icon-wrapper {
+                .institution-icon {
+                    width: 48px;
+                    height: 48px;
+                    background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    i {
+                        color: white;
+                        font-size: 1.25rem;
+                    }
+                }
+            }
+
+            .institution-details {
+                flex: 1;
+                min-width: 0;
+
+                .institution-name {
+                    font-size: 1.0625rem;
+                    font-weight: 600;
+                    color: $slate-900;
+                    margin: 0;
+                    word-break: break-word;
+                }
+
+                .institution-label {
+                    font-size: 0.8125rem;
+                    color: $slate-600;
+                    word-break: break-word;
+                }
+            }
+        }
+
+        .card-body {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+
+            .info-row {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+
+                .info-icon {
+                    color: $slate-400;
+                    width: 16px;
+                    font-size: 0.875rem;
+                    flex-shrink: 0;
+                }
+
+                .info-text {
+                    font-size: 0.875rem;
+                    color: $slate-700;
+                    word-break: break-word;
+                }
+            }
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            background: $slate-50;
+            border-top: 1px solid $slate-100;
+            display: flex;
+            gap: 0.5rem;
+
+            .btn {
+                font-weight: 600;
+                border-radius: 6px;
+                font-size: 0.8125rem;
+                transition: all 0.3s ease;
+
+                i {
+                    transition: transform 0.3s ease;
+                }
+            }
+
+            .btn-dark {
+                background: linear-gradient(135deg, $slate-800 0%, $slate-900 100%);
+                border: none;
+
+                &:hover {
+                    background: linear-gradient(135deg, $slate-900 0%, #000 100%);
+
+                    i {
+                        transform: translateX(2px);
+                    }
+                }
+            }
+
+            .btn-outline-danger {
+                border-color: $red-600;
+                color: $red-600;
+
+                &:hover {
+                    background: $red-600;
+                    border-color: $red-600;
+                    color: white;
+
+                    i {
+                        transform: scale(1.1);
+                    }
+                }
+            }
+        }
+    }
+
+    // Empty State
+    .empty-state {
+        background: white;
+        border: 1px solid $slate-200;
+        border-radius: 16px;
+        padding: 4rem 2rem;
+
+        .empty-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, $slate-100 0%, $slate-200 100%);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+
+            i {
+                font-size: 2rem;
+                color: $slate-400;
+            }
+        }
+
+        h4 {
+            color: $slate-900;
+        }
+
+        .text-muted {
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.625rem 1.5rem;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background: linear-gradient(135deg, $indigo-700 0%, $indigo-800 100%);
+
+                i {
+                    transform: translateX(3px);
+                }
+            }
+
+            i {
+                transition: transform 0.3s ease;
+            }
+        }
     }
 }
