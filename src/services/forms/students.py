@@ -72,9 +72,10 @@ class BusRequestForm(form_mixin.BootstrapFormMixin, forms.ModelForm):
         drop_address (CharField): Address where the student wishes to be dropped off.
         contact_no (CharField): Contact number for the student.
         contact_email (EmailField): Email address for the student.
+        note (TextField): Optional notes or additional comments.
     """
     class Meta:
         model = BusRequest
         fields = [
-            "student_name", "pickup_address", "pickup_location_map_link", "drop_address", "drop_location_map_link", "contact_no", "contact_email"
+            "student_name", "pickup_address", "pickup_location_map_link", "drop_address", "drop_location_map_link", "contact_no", "contact_email", "note"
         ]
