@@ -12,127 +12,159 @@
 {% block content %}
 
 <div class="dashboard-container">
-    <!-- Page Header -->
-    <div class="page-header-section">
-        <h1 class="page-header">Dashboard</h1>
-        <p class="page-subtitle">Overview of your organization's bus management system</p>
-    </div>
 
-    <!-- Organization Info Card -->
-    <div class="org-info-card">
-        <div class="org-details">
-            <h2 class="org-name">{{ org.name }}</h2>
-            <p class="org-location">
-                <i class="fas fa-map-marker-alt"></i>
-                {{ org.area }}, {{ org.city }}
+    <!-- Page Header + Org Banner -->
+    <div class="dashboard-hero">
+        <div class="hero-text">
+            <p class="hero-greeting">Welcome back, {{ request.user.first_name|default:request.user.email }}</p>
+            <h1 class="hero-title">{{ org.name }}</h1>
+            <p class="hero-meta">
+                <span><i class="fas fa-map-marker-alt"></i> {{ org.area }}, {{ org.city }}</span>
+                <span class="hero-divider">·</span>
+                <span><i class="far fa-calendar-alt"></i> Since {{ org.created_at|date:"M Y" }}</span>
             </p>
         </div>
-        <div class="org-meta">
-            <span class="added-date">
-                <i class="far fa-calendar"></i>
-                Added on {{ org.created_at|date:"M d, Y" }}
-            </span>
+        <div class="hero-decoration" aria-hidden="true">
+            <i class="fas fa-bus-alt"></i>
         </div>
     </div>
 
     <!-- Statistics Grid -->
     <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon indigo">
-                <i class="fas fa-clipboard-list"></i>
+        <div class="stat-card accent-indigo">
+            <div class="stat-icon-wrap">
+                <i class="fas fa-book-open-reader"></i>
             </div>
-            <div class="stat-content">
-                <h3 class="stat-value">{{ active_registrations }}</h3>
-                <p class="stat-label">Active Registrations</p>
+            <div class="stat-body">
+                <span class="stat-value">{{ active_registrations }}</span>
+                <span class="stat-label">Registrations</span>
             </div>
+            <a href="{% url 'central_admin:registration_list' %}" class="stat-link" aria-label="View registrations"></a>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon slate">
+        <div class="stat-card accent-sky">
+            <div class="stat-icon-wrap">
                 <i class="fas fa-bus"></i>
             </div>
-            <div class="stat-content">
-                <h3 class="stat-value">{{ buses_available }}</h3>
-                <p class="stat-label">Buses Available</p>
+            <div class="stat-body">
+                <span class="stat-value">{{ buses_available }}</span>
+                <span class="stat-label">Buses</span>
             </div>
+            <a href="{% url 'central_admin:bus_list' %}" class="stat-link" aria-label="View buses"></a>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon indigo">
-                <i class="fas fa-school"></i>
+        <div class="stat-card accent-emerald">
+            <div class="stat-icon-wrap">
+                <i class="fas fa-graduation-cap"></i>
             </div>
-            <div class="stat-content">
-                <h3 class="stat-value">{{ institution_count }}</h3>
-                <p class="stat-label">Institutions Added</p>
+            <div class="stat-body">
+                <span class="stat-value">{{ institution_count }}</span>
+                <span class="stat-label">Institutions</span>
             </div>
+            <a href="{% url 'central_admin:institution_list' %}" class="stat-link" aria-label="View institutions"></a>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon slate">
-                <i class="fas fa-ticket-alt"></i>
-            </div>
-            <div class="stat-content">
-                <h3 class="stat-value">{{ total_tickets }}</h3>
-                <p class="stat-label">Active Tickets</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon indigo">
-                <i class="fas fa-route"></i>
-            </div>
-            <div class="stat-content">
-                <h3 class="stat-value">{{ total_routes }}</h3>
-                <p class="stat-label">Total Routes</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon slate">
-                <i class="fas fa-map-pin"></i>
-            </div>
-            <div class="stat-content">
-                <h3 class="stat-value">{{ total_stops }}</h3>
-                <p class="stat-label">Total Stops</p>
-            </div>
-        </div>
     </div>
 
-    <!-- Recent Activities Section -->
-    <div class="activities-section">
-        <div class="section-header">
-            <h3 class="section-title">
-                <i class="fas fa-history"></i>
-                Recent Activities
-            </h3>
-        </div>
-        
-        <div class="activities-card">
-            {% if recent_activities %}
-                <div class="activities-list">
-                    {% for activity in recent_activities %}
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-circle"></i>
+    <!-- Bottom Two-Column Layout -->
+    <div class="bottom-grid">
+
+        <!-- Recent Activities -->
+        <div class="activities-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-history"></i>
+                    Recent Activities
+                </h3>
+            </div>
+            <div class="activities-card">
+                {% if recent_activities %}
+                    <div class="activities-list">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item">
+                            <div class="activity-dot"></div>
+                            <div class="activity-content">
+                                <p class="activity-action">{{ activity.action }}</p>
+                                <span class="activity-time">
+                                    <i class="far fa-clock"></i>
+                                    {{ activity.timestamp|date:"M d, Y · g:i A" }}
+                                </span>
+                            </div>
                         </div>
-                        <div class="activity-content">
-                            <p class="activity-action">{{ activity.action }}</p>
-                            <span class="activity-time">
-                                <i class="far fa-clock"></i>
-                                {{ activity.timestamp|date:"M d, Y - g:i A" }}
-                            </span>
-                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>No activities yet</p>
-                </div>
-            {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No activities yet</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h3>
+            </div>
+            <div class="quick-actions-list">
+                {% if active_registration %}
+                <a href="{% url 'central_admin:registration_detail' registration_slug=active_registration.slug %}" class="quick-action-item">
+                    <div class="qa-icon qa-indigo"><i class="fas fa-book-open-reader"></i></div>
+                    <div class="qa-text">
+                        <span class="qa-label">Active Registration</span>
+                        <span class="qa-desc">{{ active_registration.name }}</span>
+                    </div>
+                    <i class="fas fa-chevron-right qa-arrow"></i>
+                </a>
+                <a href="{% url 'central_admin:bus_record_list' registration_slug=active_registration.slug %}" class="quick-action-item">
+                    <div class="qa-icon qa-sky"><i class="fas fa-bus"></i></div>
+                    <div class="qa-text">
+                        <span class="qa-label">Bus Records</span>
+                        <span class="qa-desc">{{ active_registration.name }}</span>
+                    </div>
+                    <i class="fas fa-chevron-right qa-arrow"></i>
+                </a>
+                {% else %}
+                <span class="quick-action-item quick-action-disabled">
+                    <div class="qa-icon qa-indigo"><i class="fas fa-book-open-reader"></i></div>
+                    <div class="qa-text">
+                        <span class="qa-label">Active Registration</span>
+                        <span class="qa-desc">No active registration</span>
+                    </div>
+                </span>
+                <span class="quick-action-item quick-action-disabled">
+                    <div class="qa-icon qa-sky"><i class="fas fa-bus"></i></div>
+                    <div class="qa-text">
+                        <span class="qa-label">Bus Records</span>
+                        <span class="qa-desc">No active registration</span>
+                    </div>
+                </span>
+                {% endif %}
+                <a href="{% url 'central_admin:bus_list' %}" class="quick-action-item">
+                    <div class="qa-icon qa-emerald"><i class="fas fa-bus-alt"></i></div>
+                    <div class="qa-text">
+                        <span class="qa-label">Bus List</span>
+                        <span class="qa-desc">Manage your fleet</span>
+                    </div>
+                    <i class="fas fa-chevron-right qa-arrow"></i>
+                </a>
+                <a href="{% url 'central_admin:people_list' %}" class="quick-action-item">
+                    <div class="qa-icon qa-violet"><i class="fas fa-user-group"></i></div>
+                    <div class="qa-text">
+                        <span class="qa-label">People</span>
+                        <span class="qa-desc">Admins, drivers &amp; students</span>
+                    </div>
+                    <i class="fas fa-chevron-right qa-arrow"></i>
+                </a>
+            </div>
+        </div>
+
+    </div><!-- /bottom-grid -->
+
 </div>
 
 {% endblock content %}
