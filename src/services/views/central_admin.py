@@ -135,11 +135,7 @@ class DashboardView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, TemplateVie
         context['buses_available'] = Bus.objects.filter(org=org).count()
         context['institution_count'] = Institution.objects.filter(org=org).count()
         context['recent_activities'] = UserActivity.objects.filter(org=org).order_by('-timestamp')[:10]
-        
-        # Add ticket statistics
-        context['total_tickets'] = Ticket.objects.filter(org=org, is_terminated=False).count()
-        context['total_stops'] = Stop.objects.filter(org=org).count()
-        context['total_routes'] = Route.objects.filter(org=org).count()
+        context['active_registration'] = Registration.objects.filter(org=org, is_active=True).first()
         
         return context
 
