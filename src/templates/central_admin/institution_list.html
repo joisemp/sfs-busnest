@@ -11,50 +11,144 @@
 
 {% block content %}
 <section id="institution-list">
-    <div>
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center section-header mb-4">
-            <h2>Institutions</h2>
-            {% if not search_term %}
-            <a href="{% url 'central_admin:institution_create' %}" class="btn btn-primary">
-                <i class="fa-solid fa-plus me-2"></i>Add Institution
-            </a>
-            {% endif %}
-        </div>
-
-<section>
-    {% if institutions %}
-    <div class="wrap">
-        {% for institute in institutions %}
-        <div class="card-wrap">
-            <div class="card border-0">
-                <div class="mb-3">
-                    <div class="mb-3">
-                        <h6 class="card-title fw-bold">{{institute.name}}</h6>
-                        <p class="card-subtitle mb-2 text-muted small">{{institute.label}}</p>
-                    </div>
-                    <p class="card-subtitle mb-2 text-muted small"><i class="fa-solid fa-user me-1"></i>{{institute.incharge}}</p>
-                </div>
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}"
-                        class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i></a>
-                    <a href="{% url 'central_admin:institution_update' slug=institute.slug %}"
-                        class="btn btn-dark btn-sm"><i class="fa-solid fa-pen-to-square me-1"></i>Edit</a>
-                </div>
+    
+    <!-- Page Header -->
+    <div class="page-header-section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-header">Institutions</h1>
+                <p class="page-subtitle">Manage all institutions in your organization</p>
+            </div>
+            <div>
+                <a href="{% url 'central_admin:institution_create' %}" class="btn-primary">
+                    <i class="fa-solid fa-building-circle-check"></i>
+                    <span>Add Institution</span>
+                </a>
             </div>
         </div>
-        {% endfor %}
+    </div>
+
+    <!-- Stats Card -->
+    <div class="stats-section">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fa-solid fa-building"></i>
+            </div>
+            <div class="stat-details">
+                <p class="stat-label">Total Institutions</p>
+                <h3 class="stat-value">{{ total_count }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-card">
+        <div class="search-header">
+            <h3 class="search-title">
+                <i class="fa-solid fa-magnifying-glass me-2"></i>Search Institutions
+            </h3>
+        </div>
+        <form method="get" action="{% url 'central_admin:institution_list' %}">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="search-input" 
+                    placeholder="Search by name, label, incharge, or email..."
+                    value="{{ search_term }}"
+                >
+                {% if search_term %}
+                <a href="{% url 'central_admin:institution_list' %}" class="clear-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+                {% else %}
+                <button class="search-btn" type="submit">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Search</span>
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Institutions Grid -->
+    {% if institutions %}
+    <div class="institutions-grid-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="fa-solid fa-building me-2"></i>
+                {% if search_term %}Search Results{% else %}All Institutions{% endif %}
+            </h3>
+            <p class="section-subtitle">{{ institutions|length }} institution{{ institutions|length|pluralize }} found</p>
+        </div>
+        
+        <div class="institutions-grid">
+            {% for institute in institutions %}
+            <div class="institution-card">
+                <div class="card-header-section">
+                    <div class="institution-icon">
+                        {{ institute.name.0|upper }}{{ institute.label.0|upper }}
+                    </div>
+                    <div class="institution-info">
+                        <h4 class="institution-name">{{ institute.name }}</h4>
+                        <p class="institution-label">{{ institute.label }}</p>
+                    </div>
+                </div>
+                
+                <div class="card-body-section">
+                    {% if institute.incharge %}
+                    <div class="info-row">
+                        <i class="fa-solid fa-user-tie"></i>
+                        <span>{{ institute.incharge.first_name }} {{ institute.incharge.last_name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if institute.email %}
+                    <div class="info-row">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>{{ institute.email }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-actions">
+                    <a href="{% url 'central_admin:institution_update' slug=institute.slug %}" 
+                       class="action-btn btn-edit">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Edit</span>
+                    </a>
+                    <a href="{% url 'central_admin:institution_delete' slug=institute.slug %}" 
+                       class="action-btn btn-delete">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Delete</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% else %}
-        <div class="text-center py-5">
-            <i class="fa-solid fa-building fa-3x text-muted mb-3"></i>
-            {% if search_term %}
-            <p class="text-muted mb-0">No results for "{{search_term}}"</p>
-            {% else %}
-            <p class="text-muted mb-0">No institutions have been added yet</p>
-            {% endif %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fa-solid fa-building-slash"></i>
         </div>
-    {% endif %}
+        <h4 class="empty-title">
+            {% if search_term %}No Results Found{% else %}No Institutions Yet{% endif %}
+        </h4>
+        <p class="empty-text">
+            {% if search_term %}
+                No institutions match "{{ search_term }}". Try a different search term.
+            {% else %}
+                Get started by adding your first institution to the system.
+            {% endif %}
+        </p>
+        {% if not search_term %}
+        <a href="{% url 'central_admin:institution_create' %}" class="btn-primary">
+            <i class="fa-solid fa-building-circle-check"></i>
+            <span>Add First Institution</span>
+        </a>
+        {% endif %}
     </div>
+    {% endif %}
 </section>
 {% endblock content %}

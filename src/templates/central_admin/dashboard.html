@@ -11,57 +11,128 @@
 
 {% block content %}
 
-<section id="institute">
-    <div id="info">
-        <div class="card">
-            <div>
-                <h1>{{org.name}}</h1>
-                <p>{{org.area}}, {{org.city}}</p>
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header-section">
+        <h1 class="page-header">Dashboard</h1>
+        <p class="page-subtitle">Overview of your organization's bus management system</p>
+    </div>
+
+    <!-- Organization Info Card -->
+    <div class="org-info-card">
+        <div class="org-details">
+            <h2 class="org-name">{{ org.name }}</h2>
+            <p class="org-location">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ org.area }}, {{ org.city }}
+            </p>
+        </div>
+        <div class="org-meta">
+            <span class="added-date">
+                <i class="far fa-calendar"></i>
+                Added on {{ org.created_at|date:"M d, Y" }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon indigo">
+                <i class="fas fa-clipboard-list"></i>
             </div>
-            <div class="right">
-                <p>Added on {{org.created_at.date}}</p>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ active_registrations }}</h3>
+                <p class="stat-label">Active Registrations</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon slate">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ buses_available }}</h3>
+                <p class="stat-label">Buses Available</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon indigo">
+                <i class="fas fa-school"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ institution_count }}</h3>
+                <p class="stat-label">Institutions Added</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon slate">
+                <i class="fas fa-ticket-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ total_tickets }}</h3>
+                <p class="stat-label">Active Tickets</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon indigo">
+                <i class="fas fa-route"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ total_routes }}</h3>
+                <p class="stat-label">Total Routes</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon slate">
+                <i class="fas fa-map-pin"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ total_stops }}</h3>
+                <p class="stat-label">Total Stops</p>
             </div>
         </div>
     </div>
-    <div class="table-responsive">
-        <table class="table table-borderless">
-            <div class="wrap">
-                <div class="col">
-                    <div class="card">
-                        <h1>{{active_registrations}}</h1>
-                        <h5>Active registration</h5>
+
+    <!-- Recent Activities Section -->
+    <div class="activities-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="fas fa-history"></i>
+                Recent Activities
+            </h3>
+        </div>
+        
+        <div class="activities-card">
+            {% if recent_activities %}
+                <div class="activities-list">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-action">{{ activity.action }}</p>
+                            <span class="activity-time">
+                                <i class="far fa-clock"></i>
+                                {{ activity.timestamp|date:"M d, Y - g:i A" }}
+                            </span>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
-                <div class="col">
-                    <div class="card">
-                        <h1>{{buses_available}}</h1>
-                        <h5>Buses Available</h5>
-                    </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No activities yet</p>
                 </div>
-                <div class="col">
-                    <div class="card">
-                        <h1>{{institution_count}}</h1>
-                        <h5>Institution added</h5>
-                    </div>
-                </div>
-            </div>
-        </table>
+            {% endif %}
+        </div>
     </div>
-    <div class="activity mt-5">
-        <h4>Recent Activities</h4>
-        {% if recent_activities %}
-        <table class="table table-hover">
-            {% for activity in recent_activities %}
-            <tr>
-                <td>{{ activity.action }}</td>
-                <td>{{ activity.timestamp.date }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        {% else %}
-        <p>No activites yet</p>
-        {% endif %}
-    </div>
-</section>
+</div>
 
 {% endblock content %}

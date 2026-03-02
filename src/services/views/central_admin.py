@@ -178,6 +178,8 @@ class InstitutionListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_term'] = self.search_term
+        # Add total count for stats
+        context['total_count'] = Institution.objects.filter(org=self.request.user.profile.org).count()
         return context
     
 

@@ -292,29 +292,680 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
+@media screen and (max-width: 991px) {
+  #people-list {
+    padding: 1.5rem 0;
+  }
+}
+@media screen and (max-width: 576px) {
+  #people-list {
+    padding: 1rem 0;
+  }
+}
+#people-list .page-header-section {
+  margin-bottom: 2rem;
+}
+#people-list .page-header-section .page-header {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+#people-list .page-header-section .page-subtitle {
+  font-size: 1rem;
+  color: #334155;
+  font-weight: 400;
+  margin-bottom: 0;
+}
+#people-list .page-header-section .btn-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+#people-list .page-header-section .btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  color: white;
+}
+#people-list .page-header-section .btn-primary:hover i {
+  transform: translateX(3px);
+}
+#people-list .page-header-section .btn-primary i {
+  transition: transform 0.3s ease;
+}
+#people-list .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+@media screen and (max-width: 576px) {
+  #people-list .stats-grid {
+    gap: 0.625rem;
+  }
+}
+#people-list .stat-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+#people-list .stat-card:hover {
+  border-color: #4f46e5;
+}
+#people-list .stat-card .stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+#people-list .stat-card .stat-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+#people-list .stat-card .stat-details {
+  flex: 1;
+}
+#people-list .stat-card .stat-label {
+  font-size: 0.875rem;
+  color: #334155;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+#people-list .stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0;
+  line-height: 1;
+}
+#people-list .filter-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+#people-list .filter-section .filter-header {
+  margin-bottom: 1rem;
+}
+#people-list .filter-section .filter-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0;
+}
+#people-list .filter-section .filter-buttons {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+#people-list .filter-section .filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  color: #334155;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+#people-list .filter-section .filter-btn i {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+#people-list .filter-section .filter-btn .filter-badge {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+#people-list .filter-section .filter-btn:hover {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(99, 102, 241, 0.12) 100%);
+  border-color: #4f46e5;
+  color: #4338ca;
+}
+#people-list .filter-section .filter-btn:hover i {
+  transform: scale(1.1);
+}
+#people-list .filter-section .filter-btn.active {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  border-color: #4f46e5;
+  color: white;
+}
+#people-list .filter-section .filter-btn.active .filter-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+#people-list .info-card {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+#people-list .info-card .info-icon {
+  flex-shrink: 0;
+}
+#people-list .info-card .info-icon i {
+  font-size: 1.5rem;
+  color: #4f46e5;
+}
+#people-list .info-card .info-content {
+  flex: 1;
+}
+#people-list .info-card .info-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+#people-list .info-card .info-text {
+  font-size: 0.9375rem;
+  color: #334155;
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+#people-list .people-list-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+#people-list .people-list-card .card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+#people-list .people-list-card .card-header .card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+#people-list .people-list-card .card-header .card-subtitle {
+  font-size: 0.875rem;
+  color: #334155;
+  margin-bottom: 0;
+}
+#people-list .people-list-card .table-container {
+  overflow-x: auto;
+}
+#people-list .people-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+#people-list .people-table thead {
+  background: #f8fafc;
+}
+#people-list .people-table thead th {
+  padding: 1rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+#people-list .people-table tbody tr {
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #e2e8f0;
+}
+#people-list .people-table tbody tr:last-child {
+  border-bottom: none;
+}
+#people-list .people-table tbody tr:hover {
+  background: #f8fafc;
+}
+#people-list .people-table tbody tr td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+}
+#people-list .people-table .user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+#people-list .people-table .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+#people-list .people-table .user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+#people-list .people-table .user-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.2;
+}
+#people-list .people-table .user-email {
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.2;
+}
+#people-list .people-table .role-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#people-list .people-table .role-badge.role-central_admin {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+}
+#people-list .people-table .role-badge.role-institution_admin {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
+}
+#people-list .people-table .role-badge.role-driver {
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  color: white;
+}
+#people-list .people-table .experience-text {
+  font-size: 0.9375rem;
+  color: #334155;
+}
+#people-list .people-table .text-muted {
+  color: #334155;
+  font-size: 0.875rem;
+}
+#people-list .people-table .actions-column {
+  width: 200px;
+}
+#people-list .people-table .action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+#people-list .people-table .action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+#people-list .people-table .action-btn i {
+  font-size: 0.875rem;
+}
+#people-list .people-table .action-btn:hover {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+#people-list .people-table .action-btn:hover i {
+  transform: scale(1.1);
+}
+#people-list .people-table .action-btn.btn-edit:hover {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+#people-list .people-table .action-btn.btn-password:hover {
+  border-color: #d97706;
+  background: #fffbeb;
+  color: #d97706;
+}
+#people-list .people-table .action-btn.btn-delete:hover {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #dc2626;
+}
+#people-list .people-table .empty-state {
+  text-align: center;
+  padding: 4rem 2rem !important;
+}
+#people-list .people-table .empty-state i {
+  font-size: 4rem;
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+  display: block;
+}
+#people-list .people-table .empty-state p {
+  font-size: 1.125rem;
+  color: #334155;
+  margin-bottom: 0;
+}
+@media screen and (max-width: 991px) {
+  #people-list .page-header-section {
+    margin-bottom: 1.5rem;
+  }
+  #people-list .page-header-section .page-header {
+    font-size: 1.5rem;
+  }
+  #people-list .page-header-section .page-subtitle {
+    font-size: 0.875rem;
+  }
+  #people-list .page-header-section .btn-primary {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  #people-list .stats-grid {
+    gap: 0.75rem;
+  }
+  #people-list .stat-card {
+    padding: 1.25rem;
+  }
+  #people-list .stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+  #people-list .stat-card .stat-icon i {
+    font-size: 1.25rem;
+  }
+  #people-list .stat-card .stat-label {
+    font-size: 0.8125rem;
+  }
+  #people-list .stat-card .stat-value {
+    font-size: 1.5rem;
+  }
+  #people-list .filter-section {
+    padding: 1.25rem;
+  }
+  #people-list .filter-section .filter-title {
+    font-size: 1rem;
+  }
+  #people-list .filter-section .filter-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  #people-list .info-card {
+    padding: 1.25rem;
+  }
+  #people-list .info-card .info-icon i {
+    font-size: 1.25rem;
+  }
+  #people-list .info-card .info-title {
+    font-size: 0.9375rem;
+  }
+  #people-list .info-card .info-text {
+    font-size: 0.875rem;
+  }
+  #people-list .people-list-card .card-header {
+    padding: 1.25rem;
+  }
+  #people-list .people-list-card .card-header .card-title {
+    font-size: 1rem;
+  }
+  #people-list .people-table .user-email {
+    display: none;
+  }
+  #people-list .people-table .actions-column {
+    width: auto;
+  }
+  #people-list .people-table thead th {
+    padding: 0.875rem 1rem;
+    font-size: 0.6875rem;
+  }
+  #people-list .people-table tbody td {
+    padding: 0.875rem 1rem;
+  }
+}
+@media screen and (max-width: 768px) {
+  #people-list .page-header-section .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  #people-list .page-header-section .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+  #people-list .filter-section .filter-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  #people-list .filter-section .filter-btn {
+    justify-content: center;
+    text-align: center;
+  }
+  #people-list .people-table thead th:nth-child(3) {
+    display: none;
+  }
+  #people-list .people-table tbody td:nth-child(3) {
+    display: none;
+  }
+  #people-list .people-table .actions-column {
+    width: 120px;
+  }
+  #people-list .people-table .action-buttons {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  #people-list .people-table .action-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+  #people-list .people-table .action-btn::after {
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+  #people-list .people-table .action-btn.btn-edit::after {
+    content: "Edit";
+  }
+  #people-list .people-table .action-btn.btn-password::after {
+    content: "Password";
+  }
+  #people-list .people-table .action-btn.btn-delete::after {
+    content: "Delete";
+  }
+}
+@media screen and (max-width: 576px) {
+  #people-list .page-header-section {
+    margin-bottom: 1rem;
+  }
+  #people-list .stats-grid {
+    margin-bottom: 1.5rem;
+  }
+  #people-list .stat-card {
+    padding: 1rem;
+  }
+  #people-list .stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+  #people-list .stat-card .stat-icon i {
+    font-size: 1.125rem;
+  }
+  #people-list .stat-card .stat-label {
+    font-size: 0.75rem;
+  }
+  #people-list .stat-card .stat-value {
+    font-size: 1.25rem;
+  }
+  #people-list .filter-section {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  #people-list .filter-section .filter-header {
+    margin-bottom: 0.75rem;
+  }
+  #people-list .filter-section .filter-title {
+    font-size: 0.9375rem;
+  }
+  #people-list .filter-section .filter-buttons {
+    grid-template-columns: 1fr;
+  }
+  #people-list .filter-section .filter-btn {
+    padding: 0.75rem 1rem;
+  }
+  #people-list .info-card {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  #people-list .info-card .info-icon {
+    text-align: center;
+  }
+  #people-list .info-card .info-title {
+    font-size: 0.875rem;
+  }
+  #people-list .info-card .info-text {
+    font-size: 0.8125rem;
+  }
+  #people-list .people-list-card .card-header {
+    padding: 1rem;
+  }
+  #people-list .people-list-card .card-header .card-title {
+    font-size: 0.9375rem;
+  }
+  #people-list .people-list-card .card-header .card-title i {
+    font-size: 0.875rem;
+  }
+  #people-list .people-list-card .card-header .card-subtitle {
+    font-size: 0.8125rem;
+  }
+  #people-list .people-table {
+    font-size: 0.8125rem;
+  }
+  #people-list .people-table thead th {
+    padding: 0.75rem 0.625rem;
+    font-size: 0.625rem;
+  }
+  #people-list .people-table tbody td {
+    padding: 0.75rem 0.625rem;
+  }
+  #people-list .people-table .user-info {
+    gap: 0.625rem;
+  }
+  #people-list .people-table .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+  #people-list .people-table .user-name {
+    font-size: 0.875rem;
+  }
+  #people-list .people-table .role-badge {
+    font-size: 0.6875rem;
+    padding: 0.3125rem 0.625rem;
+  }
+  #people-list .people-table .actions-column {
+    width: 100px;
+  }
+  #people-list .people-table .action-btn {
+    height: 32px;
+    padding: 0 0.625rem;
+    font-size: 0.75rem;
+  }
+  #people-list .people-table .action-btn::after {
+    font-size: 0.75rem;
+  }
+  #people-list .people-table .action-btn i {
+    font-size: 0.75rem;
+  }
+  #people-list .people-table .empty-state {
+    padding: 3rem 1rem !important;
+  }
+  #people-list .people-table .empty-state i {
+    font-size: 3rem;
+  }
+  #people-list .people-table .empty-state p {
+    font-size: 1rem;
+  }
+}
+@media screen and (max-width: 380px) {
+  #people-list .people-table thead th:nth-child(2) {
+    display: none;
+  }
+  #people-list .people-table tbody td:nth-child(2) {
+    display: none;
+  }
+  #people-list .people-table .user-info {
+    gap: 0.5rem;
+  }
+  #people-list .people-table .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.6875rem;
+  }
+  #people-list .people-table .user-name {
+    font-size: 0.8125rem;
+  }
+}
+
+#passwordModal .modal-body {
+  padding: 1.5rem;
+}
+#passwordModal .spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
 .info-box {
-  background-color: #f8f9fa;
-  border-left: 4px solid #ffc107;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
+  background: #fffbeb;
+  border-left: 4px solid #d97706;
+  border-radius: 10px;
+  padding: 1rem;
 }
 .info-box ul {
   padding-left: 1.5rem;
   margin-bottom: 0;
 }
 .info-box ul li {
-  margin-bottom: 0.25rem;
-  color: #495057;
+  margin-bottom: 0.5rem;
+  color: #334155;
 }
 .info-box ul li:last-child {
   margin-bottom: 0;
 }
 
 .password-display-box {
-  background-color: #f8f9fa;
-  border: 2px solid #28a745;
+  background: #f0fdf4;
+  border: 2px solid #16a34a;
+  border-radius: 10px;
   padding: 1rem;
-  border-radius: 0.5rem;
 }
 .password-display-box .password-container {
   display: flex;
@@ -326,172 +977,29 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: 1px;
-  background-color: #fff;
-  border: 2px solid #dee2e6;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
   padding: 0.75rem;
 }
 .password-display-box .password-container input:focus {
-  border-color: #28a745;
-  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+  border-color: #16a34a;
+  outline: none;
 }
 .password-display-box .password-container .copy-btn {
   flex-shrink: 0;
   padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
   transition: all 0.2s ease;
+  cursor: pointer;
+}
+.password-display-box .password-container .copy-btn:hover {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
 }
 .password-display-box .password-container .copy-btn i {
   font-size: 1rem;
-}
-
-#passwordModal .modal-body {
-  padding: 1.5rem;
-}
-#passwordModal .spinner-border {
-  width: 2rem;
-  height: 2rem;
-}
-
-#people-list .section-header {
-  margin-bottom: 1rem;
-}
-#people-list .section-header h2 {
-  margin-bottom: 0;
-  font-weight: 600;
-}
-#people-list .section-header hr {
-  margin-top: 1rem;
-  opacity: 0.1;
-}
-#people-list #filter-tabs .nav-pills {
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-#people-list #filter-tabs .nav-pills .nav-item .nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.85rem;
-  border-radius: 6px;
-  color: #6c757d;
-  background-color: #fff;
-  border: 1px solid #dee2e6;
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-#people-list #filter-tabs .nav-pills .nav-item .nav-link i {
-  font-size: 0.875rem;
-}
-#people-list #filter-tabs .nav-pills .nav-item .nav-link .badge {
-  font-size: 0.7rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 8px;
-}
-#people-list #filter-tabs .nav-pills .nav-item .nav-link:hover {
-  background-color: #f8f9fa;
-  border-color: #000;
-  color: #000;
-}
-#people-list #filter-tabs .nav-pills .nav-item .nav-link.active {
-  background-color: #000;
-  border-color: #000;
-  color: #fff;
-}
-#people-list #filter-tabs .nav-pills .nav-item .nav-link.active .badge {
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  color: #fff !important;
-}
-#people-list .table-responsive {
-  border-radius: 8px;
-}
-#people-list table {
-  margin-bottom: 0;
-}
-#people-list table thead tr td, #people-list table thead tr th {
-  border-bottom: 2px solid #dee2e6;
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-#people-list table tbody tr {
-  transition: background-color 0.2s ease;
-}
-#people-list table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-#people-list table tbody tr td {
-  vertical-align: middle;
-  padding: 1rem;
-  white-space: nowrap;
-}
-#people-list table tbody tr td .fw-bold {
-  font-size: 0.95rem;
-}
-#people-list table tbody tr td .current-user-name {
-  font-weight: 600;
-  font-size: 1rem;
-}
-#people-list table tbody tr td .badge {
-  font-weight: 500;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.75rem;
-}
-#people-list table .table-link a {
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-#people-list table .table-link a i {
-  font-size: 0.875rem;
-}
-#people-list table .table-link a:hover {
-  transform: translateY(-1px);
-}
-#people-list table .table-link .btn-dark {
-  margin-right: 0.5rem;
-}
-@media (max-width: 768px) {
-  #people-list .section-header .btn {
-    font-size: 0.875rem;
-    padding: 0.5rem 1rem;
-  }
-  #people-list #filter-tabs .nav-pills .nav-item .nav-link {
-    padding: 0.6rem 1rem;
-    font-size: 0.875rem;
-  }
-  #people-list #filter-tabs .nav-pills .nav-item .nav-link i {
-    font-size: 0.875rem;
-  }
-  #people-list table {
-    font-size: 0.875rem;
-  }
-  #people-list table tbody td {
-    padding: 0.75rem 0.5rem;
-  }
-}
-
-.info-box {
-  background-color: #f8f9fa;
-  border-left: 4px solid #ffc107;
-  padding: 1rem;
-  border-radius: 0.375rem;
-}
-.info-box ul {
-  padding-left: 1.5rem;
-  margin-bottom: 0;
-}
-.info-box ul li {
-  margin-bottom: 0.5rem;
-  color: #495057;
-}
-.info-box ul li:last-child {
-  margin-bottom: 0;
-}
-
-#passwordModal .modal-body {
-  padding: 1.5rem;
-}
-#passwordModal .spinner-border {
-  width: 2rem;
-  height: 2rem;
 }/*# sourceMappingURL=style.css.map */
