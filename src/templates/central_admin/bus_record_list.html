@@ -10,119 +10,170 @@
 {% endblock sidebar %}
 
 {% block content %}
+<section id="bus-record-list">
 
-<section id="bus_record">
-  <div class="container">
-    <!-- button -->
-    <div class="section-header">
-      <div>
-          <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-       </div>
-       <div class="gear">
-         <div>
-           <h2>Records</h2>
-         </div>
-          <div class="button d-flex gap-2">
-             <a href="{% url 'central_admin:driver_management' registration_slug=registration.slug %}" class="btn btn-dark ms-2 mt-1" style="height:37px">
-               <i class="fa-solid fa-users-gear me-2"></i>Driver Management
-             </a>
-             <a href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}" class="btn btn-primary ms-2 mt-1" style="height:37px">Add<i class="fa-solid fa-plus ms-2"></i></a>
-             <a href="{% url 'central_admin:bus_record_export_pdf' registration_slug=registration.slug %}" class="btn btn-success ms-2 mt-1" style="height:37px">Export PDF<i class="fa-solid fa-file-pdf ms-2"></i></a>
+  <!-- Page Header -->
+  <div class="page-header">
+    <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="back-btn">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Back</span>
+    </a>
+    <div class="page-header__title">
+      <h1>Bus Records</h1>
+      <p>{{ registration.name }}</p>
+    </div>
+    <div class="page-header__top">
+      <div class="page-actions">
+        <a href="{% url 'central_admin:driver_management' registration_slug=registration.slug %}" class="action-btn action-btn--dark">
+          <i class="fa-solid fa-users-gear"></i>
+          <span>Driver Management</span>
+        </a>
+        <a href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}" class="action-btn action-btn--primary">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Record</span>
+        </a>
+        <a href="{% url 'central_admin:bus_record_export_pdf' registration_slug=registration.slug %}" class="action-btn action-btn--success">
+          <i class="fa-solid fa-file-pdf"></i>
+          <span>Export PDF</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  {% if blank_records and not reset_filter %}
+  <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}?noneRecords=True" class="alert-banner alert-banner--warning">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span>Some bus records have no bus assigned. Click here to view them.</span>
+    <i class="fa-solid fa-arrow-right"></i>
+  </a>
+  {% elif reset_filter %}
+  <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}" class="alert-banner alert-banner--filter">
+    <i class="fa-solid fa-x"></i>
+    <span>Clear filters</span>
+  </a>
+  {% endif %}
+
+  <!-- Records Grid -->
+  <div class="records-grid">
+    {% for record in bus_records %}
+    <div class="record-card {% if record.has_full_trip %}record-card--warning{% endif %}">
+
+      <!-- Card Header -->
+      <div class="record-card__header">
+        <div class="record-label">
+          <span class="record-label__text">{{ record.label }}</span>
+          {% if record.has_full_trip %}
+          <span class="full-badge"><i class="fas fa-exclamation-triangle"></i> Full</span>
+          {% endif %}
+        </div>
+        <div class="record-bus-info">
+          {% if record.bus %}
+          <span class="bus-reg">{{ record.bus.registration_no }}</span>
+          <span class="bus-capacity"><i class="fa-solid fa-users"></i> {{ record.bus.capacity }} seats</span>
+          {% else %}
+          <span class="no-bus"><i class="fa-solid fa-circle-exclamation"></i> No bus</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="record-card__stats">
+        <div class="stat-chip stat-chip--indigo">
+          <i class="fas fa-route"></i>
+          <div class="stat-chip__data">
+            <span class="stat-chip__value">{{ record.trip_count }}</span>
+            <span class="stat-chip__label">Trip{{ record.trip_count|pluralize }}</span>
           </div>
+        </div>
+        <div class="stat-chip stat-chip--emerald">
+          <i class="fas fa-arrow-up"></i>
+          <div class="stat-chip__data">
+            <span class="stat-chip__value">{{ record.pickup_ticket_count }}</span>
+            <span class="stat-chip__label">Pickup{{ record.pickup_ticket_count|pluralize }}</span>
+          </div>
+        </div>
+        <div class="stat-chip stat-chip--sky">
+          <i class="fas fa-arrow-down"></i>
+          <div class="stat-chip__data">
+            <span class="stat-chip__value">{{ record.drop_ticket_count }}</span>
+            <span class="stat-chip__label">Drop{{ record.drop_ticket_count|pluralize }}</span>
+          </div>
+        </div>
+        <div class="stat-chip stat-chip--amber">
+          <i class="fas fa-chart-bar"></i>
+          <div class="stat-chip__data">
+            {% if record.avg_filling_pct is not None %}
+            <span class="stat-chip__value">{{ record.avg_filling_pct }}%</span>
+            {% else %}
+            <span class="stat-chip__value">{{ record.avg_filling_per_trip }}</span>
+            {% endif %}
+            <span class="stat-chip__label">Avg / Trip</span>
+          </div>
+        </div>
       </div>
-      <hr>
-  </div>
-    <!-- alert message -->
-    {% if blank_records and not reset_filter %}
-    <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}?noneRecords=True"
-      class="alert alert-warning d-flex align-items-center mt-3" role="alert" style="font-weight:600;">
-      <div>
-        <i class="fa-solid fa-triangle-exclamation me-2"></i>There are few buses records without bus assigned. Click
-        here to view
-      </div>
-    </a>
-    {% elif reset_filter %}
-    <a href="{% url 'central_admin:bus_record_list' registration_slug=registration.slug %}"
-      class="btn btn-dark mt-3 mb-3" role="alert" style="font-weight:600;">
-      <div>
-        <i class="fa-solid fa-x me-2"></i>Clear filters
-      </div>
-    </a>
-    {% endif %}
-    <!-- table -->
-    <table class="table">
-      <thead>
-        <tr>
-          <th class="text-body-secondary">Label</th>
-          <th class="text-body-secondary">Registration no</th>
-          <th class="text-body-secondary">Capacity</th>
-          <th class="text-body-secondary">Assigned Driver</th>
-          <th class="text-body-secondary">Total Distance</th>
-          <th class="text-body-secondary">Statistics</th>
-          <th class="text-body-secondary">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for record in bus_records %}
-        <tr {% if record.has_full_trip %}class="table-warning" style="border-left: 4px solid #ff9800;"{% endif %}>
-          <td class="fw-semibold">
-            {{record.label}}
-            {% if record.has_full_trip %}
-            <span class="badge bg-warning text-dark ms-2" title="At least one trip is at full capacity">
-              <i class="fas fa-exclamation-triangle me-1"></i>Full
-            </span>
-            {% endif %}
-          </td>
-          <td>
-            {% if record.bus %}
-            {{record.bus.registration_no}}
-            {% else %}
-            <b>----</b>
-            {% endif %}
-          </td>
-          <td>
-            {% if record.bus %}
-            {{record.bus.capacity}}
-            {% else %}
-            <b>----</b>
-            {% endif %}
-          </td>
-          <td>
-            {% if record.assigned_driver %}
-            <span class="fw-semibold">{{ record.assigned_driver.profile.first_name }} {{ record.assigned_driver.profile.last_name }}</span>
-            {% else %}
-            <span class="text-muted">Not assigned</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if record.calculated_total_km %}
-            <span class="fw-semibold">{{ record.calculated_total_km }} km</span>
-            {% else %}
-            <span class="text-muted">-</span>
-            {% endif %}
-          </td>
-          <td>
-            <div class="d-flex flex-wrap gap-1">
-              <span class="badge bg-primary">
-                <i class="fas fa-route me-1"></i>{{ record.trip_count }} trip{{ record.trip_count|pluralize }}
-              </span>
-              <span class="badge bg-success">
-                <i class="fas fa-arrow-up me-1"></i>{{ record.pickup_ticket_count }} pickup{{ record.pickup_ticket_count|pluralize }}
-              </span>
-              <span class="badge bg-info">
-                <i class="fas fa-arrow-down me-1"></i>{{ record.drop_ticket_count }} drop{{ record.drop_ticket_count|pluralize }}
-              </span>
-            </div>
-          </td>
-          <td>
-            <a class="fw-semibold btn btn-sm btn-outline-dark me-2" href="{% url 'central_admin:trip_list' registration_slug=registration.slug bus_record_slug=record.slug %}">View details</a>
-            <a class="fw-semibold btn btn-sm btn-outline-danger" href="{% url 'central_admin:bus_record_delete' registration_slug=registration.slug bus_record_slug=record.slug %}">Delete</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
 
+      <!-- Meta -->
+      <div class="record-card__meta">
+        <div class="meta-item">
+          <i class="fa-solid fa-user-tie"></i>
+          {% if record.assigned_driver %}
+          <span>{{ record.assigned_driver.profile.first_name }} {{ record.assigned_driver.profile.last_name }}</span>
+          {% else %}
+          <span class="meta-item--muted">No driver assigned</span>
+          {% endif %}
+        </div>
+        <div class="meta-item">
+          <i class="fa-solid fa-road"></i>
+          {% if record.calculated_total_km %}
+          <span>{{ record.calculated_total_km }} km</span>
+          {% else %}
+          <span class="meta-item--muted">No distance data</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Trip Filling -->
+      {% if record.trips_list and record.bus %}
+      <div class="trip-filling">
+        <p class="trip-filling__title"><i class="fa-solid fa-gauge-high"></i> Trip Filling</p>
+        {% for trip in record.trips_list %}
+        <div class="trip-row">
+          <div class="trip-row__info">
+            <span class="trip-schedule">{{ trip.schedule.name }}</span>
+          </div>
+          <div class="trip-row__fill">
+            <div class="fill-bar">
+              <div class="fill-bar__inner {% if trip.booking_count >= record.bus.capacity %}fill-bar__inner--full{% endif %}"
+                   style="width: {{ trip.total_filled_seats_percentage }}%"></div>
+            </div>
+            <span class="fill-count">{{ trip.booking_count }}/{{ record.bus.capacity }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="record-card__actions">
+        <a class="record-action record-action--view" href="{% url 'central_admin:trip_list' registration_slug=registration.slug bus_record_slug=record.slug %}">
+          <i class="fa-solid fa-eye"></i> View Details
+        </a>
+        <a class="record-action record-action--delete" href="{% url 'central_admin:bus_record_delete' registration_slug=registration.slug bus_record_slug=record.slug %}">
+          <i class="fa-solid fa-trash"></i> Delete
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <i class="fa-solid fa-bus-simple"></i>
+      <p>No bus records found.</p>
+      <a href="{% url 'central_admin:bus_record_create' registration_slug=registration.slug %}" class="action-btn action-btn--primary">
+        <i class="fa-solid fa-plus"></i> Add Record
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
 {% endblock content %}

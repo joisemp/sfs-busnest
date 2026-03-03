@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from config.views import LandingPageView, count_to_10
+from config.views import LandingPageView, count_to_10, service_worker, manifest_json
 
 """
 URL configuration for the BMS-SFS Institutions project.
@@ -28,6 +28,8 @@ Namespaces:
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', LandingPageView.as_view(), name='landing_page'),
+    path('sw.js', service_worker, name='service_worker'),
+    path('manifest.json', manifest_json, name='manifest_json'),
     path('count/', count_to_10, name='count'),
     path('core/', include('core.urls', namespace='core')),
     path('central_admin/', include('services.urls.central_admin', namespace='central_admin')),

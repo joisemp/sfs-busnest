@@ -751,7 +751,7 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                 org=self.request.user.profile.org, 
                 bus=None, 
                 registration__slug=self.kwargs["registration_slug"]
-            ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
+            ).select_related('assigned_driver__profile').prefetch_related('trips__route', 'trips__schedule').annotate(
                 pickup_ticket_count=Count('pickup_tickets', filter=Q(pickup_tickets__is_terminated=False), distinct=True),
                 drop_ticket_count=Count('drop_tickets', filter=Q(drop_tickets__is_terminated=False), distinct=True),
                 trip_count=Count('trips', distinct=True)
@@ -760,21 +760,39 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
             queryset = BusRecord.objects.filter(
                 org=self.request.user.profile.org, 
                 registration__slug=self.kwargs["registration_slug"]
-            ).select_related('assigned_driver__profile').prefetch_related('trips__route').order_by('label').annotate(
+            ).select_related('assigned_driver__profile').prefetch_related('trips__route', 'trips__schedule').annotate(
                 pickup_ticket_count=Count('pickup_tickets', filter=Q(pickup_tickets__is_terminated=False), distinct=True),
                 drop_ticket_count=Count('drop_tickets', filter=Q(drop_tickets__is_terminated=False), distinct=True),
                 trip_count=Count('trips', distinct=True)
             )
-        return queryset
-    
+        return sorted(queryset, key=lambda r: self._natural_sort_key(r.label or ''))
+
+    def _natural_sort_key(self, text):
+        """
+        Generate a key for natural sorting that handles numbers correctly.
+        Converts 'Bus 10' to come after 'Bus 9' instead of after 'Bus 1'.
+        """
+        import re
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', text)]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["registration"] = Registration.objects.get(slug=self.kwargs["registration_slug"])
         
-        # Calculate total_km and check for fully filled trips for each bus record
+        # Calculate total_km, avg filling per trip, and check for fully filled trips
         for record in context['bus_records']:
-            trips = record.trips.all()
+            trips = list(record.trips.all())
+            record.trips_list = trips
             record.calculated_total_km = sum(trip.route.total_km or 0 for trip in trips)
+            
+            # Average filling per trip
+            if trips:
+                total_bookings = sum(trip.booking_count for trip in trips)
+                record.avg_filling_per_trip = round(total_bookings / len(trips), 1)
+                record.avg_filling_pct = round((record.avg_filling_per_trip / record.bus.capacity) * 100, 1) if record.bus else None
+            else:
+                record.avg_filling_per_trip = 0
+                record.avg_filling_pct = None
             
             # Check if any trip is at full capacity (100%)
             record.has_full_trip = False
@@ -783,7 +801,13 @@ class BusRecordListView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, ListVie
                     if trip.booking_count >= record.bus.capacity:
                         record.has_full_trip = True
                         break
-        
+
+        # Sort: filled records first, then natural sort by label
+        context['bus_records'] = sorted(
+            context['bus_records'],
+            key=lambda r: (not r.has_full_trip, self._natural_sort_key(r.label or ''))
+        )
+
         if BusRecord.objects.filter(org=self.request.user.profile.org, bus=None, registration__slug=self.kwargs["registration_slug"]):
             context["blank_records"] = True
         if self.noneRecords:
