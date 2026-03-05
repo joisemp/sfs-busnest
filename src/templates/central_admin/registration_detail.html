@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 3. Top Pickup Points
     if (stopChartData.pickup_stops.length > 0) {
         const pickupCtx = document.getElementById('pickupStopsChart').getContext('2d');
-        new Chart(pickupCtx, {
+        const pickupChart = new Chart(pickupCtx, {
             type: 'bar',
             data: {
                 labels: stopChartData.pickup_stops,
@@ -438,6 +438,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...commonBarOptions,
                 indexAxis: 'y',
                 aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Tickets: ' + context.parsed.x;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         beginAtZero: true,
@@ -457,6 +472,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         }
                     }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const routeSlug = stopChartData.pickup_route_slugs[index];
+                        const registrationSlug = '{{ registration.slug }}';
+                        const url = `/central_admin/registrations/${registrationSlug}/routes/${routeSlug}/stops/`;
+                        window.location.href = url;
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });
@@ -465,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4. Top Drop Points
     if (stopChartData.drop_stops.length > 0) {
         const dropCtx = document.getElementById('dropStopsChart').getContext('2d');
-        new Chart(dropCtx, {
+        const dropChart = new Chart(dropCtx, {
             type: 'bar',
             data: {
                 labels: stopChartData.drop_stops,
@@ -482,6 +509,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...commonBarOptions,
                 indexAxis: 'y',
                 aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Tickets: ' + context.parsed.x;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         beginAtZero: true,
@@ -501,6 +543,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         }
                     }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const routeSlug = stopChartData.drop_route_slugs[index];
+                        const registrationSlug = '{{ registration.slug }}';
+                        const url = `/central_admin/registrations/${registrationSlug}/routes/${routeSlug}/stops/`;
+                        window.location.href = url;
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });

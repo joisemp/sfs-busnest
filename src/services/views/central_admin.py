@@ -2552,7 +2552,8 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
             pickup_point__isnull=False
         ).values(
             'pickup_point__name',
-            'pickup_point__route__name'
+            'pickup_point__route__name',
+            'pickup_point__route__slug'
         ).annotate(
             count=Count('id')
         ).order_by('-count')[:10]  # Top 10 pickup points
@@ -2562,7 +2563,8 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
             drop_point__isnull=False
         ).values(
             'drop_point__name',
-            'drop_point__route__name'
+            'drop_point__route__name',
+            'drop_point__route__slug'
         ).annotate(
             count=Count('id')
         ).order_by('-count')[:10]  # Top 10 drop points
@@ -2620,12 +2622,21 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
             count=Count('id')
         ).order_by('-count')[:5]
         
+        # Helper function to truncate stop names to first 3 words
+        def truncate_stop_name(stop_name, max_words=3):
+            words = stop_name.split()
+            if len(words) > max_words:
+                return ' '.join(words[:max_words]) + '...'
+            return stop_name
+        
         # Prepare data for charts
         context['stop_chart_data'] = json.dumps({
-            'pickup_stops': [f"{item['pickup_point__name']} ({item['pickup_point__route__name']})" for item in top_pickup_points],
+            'pickup_stops': [truncate_stop_name(item['pickup_point__name']) for item in top_pickup_points],
             'pickup_counts': [item['count'] for item in top_pickup_points],
-            'drop_stops': [f"{item['drop_point__name']} ({item['drop_point__route__name']})" for item in top_drop_points],
+            'pickup_route_slugs': [item['pickup_point__route__slug'] for item in top_pickup_points],
+            'drop_stops': [truncate_stop_name(item['drop_point__name']) for item in top_drop_points],
             'drop_counts': [item['count'] for item in top_drop_points],
+            'drop_route_slugs': [item['drop_point__route__slug'] for item in top_drop_points],
         })
         
         context['route_chart_data'] = json.dumps({
