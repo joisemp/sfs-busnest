@@ -1,5 +1,6 @@
 // BusNest Service Worker
-const CACHE_NAME = 'busnest-v1';
+const CACHE_VERSION = 'v3';
+const CACHE_NAME = `busnest-${CACHE_VERSION}`;
 
 // Static assets to pre-cache (app shell)
 const PRECACHE_ASSETS = [
@@ -52,22 +53,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Network-first for static assets (CSS/JS/images)
+  // Always fetches fresh from network; falls back to cache only when offline.
+  // This ensures style/script updates are visible immediately without hard reload.
   if (
     url.pathname.startsWith('/static/') ||
     url.pathname.startsWith('/staticfiles/')
   ) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           if (response && response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
-        });
-      })
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
