@@ -59,15 +59,22 @@
                 <div>
                     <h2>Requests</h2>
                 </div>
-                <!-- Search form -->
-                <form method="get" class="mb-3 mt-3 d-flex" style="max-width: 400px;">
-                    {% if search_query %}
-                        <a href="?" class="btn btn-secondary ms-2">Reset Search</a>
-                    {% else %}
-                    <input type="search" name="search" class="form-control me-2" placeholder="Search by name, contact, or email" value="{{ search_query|default_if_none:'' }}">
-                    <button type="submit" class="btn btn-primary">Search<i class="fa-solid fa-magnifying-glass ms-2"></i></button>
-                    {% endif %}
-                </form>
+                <div class="d-flex gap-2">
+                    <!-- Search form -->
+                    <form method="get" class="mb-3 mt-3 d-flex" style="max-width: 400px;">
+                        {% if search_query %}
+                            <a href="?" class="btn btn-secondary ms-2">Reset Search</a>
+                        {% else %}
+                        <input type="search" name="search" class="form-control me-2" placeholder="Search by name, contact, or email" value="{{ search_query|default_if_none:'' }}">
+                        <button type="submit" class="btn btn-primary">Search<i class="fa-solid fa-magnifying-glass ms-2"></i></button>
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Export PDF Button -->
+                    <button type="button" class="btn btn-success mb-3 mt-3" data-bs-toggle="modal" data-bs-target="#exportPDFModal" style="height: fit-content;">
+                        <i class="fa-solid fa-file-pdf me-2"></i>Export PDF
+                    </button>
+                </div>
             </div>
             <hr>
             <!-- Filter Tabs -->
@@ -292,6 +299,72 @@
           </nav>
         </div>
       </div>
+      
+      <!-- Export PDF Modal -->
+      <div class="modal fade" id="exportPDFModal" tabindex="-1" aria-labelledby="exportPDFModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exportPDFModalLabel">
+                <i class="fa-solid fa-file-pdf me-2"></i>Export Requests to PDF
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="text-muted mb-3">
+                Generate a PDF report of bus requests for field visits. Optionally filter by date range.
+              </p>
+              <form id="exportPDFForm">
+                <div class="mb-3">
+                  <label for="start_date" class="form-label">Start Date (Optional)</label>
+                  <input type="date" class="form-control" id="start_date" name="start_date">
+                  <small class="text-muted">Leave empty to include all requests from the beginning</small>
+                </div>
+                <div class="mb-3">
+                  <label for="end_date" class="form-label">End Date (Optional)</label>
+                  <input type="date" class="form-control" id="end_date" name="end_date">
+                  <small class="text-muted">Leave empty to include all requests until now</small>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-success" onclick="exportPDF()">
+                <i class="fa-solid fa-download me-2"></i>Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 </section>
+
+<script>
+function exportPDF() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    
+    // Build the URL with parameters
+    let url = "{% url 'central_admin:bus_request_export_pdf' registration_slug=registration.slug %}";
+    const params = new URLSearchParams();
+    
+    if (startDate) {
+        params.append('start_date', startDate);
+    }
+    if (endDate) {
+        params.append('end_date', endDate);
+    }
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    // Open in new window/tab to trigger download
+    window.open(url, '_blank');
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('exportPDFModal'));
+    modal.hide();
+}
+</script>
 
 {% endblock content %}
