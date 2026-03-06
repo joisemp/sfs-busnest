@@ -2511,14 +2511,34 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get only non-deleted tickets for recent display
+        # Get institution filter from query params (for charts only)
+        institution_slug = self.request.GET.get('institution', None)
+        selected_institution = None
+        
+        # Get all institutions for this organization
+        institutions = Institution.objects.filter(
+            org=self.request.user.profile.org
+        ).order_by('name')
+        context['institutions'] = institutions
+        
+        if institution_slug:
+            try:
+                selected_institution = Institution.objects.get(
+                    slug=institution_slug,
+                    org=self.request.user.profile.org
+                )
+                context['selected_institution'] = selected_institution
+            except Institution.DoesNotExist:
+                pass
+        
+        # Get only non-deleted tickets for recent display (NOT FILTERED)
         tickets = self.object.tickets.filter(
             org=self.request.user.profile.org,
             is_terminated=False
         ).order_by('-created_at')[:10]
         context['recent_tickets'] = tickets
         
-        # Calculate ticket statistics (only active/non-deleted tickets)
+        # Calculate ticket statistics (only active/non-deleted tickets - NOT FILTERED)
         total_active_tickets = self.object.tickets.filter(
             org=self.request.user.profile.org,
             is_terminated=False
@@ -2542,10 +2562,16 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
         import json
         
         # Get all active tickets for this registration
-        active_tickets = self.object.tickets.filter(
-            org=self.request.user.profile.org,
-            is_terminated=False
-        )
+        # Apply institution filter ONLY to chart data
+        chart_tickets_filter = {
+            'org': self.request.user.profile.org,
+            'is_terminated': False
+        }
+        
+        if selected_institution:
+            chart_tickets_filter['institution'] = selected_institution
+        
+        active_tickets = self.object.tickets.filter(**chart_tickets_filter)
         
         # 1. Top Pickup Points - Most popular pickup locations
         top_pickup_points = active_tickets.filter(

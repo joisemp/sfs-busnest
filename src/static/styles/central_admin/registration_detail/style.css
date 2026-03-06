@@ -562,7 +562,8 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   border-radius: 6px;
 }
 @media screen and (max-width: 991px) {
-  #registration-dashobard .analytics-section {
+  #registration-dashobard .analytics-section,
+  #registration-dashobard .filter-section {
     display: none;
   }
 }

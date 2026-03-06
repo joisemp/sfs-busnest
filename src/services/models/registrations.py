@@ -11,6 +11,7 @@ Models:
 
 from django.db import models
 from django.utils.text import slugify
+from django.utils import timezone
 from config.utils import generate_unique_slug, generate_unique_code
 from .core import Organisation
 
@@ -19,13 +20,14 @@ class Registration(models.Model):
     """
     Represents a registration event or period for an organization.
     Fields:
-        org, name, instructions, status, code, is_active, slug
+        org, name, start_date, end_date, instructions, status, code, is_active, slug
     Methods:
         save: Generates a unique slug and code if not present. Ensures only one active registration.
         __str__: Returns the registration name.
     """
     org = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name='registrations')
     name = models.CharField(max_length=200)
+    date_created = models.DateTimeField(default=timezone.now, help_text='Date when registration was created')
     instructions = models.TextField()
     status = models.BooleanField(default=False)
     code = models.CharField(max_length=100, unique=True, null=True)
