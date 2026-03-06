@@ -372,6 +372,88 @@ class TicketRestoreView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, Acti
         return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
 
 
+class TicketPermanentDeleteView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, View):
+    """
+    View to permanently delete a terminated ticket from the database.
+    Only allows deletion of tickets that are already terminated.
+    """
+    
+    def get(self, request, registration_slug, ticket_slug):
+        """
+        Display confirmation page for permanent ticket deletion.
+        """
+        ticket = get_object_or_404(
+            Ticket, 
+            slug=ticket_slug, 
+            registration__slug=registration_slug,
+            institution=request.user.profile.institution
+        )
+        
+        # Only allow deletion of terminated tickets
+        if not ticket.is_terminated:
+            messages.error(request, 'Only terminated tickets can be permanently deleted. Please terminate the ticket first.')
+            return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Check for associated payments
+        payment_count = ticket.payments.count()
+        can_delete = payment_count == 0
+        
+        return render(request, 'institution_admin/ticket_permanent_delete.html', {
+            'ticket': ticket,
+            'registration': ticket.registration,
+            'payment_count': payment_count,
+            'can_delete': can_delete
+        })
+    
+    @transaction.atomic
+    def post(self, request, registration_slug, ticket_slug):
+        """
+        Permanently delete the terminated ticket.
+        """
+        ticket = get_object_or_404(
+            Ticket, 
+            slug=ticket_slug, 
+            registration__slug=registration_slug,
+            institution=request.user.profile.institution
+        )
+        
+        # Verify ticket is terminated
+        if not ticket.is_terminated:
+            messages.error(request, 'Only terminated tickets can be permanently deleted.')
+            return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Check for associated payments before deletion
+        payment_count = ticket.payments.count()
+        if payment_count > 0:
+            messages.error(
+                request,
+                f'Cannot permanently delete this ticket because it has {payment_count} payment record(s) associated with it. '
+                f'Please remove all payment records before deleting the ticket.'
+            )
+            return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+        
+        # Store info for success message
+        student_name = ticket.student_name
+        ticket_id = ticket.ticket_id
+        
+        # Delete the ticket - Receipt (OneToOne) will be freed for reuse
+        ticket.delete()
+        
+        messages.success(
+            request, 
+            f'Ticket {ticket_id} for {student_name} has been permanently deleted from the system.'
+        )
+        
+        # Log the deletion
+        log_user_activity(
+            user=request.user,
+            action=f"Permanently deleted ticket: {ticket_id}",
+            description=f"Ticket {ticket_id} for student {student_name} was permanently deleted."
+        )
+        
+        return redirect('institution_admin:ticket_list', registration_slug=registration_slug)
+
+
 class ReceiptListView(LoginRequiredMixin, InsitutionAdminOnlyAccessMixin, ListView):
     """
     View to list all receipts for a registration.
