@@ -48,9 +48,9 @@ class ValidateStudentFormView(RegistrationOpenCheckMixin, FormView):
             self.request.session['receipt_id'] = receipt.pk
             self.request.session['student_id'] = receipt.student_id
 
-            # Check if a ticket already exists for this receipt
-            if Ticket.objects.filter(recipt_id=receipt.pk, is_terminated=False).exists():
-                form.add_error(None, "A ticket already exists for this receipt.")
+            # Check if a ticket already exists for this receipt (regardless of termination status)
+            if Ticket.objects.filter(recipt_id=receipt.pk).exists():
+                form.add_error(None, "A ticket already exists for this receipt. Or your ticket is terminated. Please contact your institution for further assistance.")
                 return self.form_invalid(form)
 
             return super().form_valid(form)
