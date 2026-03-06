@@ -310,7 +310,7 @@
                       </button>
                       <ul class="dropdown-menu shadow-lg">
                         {% if ticket.is_terminated %}
-                        <!-- For terminated tickets, only show restore option -->
+                        <!-- For terminated tickets, show restore and permanent delete options -->
                         <li class="p-3">
                           <form method="POST" action="{% url 'institution_admin:ticket_restore' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}" style="display: inline;">
                             {% csrf_token %}
@@ -318,6 +318,12 @@
                               <i class="fa-solid fa-rotate-left me-2"></i>Restore ticket
                             </button>
                           </form>
+                        </li>
+                        <li class="p-3">
+                          <a class="dropdown-item text-danger" 
+                             href="{% url 'institution_admin:ticket_permanent_delete' registration_slug=ticket.registration.slug ticket_slug=ticket.slug %}">
+                            <i class="fa-solid fa-trash-can me-2"></i>Permanently delete
+                          </a>
                         </li>
                         {% else %}
                         <!-- For active tickets, show all normal actions -->

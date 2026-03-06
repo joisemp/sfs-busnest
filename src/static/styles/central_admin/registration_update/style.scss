@@ -1,81 +1,385 @@
 @use "../../sidebar_navbar_base" as *;
+@use "sass:color";
 
+// ── Page layout ───────────────────────────────────────────────
 #registeration-update {
-    .registration-setting {
+    padding-bottom: 2rem;
+
+    // ── Back button ───────────────────────────────────────────
+    .back-button-container {
+        margin-bottom: 1rem;
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid $gray-200;
+            background: $base-white;
+            color: $gray-700;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s, border-color 0.15s;
+
+            &:hover {
+                background: $gray-100;
+                border-color: $gray-300;
+            }
+
+            i {
+                font-size: 0.875rem;
+            }
+        }
+    }
+
+    // ── Page header ───────────────────────────────────────────
+    .page-header {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        .page-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: $indigo-400;
+            margin: 0;
+        }
+
+        .page-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: $gray-800;
+            margin: 0;
+            line-height: 1.3;
+        }
+    }
+
+    // ── Two-column grid ───────────────────────────────────────
+    .update-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 1.25rem;
+        align-items: start;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    // ── Shared card base ──────────────────────────────────────
+    .card {
+        border: 1px solid $gray-200;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        background: $base-white;
+        margin-bottom: 1.25rem;
+
+        .card-body {
+            padding: 1.25rem 1.5rem;
+        }
+    }
+
+    // ── Booking link card ─────────────────────────────────────
+    .link-card {
+        background: linear-gradient(
+            135deg,
+            rgba(79, 70, 229, 1) 0%,
+            rgba(99, 91, 249, 1) 100%
+        ) !important;
+        border: none !important;
+
+        .link-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+            margin: 0 0 0.2rem 0;
+        }
+
+        .card-desc {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.85);
+            margin: 0;
+        }
+
+        .link-status-badge {
+            flex-shrink: 0;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+
+            &.badge-open {
+                background: rgba(134, 239, 172, 0.25);
+                color: #bbf7d0;
+                border: 1px solid rgba(134, 239, 172, 0.4);
+            }
+
+            &.badge-closed {
+                background: rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.6);
+                border: 1px solid rgba(255,255,255,0.2);
+            }
+        }
+
+        .link-input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .link-input {
+            flex: 1;
+            min-width: 0;
+            border: none !important;
+            border-radius: 8px;
+            color: $slate-200;
+            background-color: rgba(255,255,255,0.15) !important;
+            font-size: 0.82rem;
+            padding: 0.5rem 0.75rem;
+
+            &:focus {
+                outline: none;
+                box-shadow: none;
+            }
+        }
+
+        .btn-copy,
+        .btn-view {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.15);
+            color: $base-white;
+            text-decoration: none;
+            transition: background 0.15s;
+            cursor: pointer;
+
+            &:hover {
+                background: rgba(255,255,255,0.25);
+                color: $base-white;
+            }
+        }
+
+        .btn-copy-success {
+            background: rgba(134, 239, 172, 0.3) !important;
+            border-color: rgba(134, 239, 172, 0.5) !important;
+        }
+    }
+
+    // ── Section cards (general, instructions, visibility) ─────
+    .section-card {
+        .card-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid $gray-100;
+        }
+
+        .section-icon {
+            margin-top: 2px;
+            font-size: 1rem;
+            color: $indigo-500;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: $gray-800;
+            margin: 0 0 0.15rem 0;
+        }
+
+        .section-desc {
+            font-size: 0.8rem;
+            color: $gray-400;
+            margin: 0;
+        }
+    }
+
+    // ── Field styling ─────────────────────────────────────────
+    .field-group {
+        margin-bottom: 0.75rem;
+
+        .field-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: $gray-700;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            border: 1px solid $gray-200;
+            border-radius: 8px;
+            padding: 0.55rem 0.875rem;
+            font-size: 0.9rem;
+            color: $gray-800;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            min-height: 44px;
+
+            &:focus {
+                border-color: $indigo-400;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+                outline: none;
+            }
+        }
+
+        .field-error {
+            font-size: 0.78rem;
+            color: $red-500;
+            margin-top: 0.3rem;
+        }
+    }
+
+    // ── Toggle rows (visibility section) ─────────────────────
+    .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.875rem 0;
+
+        &:not(:last-child) {
+            border-bottom: 1px solid $gray-100;
+        }
+
+        .toggle-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+
+            .toggle-label {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: $gray-800;
+            }
+
+            .toggle-desc {
+                font-size: 0.75rem;
+                color: $gray-400;
+            }
+        }
+
+        .form-check {
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-check-input {
+            width: 2.5em;
+            height: 1.35em;
+            cursor: pointer;
+            margin: 0;
+
+            &:checked {
+                background-color: $indigo-500;
+                border-color: $indigo-500;
+            }
+
+            &:focus {
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+                border-color: $indigo-400;
+            }
+        }
+    }
+
+    // ── Quill editor overrides ────────────────────────────────
+    #quill-editor {
+        border-radius: 0 0 8px 8px;
+        min-height: 280px;
+        font-size: 0.9rem;
+        color: $gray-800;
+    }
+
+    .ql-toolbar.ql-snow {
+        border: 1px solid $gray-200;
+        border-radius: 8px 8px 0 0;
+        background: $gray-50;
+    }
+
+    .ql-container.ql-snow {
+        border: 1px solid $gray-200;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .ql-editor {
+        min-height: 280px;
+        font-size: 0.9rem;
+        line-height: 1.7;
+
+        &.ql-blank::before {
+            color: $gray-400;
+            font-style: normal;
+        }
+    }
+
+    // ── Save card ─────────────────────────────────────────────
+    .save-card {
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+        margin-bottom: 0;
+
+        .card-body {
+            padding: 0;
+        }
+    }
+
+    .btn-save {
+        display: flex;
+        align-items: center;
         justify-content: center;
-        .wrap {
-            width: 500px;
-            margin-top: 12px;
+        background: $indigo-600;
+        color: $base-white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.7rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.15s, transform 0.1s;
 
-            .heading{
-                font-weight: 700;
-                margin-bottom: 0.5rem;
-                color: $indigo-600;
-            }
+        &:hover {
+            background: $indigo-700;
+            color: $base-white;
+        }
 
-            .link-box {
-                padding: 15px 0px;
-                background: rgb(120, 112, 255) !important;
-                background: linear-gradient(
-                    0deg,
-                    rgb(103, 96, 242) 0%,
-                    rgb(103, 96, 242) 6%,
-                    rgba(79, 70, 229, 1) 66%,
-                    rgba(79, 70, 229, 1) 90%
-                ) !important;
-                h5 {
-                    color: #ffff;
-                }
-
-                .link-input {
-                    border: none;
-                    border-radius: 3px;
-                    color: $slate-200;
-                    background-color: $indigo-500;
-                }
-                .button {
-                    display: flex;
-                    margin-top: 16px;
-                    justify-content: right;
-                }
-            }
-
-            .form-card{
-                .card{
-                    border: none !important;
-                    background-color: $indigo-50;
-                    padding: 0.5rem 0;
-                    label{
-                        font-weight: 600;
-                        padding-bottom: 6px;
-                    }
-                    .form-control{
-                        border: none;
-                        min-height: 50px;
-                    }
-                }
-            }
-            
-            .form-check-input {
-                &:checked {
-                    background-color: $indigo-600;
-                    border-color: $indigo-600;
-                }
-
-                &:focus {
-                    border-color: $indigo-600;
-                    box-shadow: 0 0 0 0.2rem rgba($indigo-600, 0.25);
-                }
-            }
-            .save-button {
-                display: flex;
-                justify-content: right;
-            }
-            .head {
-                display: flex;
-                justify-content: space-between;
-            }
+        &:active {
+            transform: scale(0.98);
         }
     }
 }

@@ -329,7 +329,8 @@
 
     // Hide charts and their container on smaller devices
     @media screen and (max-width: 991px) {
-        .analytics-section {
+        .analytics-section,
+        .filter-section {
             display: none;
         }
     }

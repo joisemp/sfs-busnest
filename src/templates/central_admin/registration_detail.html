@@ -23,7 +23,7 @@
                     </h1>
                     <p class="text-muted mb-0" style="font-size: 0.9375rem;">
                         <i class="fa-solid fa-calendar-days me-2" style="color: #6366f1;"></i>
-                        {{ registration.start_date|date:"M d, Y" }} - {{ registration.end_date|date:"M d, Y" }}
+                        {{ registration.date_created|date:"M d, Y" }}
                     </p>
                 </div>
                 <div class="d-flex gap-2">
@@ -42,8 +42,117 @@
         </div>
     </div>
 
+    <!-- Institution Filter Section -->
+    <div class="row mb-4 filter-section">
+        <div class="col-12">
+            <div class="card shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 12px; overflow: hidden;">
+                <div class="card-body py-4 px-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="filter-icon-wrapper" style="background: rgba(255, 255, 255, 0.2); width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-filter text-white" style="font-size: 1.25rem;"></i>
+                            </div>
+                            <div>
+                                <label for="institutionFilter" class="text-white mb-1 fw-bold" style="font-size: 1rem; letter-spacing: -0.01em;">Filter Charts by Institution</label>
+                                <p class="text-white mb-0 opacity-75" style="font-size: 0.8rem;">Analyze chart data for specific institutions</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="custom-select-wrapper" style="position: relative; min-width: 280px;">
+                                <select id="institutionFilter" class="form-select custom-dropdown" style="
+                                    background-color: rgba(255, 255, 255, 0.95);
+                                    border: 2px solid rgba(255, 255, 255, 0.3);
+                                    border-radius: 10px;
+                                    padding: 12px 40px 12px 16px;
+                                    font-size: 0.95rem;
+                                    font-weight: 500;
+                                    color: #1e293b;
+                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                                    transition: all 0.3s ease;
+                                    cursor: pointer;
+                                    appearance: none;
+                                    -webkit-appearance: none;
+                                    -moz-appearance: none;
+                                    background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236366f1%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e');
+                                    background-repeat: no-repeat;
+                                    background-position: right 12px center;
+                                    background-size: 20px;
+                                " onchange="filterByInstitution(this.value)">
+                                    <option value="">🏫 All Institutions</option>
+                                    {% for institution in institutions %}
+                                    <option value="{{ institution.slug }}" {% if selected_institution and selected_institution.slug == institution.slug %}selected{% endif %}>
+                                        {{ institution.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if selected_institution %}
+                            <a href="?" style="text-decoration: none;">
+                                <button type="button" class="btn btn-light shadow-sm" style="
+                                    border-radius: 10px;
+                                    padding: 12px 20px;
+                                    font-weight: 600;
+                                    font-size: 0.9rem;
+                                    border: 2px solid rgba(255, 255, 255, 0.3);
+                                    transition: all 0.3s ease;
+                                ">
+                                    <i class="fa-solid fa-times me-1"></i>Clear Filter
+                                </button>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .custom-dropdown:hover {
+            background-color: white !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .custom-dropdown:focus {
+            outline: none;
+            background-color: white !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 6px 12px -2px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .btn-light:hover {
+            background-color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        .filter-icon-wrapper {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover .filter-icon-wrapper {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        @media (max-width: 768px) {
+            .custom-select-wrapper {
+                min-width: 100% !important;
+            }
+        }
+    </style>
+
     <!-- Analytics Dashboard Section -->
     <div class="row mb-4 analytics-section">
+        {% if selected_institution %}
+        <div class="col-12 mb-3">
+            <div class="alert alert-info d-flex align-items-center mb-0" role="alert">
+                <i class="fa-solid fa-chart-line me-2"></i>
+                <span>Chart analytics filtered for <strong>{{ selected_institution.name }}</strong></span>
+            </div>
+        </div>
+        {% endif %}
         <!-- Route Distribution Chart -->
         <div class="col-12 col-xl-8 mb-4">
             <div class="card chart-card">
@@ -194,7 +303,7 @@
             <div class="table-content">
 
                 <div class="heading">
-                    <h2>Recent registrations</h2>
+                    <h2>Recent Tickets</h2>
                     <div class="button-group">
                         <a href="{% url 'central_admin:ticket_list' registration_slug=registration.slug %}">
                             <button type="button" class="btn btn-primary">
@@ -216,22 +325,31 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for ticket in recent_tickets %}
-                            <tr>
-                                <td>{{ticket.student_id}}</td>
-                                <td>{{ticket.student_name}}</td>
-                                <td>{{ticket.institution.name}}</td>
-                                <td>
-                                    <span class="badge rounded-pill 
-                                    {% if ticket.ticket_type == 'one_way' %}text-bg-primary
-                                    {% elif ticket.ticket_type == 'two_way' %}text-bg-dark
-                                    {% endif %} px-3" style="padding-bottom: 6px;">
-                                        {{ ticket.get_ticket_type_display }}
-                                    </span>
-                                </td>
-                                <td>{{ticket.ticket_id}}</td>
-                            </tr>
-                            {% endfor %}
+                            {% if recent_tickets %}
+                                {% for ticket in recent_tickets %}
+                                <tr>
+                                    <td>{{ticket.student_id}}</td>
+                                    <td>{{ticket.student_name}}</td>
+                                    <td>{{ticket.institution.name}}</td>
+                                    <td>
+                                        <span class="badge rounded-pill 
+                                        {% if ticket.ticket_type == 'one_way' %}text-bg-primary
+                                        {% elif ticket.ticket_type == 'two_way' %}text-bg-dark
+                                        {% endif %} px-3" style="padding-bottom: 6px;">
+                                            {{ ticket.get_ticket_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ticket.ticket_id}}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fa-solid fa-inbox fa-2x mb-2"></i>
+                                        <p class="mb-0">No tickets found{% if selected_institution %} for {{ selected_institution.name }}{% endif %}</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -421,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 3. Top Pickup Points
     if (stopChartData.pickup_stops.length > 0) {
         const pickupCtx = document.getElementById('pickupStopsChart').getContext('2d');
-        new Chart(pickupCtx, {
+        const pickupChart = new Chart(pickupCtx, {
             type: 'bar',
             data: {
                 labels: stopChartData.pickup_stops,
@@ -438,6 +556,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...commonBarOptions,
                 indexAxis: 'y',
                 aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Tickets: ' + context.parsed.x;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         beginAtZero: true,
@@ -457,6 +590,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         }
                     }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const routeSlug = stopChartData.pickup_route_slugs[index];
+                        const registrationSlug = '{{ registration.slug }}';
+                        const url = `/central_admin/registrations/${registrationSlug}/routes/${routeSlug}/stops/`;
+                        window.location.href = url;
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });
@@ -465,7 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4. Top Drop Points
     if (stopChartData.drop_stops.length > 0) {
         const dropCtx = document.getElementById('dropStopsChart').getContext('2d');
-        new Chart(dropCtx, {
+        const dropChart = new Chart(dropCtx, {
             type: 'bar',
             data: {
                 labels: stopChartData.drop_stops,
@@ -482,6 +627,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...commonBarOptions,
                 indexAxis: 'y',
                 aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Tickets: ' + context.parsed.x;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         beginAtZero: true,
@@ -501,6 +661,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         }
                     }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const routeSlug = stopChartData.drop_route_slugs[index];
+                        const registrationSlug = '{{ registration.slug }}';
+                        const url = `/central_admin/registrations/${registrationSlug}/routes/${routeSlug}/stops/`;
+                        window.location.href = url;
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });
@@ -544,5 +716,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<script>
+function filterByInstitution(institutionSlug) {
+    const url = new URL(window.location.href);
+    if (institutionSlug) {
+        url.searchParams.set('institution', institutionSlug);
+    } else {
+        url.searchParams.delete('institution');
+    }
+    window.location.href = url.toString();
+}
 </script>
 {% endblock content %}

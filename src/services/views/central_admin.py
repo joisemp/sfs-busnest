@@ -2511,14 +2511,34 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get only non-deleted tickets for recent display
+        # Get institution filter from query params (for charts only)
+        institution_slug = self.request.GET.get('institution', None)
+        selected_institution = None
+        
+        # Get all institutions for this organization
+        institutions = Institution.objects.filter(
+            org=self.request.user.profile.org
+        ).order_by('name')
+        context['institutions'] = institutions
+        
+        if institution_slug:
+            try:
+                selected_institution = Institution.objects.get(
+                    slug=institution_slug,
+                    org=self.request.user.profile.org
+                )
+                context['selected_institution'] = selected_institution
+            except Institution.DoesNotExist:
+                pass
+        
+        # Get only non-deleted tickets for recent display (NOT FILTERED)
         tickets = self.object.tickets.filter(
             org=self.request.user.profile.org,
             is_terminated=False
         ).order_by('-created_at')[:10]
         context['recent_tickets'] = tickets
         
-        # Calculate ticket statistics (only active/non-deleted tickets)
+        # Calculate ticket statistics (only active/non-deleted tickets - NOT FILTERED)
         total_active_tickets = self.object.tickets.filter(
             org=self.request.user.profile.org,
             is_terminated=False
@@ -2542,17 +2562,24 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
         import json
         
         # Get all active tickets for this registration
-        active_tickets = self.object.tickets.filter(
-            org=self.request.user.profile.org,
-            is_terminated=False
-        )
+        # Apply institution filter ONLY to chart data
+        chart_tickets_filter = {
+            'org': self.request.user.profile.org,
+            'is_terminated': False
+        }
+        
+        if selected_institution:
+            chart_tickets_filter['institution'] = selected_institution
+        
+        active_tickets = self.object.tickets.filter(**chart_tickets_filter)
         
         # 1. Top Pickup Points - Most popular pickup locations
         top_pickup_points = active_tickets.filter(
             pickup_point__isnull=False
         ).values(
             'pickup_point__name',
-            'pickup_point__route__name'
+            'pickup_point__route__name',
+            'pickup_point__route__slug'
         ).annotate(
             count=Count('id')
         ).order_by('-count')[:10]  # Top 10 pickup points
@@ -2562,7 +2589,8 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
             drop_point__isnull=False
         ).values(
             'drop_point__name',
-            'drop_point__route__name'
+            'drop_point__route__name',
+            'drop_point__route__slug'
         ).annotate(
             count=Count('id')
         ).order_by('-count')[:10]  # Top 10 drop points
@@ -2620,12 +2648,21 @@ class RegistrationDetailView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, De
             count=Count('id')
         ).order_by('-count')[:5]
         
+        # Helper function to truncate stop names to first 3 words
+        def truncate_stop_name(stop_name, max_words=3):
+            words = stop_name.split()
+            if len(words) > max_words:
+                return ' '.join(words[:max_words]) + '...'
+            return stop_name
+        
         # Prepare data for charts
         context['stop_chart_data'] = json.dumps({
-            'pickup_stops': [f"{item['pickup_point__name']} ({item['pickup_point__route__name']})" for item in top_pickup_points],
+            'pickup_stops': [truncate_stop_name(item['pickup_point__name']) for item in top_pickup_points],
             'pickup_counts': [item['count'] for item in top_pickup_points],
-            'drop_stops': [f"{item['drop_point__name']} ({item['drop_point__route__name']})" for item in top_drop_points],
+            'pickup_route_slugs': [item['pickup_point__route__slug'] for item in top_pickup_points],
+            'drop_stops': [truncate_stop_name(item['drop_point__name']) for item in top_drop_points],
             'drop_counts': [item['count'] for item in top_drop_points],
+            'drop_route_slugs': [item['drop_point__route__slug'] for item in top_drop_points],
         })
         
         context['route_chart_data'] = json.dumps({
@@ -3756,6 +3793,207 @@ class BusRequestCommentView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, Vie
             comment_html = render_to_string('central_admin/comment.html', {'comment': comment}).strip()
             return HttpResponse(comment_html)
         return HttpResponse('Invalid form submission', status=400)
+
+
+class BusRequestExportPDFView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):
+    """
+    View to export bus requests as PDF for field visits.
+    
+    This view generates a PDF document containing bus request details organized for
+    visiting the locations mentioned in the requests. It supports date range filtering
+    and formats the information to be helpful for field staff.
+    
+    Methods:
+        get(request, registration_slug):
+            Handles GET requests to generate and return a PDF file.
+            - Filters bus requests by organization, registration, and optional date range
+            - Groups requests by status and institution
+            - Includes addresses, map links, contact details for each request
+            - Returns PDF as downloadable file
+    
+    Permissions:
+        - Requires the user to be authenticated and have central admin access.
+    """
+    def get(self, request, registration_slug):
+        registration = get_object_or_404(Registration, slug=registration_slug)
+        
+        # Get date range parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        # Base queryset filtered by org and registration
+        queryset = BusRequest.objects.filter(
+            org=request.user.profile.org,
+            registration=registration
+        ).select_related('institution', 'receipt', 'student_group').order_by('institution__name', 'created_at')
+        
+        # Apply date range filter if provided
+        if start_date:
+            start_date_parsed = parse_date(start_date)
+            if start_date_parsed:
+                queryset = queryset.filter(created_at__date__gte=start_date_parsed)
+        
+        if end_date:
+            end_date_parsed = parse_date(end_date)
+            if end_date_parsed:
+                queryset = queryset.filter(created_at__date__lte=end_date_parsed)
+        
+        bus_requests = list(queryset)
+        
+        # Create PDF
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Margins and layout
+        margin_left, margin_right = 40, 40
+        margin_top, margin_bottom = 60, 60
+        usable_width = width - margin_left - margin_right
+        y = height - margin_top
+        
+        def check_page_break(y, required_space=100):
+            """Check if we need to start a new page."""
+            if y < margin_bottom + required_space:
+                p.showPage()
+                return height - margin_top
+            return y
+        
+        def draw_header():
+            """Draw the header on a new page."""
+            y = height - margin_top
+            p.setFont("Helvetica-Bold", 20)
+            p.setFillColorRGB(0.13, 0.22, 0.38)
+            p.drawString(margin_left, y, f"Bus Requests - Field Visit Report")
+            y -= 25
+            
+            p.setFont("Helvetica-Bold", 12)
+            p.setFillColorRGB(0.25, 0.25, 0.25)
+            p.drawString(margin_left, y, f"Registration: {registration.name}")
+            y -= 18
+            
+            p.setFont("Helvetica", 10)
+            if start_date and end_date:
+                p.drawString(margin_left, y, f"Date Range: {start_date} to {end_date}")
+            elif start_date:
+                p.drawString(margin_left, y, f"From: {start_date}")
+            elif end_date:
+                p.drawString(margin_left, y, f"Until: {end_date}")
+            else:
+                p.drawString(margin_left, y, f"All Requests")
+            y -= 18
+            
+            p.drawString(margin_left, y, f"Total Requests: {len(bus_requests)}")
+            y -= 15
+            
+            # Horizontal line
+            p.setStrokeColorRGB(0.18, 0.32, 0.55)
+            p.setLineWidth(1.5)
+            p.line(margin_left, y, width - margin_right, y)
+            y -= 20
+            
+            return y
+        
+        # Draw first page header
+        y = draw_header()
+        
+        # Group requests by institution
+        from itertools import groupby
+        grouped_requests = groupby(bus_requests, key=lambda x: x.institution.name)
+        
+        for institution_name, requests in grouped_requests:
+            requests_list = list(requests)
+            
+            # Check space for institution header
+            y = check_page_break(y, 80)
+            
+            # Institution header
+            p.setFont("Helvetica-Bold", 14)
+            p.setFillColorRGB(0.19, 0.32, 0.55)
+            p.rect(margin_left, y - 25, usable_width, 25, fill=1, stroke=0)
+            p.setFillColorRGB(1, 1, 1)
+            p.drawString(margin_left + 10, y - 15, f"{institution_name} ({len(requests_list)} requests)")
+            y -= 35
+            
+            # Draw each request in this institution
+            for idx, bus_req in enumerate(requests_list, 1):
+                # Check if we need space for this request (approximately 180 points)
+                y = check_page_break(y, 180)
+                
+                # Request card background
+                card_height = 160
+                p.setFillColorRGB(0.97, 0.98, 1)
+                p.rect(margin_left, y - card_height, usable_width, card_height, fill=1, stroke=1)
+                
+                # Request header
+                p.setFont("Helvetica-Bold", 11)
+                p.setFillColorRGB(0.13, 0.22, 0.38)
+                p.drawString(margin_left + 10, y - 15, f"{idx}. {bus_req.student_name}")
+                
+                # Status badge
+                status_text = bus_req.get_status_display()
+                status_color = (0.8, 0.2, 0.2) if bus_req.status == 'closed' else (0.2, 0.5, 0.2)
+                p.setFillColorRGB(*status_color)
+                p.setFont("Helvetica-Bold", 9)
+                p.drawString(margin_left + 10, y - 28, f"[{status_text}]")
+                
+                # Receipt ID and Student Group
+                p.setFont("Helvetica", 9)
+                p.setFillColorRGB(0.3, 0.3, 0.3)
+                receipt_text = f"Receipt: {bus_req.receipt.receipt_id}"
+                if bus_req.student_group:
+                    receipt_text += f" | Class: {bus_req.student_group.name}"
+                p.drawString(margin_left + 10, y - 42, receipt_text)
+                
+                # Pickup Address
+                p.setFont("Helvetica-Bold", 10)
+                p.setFillColorRGB(0.13, 0.22, 0.38)
+                p.drawString(margin_left + 10, y - 60, "Pickup Location:")
+                p.setFont("Helvetica", 9)
+                p.setFillColorRGB(0, 0, 0)
+                
+                # Wrap address text if too long
+                pickup_addr = bus_req.pickup_address[:80] + "..." if len(bus_req.pickup_address) > 80 else bus_req.pickup_address
+                p.drawString(margin_left + 20, y - 73, pickup_addr)
+                
+                # Map link icon
+                p.setFillColorRGB(0, 0, 0.8)
+                p.drawString(margin_left + 20, y - 85, "Map: " + bus_req.pickup_location_map_link[:65])
+                
+                # Drop Address
+                p.setFont("Helvetica-Bold", 10)
+                p.setFillColorRGB(0.13, 0.22, 0.38)
+                p.drawString(margin_left + 10, y - 103, "Drop Location:")
+                p.setFont("Helvetica", 9)
+                p.setFillColorRGB(0, 0, 0)
+                
+                drop_addr = bus_req.drop_address[:80] + "..." if len(bus_req.drop_address) > 80 else bus_req.drop_address
+                p.drawString(margin_left + 20, y - 116, drop_addr)
+                
+                # Map link
+                p.setFillColorRGB(0, 0, 0.8)
+                p.drawString(margin_left + 20, y - 128, "Map: " + bus_req.drop_location_map_link[:65])
+                
+                # Contact Information
+                p.setFont("Helvetica-Bold", 9)
+                p.setFillColorRGB(0.13, 0.22, 0.38)
+                p.drawString(margin_left + 10, y - 145, f"Contact: {bus_req.contact_no} | Email: {bus_req.contact_email}")
+                
+                y -= card_height + 15
+        
+        # If no requests found
+        if not bus_requests:
+            p.setFont("Helvetica", 12)
+            p.setFillColorRGB(0.5, 0.5, 0.5)
+            p.drawString(margin_left, y, "No bus requests found for the selected criteria.")
+        
+        # Save PDF
+        p.showPage()
+        p.save()
+        
+        # Return PDF response
+        buffer.seek(0)
+        filename = f"bus_requests_{registration.slug}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        return FileResponse(buffer, as_attachment=True, filename=filename)
 
 
 class TicketExportView(LoginRequiredMixin, CentralAdminOnlyAccessMixin, View):

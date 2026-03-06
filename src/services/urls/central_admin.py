@@ -63,6 +63,7 @@ URL Patterns (detailed):
 - registrations/<slug:registration_slug>/bus-requests/: List all bus requests for a registration.
 - registrations/<slug:registration_slug>/bus-requests/open/: List open bus requests.
 - registrations/<slug:registration_slug>/bus-requests/closed/: List closed bus requests.
+- registrations/<slug:registration_slug>/bus-requests/export-pdf/: Export bus requests to PDF for field visits (with optional date range filtering).
 - registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/delete/: Delete a bus request.
 - registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/status/: Update the status of a bus request.
 - registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/comment/: Add a comment to a bus request.
@@ -178,6 +179,7 @@ urlpatterns = [
      path('registrations/<slug:registration_slug>/bus-requests/', central_admin.BusRequestListView.as_view(), name='bus_request_list'),
      path('registrations/<slug:registration_slug>/bus-requests/open/', central_admin.BusRequestOpenListView.as_view(), name='bus_request_open_list'),
      path('registrations/<slug:registration_slug>/bus-requests/closed/', central_admin.BusRequestClosedListView.as_view(), name='bus_request_closed_list'),
+     path('registrations/<slug:registration_slug>/bus-requests/export-pdf/', central_admin.BusRequestExportPDFView.as_view(), name='bus_request_export_pdf'),
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/delete/', central_admin.BusRequestDeleteView.as_view(), name='bus_request_delete'),
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/status/', central_admin.BusRequestStatusUpdateView.as_view(), name='bus_request_status_update'),
      path('registrations/<slug:registration_slug>/bus-requests/<slug:bus_request_slug>/comment/', central_admin.BusRequestCommentView.as_view(), name='bus_request_comment'),

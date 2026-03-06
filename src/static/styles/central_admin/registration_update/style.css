@@ -292,64 +292,317 @@ tbody .table-link a, td .table-link a, tfoot .table-link a, th .table-link a, th
   font-weight: 500;
 }
 
-#registeration-update .registration-setting {
+#registeration-update {
+  padding-bottom: 2rem;
+}
+#registeration-update .back-button-container {
+  margin-bottom: 1rem;
+}
+#registeration-update .back-button-container .back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+#registeration-update .back-button-container .back-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+#registeration-update .back-button-container .back-btn i {
+  font-size: 0.875rem;
+}
+#registeration-update .page-header {
   display: flex;
-  justify-content: center;
-}
-#registeration-update .registration-setting .wrap {
-  width: 500px;
-  margin-top: 12px;
-}
-#registeration-update .registration-setting .wrap .heading {
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: #4f46e5;
-}
-#registeration-update .registration-setting .wrap .link-box {
-  padding: 15px 0px;
-  background: rgb(120, 112, 255) !important;
-  background: linear-gradient(0deg, rgb(103, 96, 242) 0%, rgb(103, 96, 242) 6%, rgb(79, 70, 229) 66%, rgb(79, 70, 229) 90%) !important;
-}
-#registeration-update .registration-setting .wrap .link-box h5 {
-  color: white;
-}
-#registeration-update .registration-setting .wrap .link-box .link-input {
-  border: none;
-  border-radius: 3px;
-  color: #e2e8f0;
-  background-color: #6366f1;
-}
-#registeration-update .registration-setting .wrap .link-box .button {
-  display: flex;
-  margin-top: 16px;
-  justify-content: right;
-}
-#registeration-update .registration-setting .wrap .form-card .card {
-  border: none !important;
-  background-color: #eef2ff;
-  padding: 0.5rem 0;
-}
-#registeration-update .registration-setting .wrap .form-card .card label {
-  font-weight: 600;
-  padding-bottom: 6px;
-}
-#registeration-update .registration-setting .wrap .form-card .card .form-control {
-  border: none;
-  min-height: 50px;
-}
-#registeration-update .registration-setting .wrap .form-check-input:checked {
-  background-color: #4f46e5;
-  border-color: #4f46e5;
-}
-#registeration-update .registration-setting .wrap .form-check-input:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
-}
-#registeration-update .registration-setting .wrap .save-button {
-  display: flex;
-  justify-content: right;
-}
-#registeration-update .registration-setting .wrap .head {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+#registeration-update .page-header .page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+#registeration-update .page-header .page-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #818cf8;
+  margin: 0;
+}
+#registeration-update .page-header .page-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.3;
+}
+#registeration-update .update-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  #registeration-update .update-layout {
+    grid-template-columns: 1fr;
+  }
+}
+#registeration-update .card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  margin-bottom: 1.25rem;
+}
+#registeration-update .card .card-body {
+  padding: 1.25rem 1.5rem;
+}
+#registeration-update .link-card {
+  background: linear-gradient(135deg, rgb(79, 70, 229) 0%, rgb(99, 91, 249) 100%) !important;
+  border: none !important;
+}
+#registeration-update .link-card .link-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+#registeration-update .link-card .card-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.2rem 0;
+}
+#registeration-update .link-card .card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+#registeration-update .link-card .link-status-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+}
+#registeration-update .link-card .link-status-badge.badge-open {
+  background: rgba(134, 239, 172, 0.25);
+  color: #bbf7d0;
+  border: 1px solid rgba(134, 239, 172, 0.4);
+}
+#registeration-update .link-card .link-status-badge.badge-closed {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+#registeration-update .link-card .link-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+#registeration-update .link-card .link-input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  border-radius: 8px;
+  color: #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.75rem;
+}
+#registeration-update .link-card .link-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+#registeration-update .link-card .btn-copy,
+#registeration-update .link-card .btn-view {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  text-decoration: none;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+#registeration-update .link-card .btn-copy:hover,
+#registeration-update .link-card .btn-view:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+#registeration-update .link-card .btn-copy-success {
+  background: rgba(134, 239, 172, 0.3) !important;
+  border-color: rgba(134, 239, 172, 0.5) !important;
+}
+#registeration-update .section-card .card-body {
+  padding: 1.25rem 1.5rem;
+}
+#registeration-update .section-card .section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+#registeration-update .section-card .section-icon {
+  margin-top: 2px;
+  font-size: 1rem;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+#registeration-update .section-card .section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.15rem 0;
+}
+#registeration-update .section-card .section-desc {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+}
+#registeration-update .field-group {
+  margin-bottom: 0.75rem;
+}
+#registeration-update .field-group .field-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.4rem;
+}
+#registeration-update .field-group .form-control {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.55rem 0.875rem;
+  font-size: 0.9rem;
+  color: #1f2937;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 44px;
+}
+#registeration-update .field-group .form-control:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  outline: none;
+}
+#registeration-update .field-group .field-error {
+  font-size: 0.78rem;
+  color: #ef4444;
+  margin-top: 0.3rem;
+}
+#registeration-update .toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 0;
+}
+#registeration-update .toggle-row:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6;
+}
+#registeration-update .toggle-row .toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+#registeration-update .toggle-row .toggle-info .toggle-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+#registeration-update .toggle-row .toggle-info .toggle-desc {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+#registeration-update .toggle-row .form-check {
+  margin: 0;
+  padding: 0;
+}
+#registeration-update .toggle-row .form-check-input {
+  width: 2.5em;
+  height: 1.35em;
+  cursor: pointer;
+  margin: 0;
+}
+#registeration-update .toggle-row .form-check-input:checked {
+  background-color: #6366f1;
+  border-color: #6366f1;
+}
+#registeration-update .toggle-row .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #818cf8;
+}
+#registeration-update #quill-editor {
+  border-radius: 0 0 8px 8px;
+  min-height: 280px;
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+#registeration-update .ql-toolbar.ql-snow {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px 8px 0 0;
+  background: #f9fafb;
+}
+#registeration-update .ql-container.ql-snow {
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+#registeration-update .ql-editor {
+  min-height: 280px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+#registeration-update .ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: normal;
+}
+#registeration-update .save-card {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  margin-bottom: 0;
+}
+#registeration-update .save-card .card-body {
+  padding: 0;
+}
+#registeration-update .btn-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s, transform 0.1s;
+}
+#registeration-update .btn-save:hover {
+  background: #4338ca;
+  color: #ffffff;
+}
+#registeration-update .btn-save:active {
+  transform: scale(0.98);
 }/*# sourceMappingURL=style.css.map */

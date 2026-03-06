@@ -3,6 +3,8 @@
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'styles/central_admin/registration_update/style.css' %}">
+<!-- Quill Snow theme -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 {% endblock style %}
 
 {% block sidebar %}
@@ -10,124 +12,203 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div>
-  <a href="#" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-</div>
-
 <section id="registeration-update">
-  <div class="registration-setting">
-    <div class="wrap">
-      <!-- link card -->
-      <div class="card link-box mb-3">
-        <div class="card-body">
-          <h5 class="card-title" style="font-weight: 502;">Link for Sharing</h5>
-          <input class="w-100 link-input form-control" disabled type="text"
-            value="{{ protocol }}://{{ domain }}{% url 'students:validate_student' registration_code=object.code %}"
-            id="link-input">
-          <div class="button">
-            <a href="{% url 'students:validate_student' registration_code=object.code %}" target="_blank"
-              class="btn btn-sm btn-outline-light card-link">View<i
-                class="fa-solid fa-arrow-up-right-from-square ms-2"></i></a>
-            <button class="btn btn-light btn-sm card-link" onclick="copyLink()">Copy Link<i
-                class="fa-regular fa-copy ms-2"></i></button>
-          </div>
-        </div>
+
+  <!-- Back button -->
+  <div class="back-button-container">
+    <a href="{% url 'central_admin:registration_detail' registration_slug=object.slug %}" class="back-btn">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Back</span>
+    </a>
+  </div>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div>
+        <p class="page-label">Registration</p>
+        <h4 class="page-title">{{ object.name }}</h4>
       </div>
-      <!-- form card -->
-      <h4 class="heading">Settings</h4>
-      <div class="form-card">
-        <div class="card mt-2">
-          <div class="card-body">
-            <form action="" method="post">
-              {% csrf_token %}
-              {{form.as_p|safe}}
-              <div class="save-button">
-                <button class="btn btn-sm btn-primary">Save changes</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-<!-- 
-      <div class="card mt-2">
-        <div class="card-body">
-          <div class="head mb-3">
-            <h6 class="card-title" style="font-weight:400;">Add FAQ</h6>
-            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#faq-form"><i
-                class="fa-solid fa-plus"></i></button>
-            <div class="modal fade" id="faq-form" tabindex="-1" aria-labelledby="faq-form" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Add FAQ</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <form action="{% url 'central_admin:faq_create' registration_slug=object.slug %}" method="post">
-                    <div class="modal-body">
-                      {% csrf_token %}
-                      {{faq_form.as_p | safe}}
-                    </div>
-                    <div class="modal-footer">
-                      <button type="submit" class="btn btn-primary">Add now</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="accordion" id="accordionExample">
-            {% if object.faqs.all %}
-            {% for faq in object.faqs.all %}
-            <div class="accordion-item">
-              <h2 class="accordion-header">
-                <button class="accordion-button collapsed" style="outline: none !important; box-shadow: none;"
-                  type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{faq.pk}}"
-                  aria-controls="flush-collapseOne{{faq.pk}}">
-                  <div class="w-100">
-                    <div class="text-body-default-bold mb-0">
-                      {{faq.question}}
-                    </div>
-                  </div>
-                </button>
-              </h2>
-              <div id="flush-collapseOne{{faq.pk}}" class="accordion-collapse collapse"
-                data-bs-parent="#accordionFlushExample">
-                <div class="accordion-body">
-                  <div class="mb-3">
-                    {{faq.answer}}
-                  </div>
-                  <form action="{% url 'central_admin:faq_delete' registration_slug=object.slug faq_slug=faq.slug %}"
-                    method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                  </form>
-                </div>
-              </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="w-100 p-3 text-center">
-              <span class="text-muted">No faqs added yet</span>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-       -->
     </div>
   </div>
-</section>
 
+  <form action="" method="post" id="registration-form">
+    {% csrf_token %}
+    <!-- Hidden textarea for instructions (synced from Quill) -->
+    <textarea name="instructions" id="id_instructions" style="display:none;">{{ form.instructions.value }}</textarea>
+
+    <div class="update-layout">
+
+      <!-- ── Left column ───────────────────────────────── -->
+      <div class="left-col">
+
+        <!-- Sharing Link card -->
+        <div class="card link-card">
+          <div class="card-body">
+            <div class="link-card-header">
+              <div>
+                <h6 class="card-label">Booking Link</h6>
+                <p class="card-desc">Share this link with students to start the booking process.</p>
+              </div>
+              <div class="link-status-badge {% if object.status %}badge-open{% else %}badge-closed{% endif %}">
+                {% if object.status %}Open{% else %}Closed{% endif %}
+              </div>
+            </div>
+            <div class="link-input-row">
+              <input class="link-input form-control" disabled type="text"
+                value="{{ protocol }}://{{ domain }}{% url 'students:validate_student' registration_code=object.code %}"
+                id="link-input">
+              <button type="button" class="btn btn-copy" onclick="copyLink()" title="Copy link">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+              <a href="{% url 'students:validate_student' registration_code=object.code %}" target="_blank"
+                class="btn btn-view" title="Open link">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instructions card -->
+        <div class="card section-card">
+          <div class="card-body">
+            <div class="section-header">
+              <i class="fa-solid fa-file-lines section-icon"></i>
+              <div>
+                <h6 class="section-title">Instructions</h6>
+                <p class="section-desc">Displayed to students on the booking page.</p>
+              </div>
+            </div>
+            {% if form.instructions.errors %}
+            <div class="alert alert-danger py-2 px-3 small">{{ form.instructions.errors }}</div>
+            {% endif %}
+            <!-- Quill editor container -->
+            <div id="quill-editor"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Right column ──────────────────────────────── -->
+      <div class="right-col">
+
+        <!-- General info card -->
+        <div class="card section-card">
+          <div class="card-body">
+            <div class="section-header">
+              <i class="fa-solid fa-pen section-icon"></i>
+              <div>
+                <h6 class="section-title">General</h6>
+                <p class="section-desc">Basic registration details.</p>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="{{ form.name.id_for_label }}" class="field-label">Registration Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}
+              <p class="field-error">{{ form.name.errors }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Visibility card -->
+        <div class="card section-card">
+          <div class="card-body">
+            <div class="section-header">
+              <i class="fa-solid fa-toggle-on section-icon"></i>
+              <div>
+                <h6 class="section-title">Visibility &amp; Status</h6>
+                <p class="section-desc">Control registration availability.</p>
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-label">Open Registration</span>
+                <span class="toggle-desc">Allow students to submit bookings.</span>
+              </div>
+              <div class="form-check form-switch">
+                {{ form.status }}
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-label">Active Registration</span>
+                <span class="toggle-desc">{{ form.is_active.help_text }}</span>
+              </div>
+              <div class="form-check form-switch">
+                {{ form.is_active }}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Save card -->
+        <div class="card save-card">
+          <div class="card-body">
+            <button type="submit" class="btn btn-save w-100">
+              <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+</section>
 {% endblock content %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
+  // ── Copy booking link ──────────────────────────────────────
   function copyLink() {
-    var copyText = document.getElementById("link-input");
-    copyText.select();
-    copyText.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(copyText.value);
-    alert("Copied the text: " + copyText.value);
+    const input = document.getElementById("link-input");
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      btn.classList.add('btn-copy-success');
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+        btn.classList.remove('btn-copy-success');
+      }, 2000);
+    });
   }
+
+  // ── Quill rich-text editor ─────────────────────────────────
+  const quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Write instructions for students…',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ color: [] }, { background: [] }],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        [{ align: [] }],
+        ['link'],
+        ['clean']
+      ]
+    }
+  });
+
+  // Load existing instructions HTML into Quill
+  const existing = document.getElementById('id_instructions').value.trim();
+  if (existing) {
+    quill.clipboard.dangerouslyPasteHTML(existing);
+  }
+
+  // Sync Quill content to hidden textarea before submit
+  document.getElementById('registration-form').addEventListener('submit', function () {
+    const html = quill.getSemanticHTML();
+    document.getElementById('id_instructions').value = html;
+  });
 </script>
 {% endblock scripts %}
