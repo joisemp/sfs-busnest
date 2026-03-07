@@ -10,42 +10,70 @@
 {% endblock sidebar %}
 
 {% block content %}
-<div class="section-header">
-    <div>
-        <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}" class="btn btn-outline-dark btn-sm mb-3"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
-     </div>
-     <div class="gear d-flex justify-content-between">
-       <div>
-         <h3>Schedules</h3>
-       </div>
-       <div>
-         <a class="btn btn-outline-dark me-2" href="{% url 'central_admin:schedule_group_list' registration_slug=registration.slug %}">Groups</a>
-         <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Create schedule</a>
-       </div>
-    </div>
-    <hr>
-</div>
-
 <section id="schedule">
-    <div class="main-wrap">
-        <div class="wrap">
-            {% for schedule in schedules %}
-            <div class="card">
-                <div class="card-body">
-                    <div class="content">
-                        <h5 class="card-title mb-3">{{ schedule.name }}</h5>
-                        <span>{{ schedule.start_time }} - {{ schedule.end_time }}</span>
-
-                    </div>
-                    <div class="button">
-                        <!-- <a href="#" class=" btn btn-sm text-danger card-link">Delete<i
-                                class="fa-solid fa-trash-can ms-2"></i></a> -->
-                        <a href="{% url 'central_admin:schedule_update' registration_slug=registration.slug schedule_slug=schedule.slug %}" class=" btn btn-sm btn-dark card-link">Edit<i
-                                class="fa-regular fa-pen-to-square ms-2"></i></a>
-                    </div>
+    <div class="main-content">
+        
+        <!-- Page Header -->
+        <div class="page-header-section mb-4">
+            <a href="{% url 'central_admin:registration_detail' registration_slug=registration.slug %}"
+                class="back-btn mb-3">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back to Registration</span>
+            </a>
+            <div class="header-content">
+                <div>
+                    <h1 class="page-header">Schedules</h1>
+                    <p class="page-subtitle">Manage timing schedules for {{ registration.name }}</p>
+                </div>
+                <div class="header-actions">
+                    <a class="btn-secondary" href="{% url 'central_admin:schedule_group_list' registration_slug=registration.slug %}">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Schedule Groups</span>
+                    </a>
+                    <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn-primary">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Create Schedule</span>
+                    </a>
                 </div>
             </div>
-            {% endfor %}
+        </div>
+
+        <!-- Schedules Grid -->
+        <div class="schedules-grid">
+            {% if schedules %}
+                {% for schedule in schedules %}
+                <div class="schedule-card">
+                    <div class="schedule-icon">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div class="schedule-content">
+                        <h3 class="schedule-title">{{ schedule.name }}</h3>
+                        <div class="schedule-time">
+                            <i class="fa-solid fa-calendar-clock"></i>
+                            <span>{{ schedule.start_time|time:"g:i A" }} - {{ schedule.end_time|time:"g:i A" }}</span>
+                        </div>
+                    </div>
+                    <div class="schedule-actions">
+                        <a href="{% url 'central_admin:schedule_update' registration_slug=registration.slug schedule_slug=schedule.slug %}" 
+                           class="btn-edit"
+                           title="Edit Schedule">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>Edit</span>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fa-solid fa-clock"></i>
+                    <h3>No schedules found</h3>
+                    <p>Create your first schedule to get started</p>
+                    <a href="{% url 'central_admin:schedule_create' registration_slug=registration.slug %}" class="btn-primary">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Create Schedule</span>
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </section>
