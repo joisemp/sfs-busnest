@@ -1,29 +1,350 @@
 @use "../../sidebar_navbar_base" as *;
+@use "../../base" as *;
+@use 'sass:color';
 
-.container{
-    padding: 0;
-}
+// Color Palette (from design guide)
+$indigo-600: #4f46e5;
+$indigo-700: #4338ca;
+$indigo-800: #3730a3;
+$slate-50: #f8fafc;
+$slate-100: #f1f5f9;
+$slate-200: #e2e8f0;
+$slate-700: #334155;
+$slate-800: #1e293b;
+$slate-900: #0f172a;
+$success: #10b981;
 
 #schedule {
-    .main-wrap {
+    .main-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        height: auto; // Override base template's fixed height
+        overflow-y: visible; // Override base template's overflow
+
+        @media screen and (max-width: 991px) {
+            padding: 1rem 0.75rem;
+        }
+    }
+
+    // Page Header Section
+    .page-header-section {
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid $slate-200;
+            border-radius: 10px;
+            color: $slate-700;
+            text-decoration: none;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background: $slate-50;
+                color: $slate-900;
+                border-color: $slate-900;
+
+                i {
+                    transform: translateX(-3px);
+                }
+            }
+
+            i {
+                transition: transform 0.3s ease;
+            }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+
+            @media screen and (max-width: 768px) {
+                flex-direction: column;
+            }
+        }
+
+        .page-header {
+            font-size: 2rem;
+            font-weight: 700;
+            color: $slate-900;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+
+            @media screen and (max-width: 991px) {
+                font-size: 1.5rem;
+            }
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: $slate-700;
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+
+            @media screen and (max-width: 768px) {
+                width: 100%;
+            }
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+
+            &:hover {
+                background: linear-gradient(135deg, $indigo-700 0%, $indigo-800 100%);
+                color: white;
+
+                i {
+                    transform: translateX(3px);
+                }
+            }
+
+            i {
+                transition: transform 0.3s ease;
+            }
+
+            @media screen and (max-width: 768px) {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: white;
+            color: $indigo-600;
+            border: 1px solid $indigo-600;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+
+            &:hover {
+                background: color.scale($indigo-600, $lightness: 95%);
+                border-color: $indigo-700;
+                color: $indigo-700;
+
+                i {
+                    transform: scale(1.1);
+                }
+            }
+
+            i {
+                transition: transform 0.2s ease;
+            }
+
+            @media screen and (max-width: 768px) {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    }
+
+    // Schedules Grid
+    .schedules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1rem;
+
+        @media screen and (max-width: 768px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .schedule-card {
+        background: white;
+        border: 1px solid $slate-200;
+        border-radius: 16px;
+        padding: 1.5rem;
         display: flex;
-        justify-content: center;
-        .wrap {
-            width: 500px;
-            .card {
-                padding: 10px;
-                margin: 5px;
-                .card-subtitle {
-                    text-transform: capitalize;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: $indigo-600;
+
+            .schedule-icon {
+                background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+                transform: scale(1.05);
+            }
+        }
+
+        .schedule-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .schedule-content {
+            flex: 1;
+            min-width: 0; // Allow text truncation
+
+            .schedule-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: $slate-900;
+                margin-bottom: 0.5rem;
+                word-break: break-word;
+            }
+
+            .schedule-time {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.9375rem;
+                color: $slate-700;
+
+                i {
+                    color: $indigo-600;
+                    font-size: 0.875rem;
                 }
 
-                .card-body {
-                    .button {
-                        margin-top: 1.5rem;
-                        text-align: right;
+                span {
+                    font-weight: 500;
+                }
+            }
+        }
+
+        .schedule-actions {
+            flex-shrink: 0;
+
+            @media screen and (max-width: 480px) {
+                width: 100%;
+                margin-top: 0.75rem;
+            }
+
+            .btn-edit {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.625rem 1.25rem;
+                background: linear-gradient(135deg, $slate-800 0%, $slate-900 100%);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                text-decoration: none;
+                transition: all 0.3s ease;
+
+                &:hover {
+                    background: linear-gradient(135deg, $slate-900 0%, color.scale($slate-900, $lightness: -10%) 100%);
+                    color: white;
+
+                    i {
+                        transform: scale(1.1);
                     }
                 }
+
+                i {
+                    transition: transform 0.2s ease;
+                }
+
+                @media screen and (max-width: 480px) {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    // Empty State
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border: 1px solid $slate-200;
+        border-radius: 16px;
+
+        i {
+            font-size: 4rem;
+            color: $slate-200;
+            margin-bottom: 1.5rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: $slate-900;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            font-size: 1rem;
+            color: $slate-700;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, $indigo-600 0%, $indigo-700 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background: linear-gradient(135deg, $indigo-700 0%, $indigo-800 100%);
+                color: white;
+
+                i {
+                    transform: translateX(3px);
+                }
+            }
+
+            i {
+                transition: transform 0.3s ease;
             }
         }
     }
 }
+

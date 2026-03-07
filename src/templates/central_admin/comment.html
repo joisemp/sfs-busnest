@@ -1,4 +1,7 @@
-<div class="comment">
-    <p>{{ comment.comment }}</p>
-    <small>- {{ comment.created_by }} on {{ comment.created_at }}</small>
+<div class="comment-card">
+    <p class="comment-text">{{ comment.comment }}</p>
+    <div class="comment-meta">
+        <i class="fa-solid fa-user-circle"></i>
+        {{ comment.created_by }} • {{ comment.created_at|date:"M d, Y - h:i A" }}
+    </div>
 </div>
